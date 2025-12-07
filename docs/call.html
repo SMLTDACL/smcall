@@ -1,0 +1,3574 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title></title>
+</head>
+<body>
+
+    <!-- ===================== [B1] APP ROOT ===================== -->
+<div id="sm-vendedores-app">
+  <!-- ===================== [B2] BOTON COMENZAR ===================== -->
+<div class="sm-start-wrap">
+  <div id="sm-start-title" class="sm-start-title"></div>
+  <button id="sm-btn-comenzar" class="sm-btn sm-btn-primary" style="font-size: 16px; ">Comenzar</button>
+</div>
+  <!-- ===================== [B3] OVERLAY + POPUP FULLSCREEN ===================== -->
+  <div id="sm-overlay" class="sm-overlay" style="display:none;">
+    <div id="sm-sheet" class="sm-sheet" role="dialog" aria-modal="true">
+      <!-- Header -->
+      <div class="sm-sheet-head">
+        <div class="sm-sheet-brand" aria-hidden="true">
+          <img
+            src="https://www.simplemarcas.cl/hosted/images/48/b158d3fdac4a15bd946b594573c45e/logon.png"
+            alt="Simple Marcas"
+          />
+        </div>
+        <!-- Acciones header (reemplaza nombre/idpipe) -->
+        <div class="sm-sheet-actions">
+          <button id="sm-btn-stats" class="sm-icon-btn" type="button" aria-label="Abrir estadísticas">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round"
+      class="lucide lucide-chart-column-increasing-icon lucide-chart-column-increasing">
+      <path d="M13 17V9"/><path d="M18 17V5"/><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>
+    </svg>
+  </button>
+          <button id="sm-btn-calendar" class="sm-icon-btn" type="button" aria-label="Abrir calendario">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-calendar-icon lucide-calendar">
+             <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
+            </svg>
+          </button>
+          <button id="sm-btn-search" class="sm-icon-btn" type="button" aria-label="Buscar trato">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-search-icon lucide-search">
+              <path d="m21 21-4.34-4.34"/>
+              <circle cx="11" cy="11" r="8"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <!-- Body -->
+      <div id="sm-body" class="sm-sheet-body">
+        <!-- ===== [B3.1] VIEW: DETALLE TRATO ===== -->
+        <div id="sm-view-deal">
+          <div class="sm-grid">
+            <!-- Columna izquierda -->
+            <div class="sm-card">
+              <!-- Tracking (solo algunos estados) -->
+              <div id="sm-tracking" class="sm-tracking" style="display:none;"></div>
+              <div class="sm-row"><div class="sm-k">Estado</div><div id="sm-ESTADO" class="sm-v">—</div></div>
+              <div class="sm-row"><div class="sm-k">Nombre</div><div id="sm-NOMBRE" class="sm-v">—</div></div>
+              <div class="sm-row">
+                <div class="sm-k">IDPIPE</div>
+                <div class="sm-v sm-v-copy">
+                  <span id="sm-IDPIPE">—</span>
+                  <button class="sm-copy-mini" type="button" aria-label="Copiar IDPIPE" data-copy="#sm-IDPIPE">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      class="lucide lucide-copy-icon lucide-copy">
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="sm-row">
+                <div class="sm-k">Email</div>
+                <div class="sm-v sm-v-copy">
+                  <span id="sm-EMAIL">—</span>
+                  <button class="sm-copy-mini" type="button" aria-label="Copiar Email" data-copy="#sm-EMAIL">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      class="lucide lucide-copy-icon lucide-copy">
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="sm-row">
+                <div class="sm-k">Marca</div>
+                <div class="sm-v sm-v-copy">
+                  <span id="sm-MARCA">—</span>
+                  <button class="sm-copy-mini" type="button" aria-label="Copiar Marca" data-copy="#sm-MARCA">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      class="lucide lucide-copy-icon lucide-copy">
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="sm-row"><div class="sm-k">Clases</div><div id="sm-CLASES" class="sm-v">—</div></div>
+              <div class="sm-row"><div class="sm-k">Cant. Clases</div><div id="sm-CANT_CLASES" class="sm-v">—</div></div>
+              <div class="sm-row"><div class="sm-k">PDF</div><div id="sm-PDF" class="sm-v sm-link">—</div></div>
+              <div class="sm-row"><div class="sm-k">Opción</div><div id="sm-OPCION" class="sm-v">—</div></div>
+              <div class="sm-row"><div class="sm-k">Monto base</div><div id="sm-MONTO_BASE" class="sm-v">—</div></div>
+              <div class="sm-row"><div class="sm-k">Descuento</div><div id="sm-DESCUENTO" class="sm-v">—</div></div>
+              <div class="sm-row"><div class="sm-k">Tipo</div><div id="sm-TIPO" class="sm-v">—</div></div>
+              <div class="sm-row"><div class="sm-k">Último Contacto</div><div id="sm-ULTIMO_CONTACTO" class="sm-v">—</div></div>
+              <div class="sm-row"><div class="sm-k">Ficha</div><div id="sm-URL_FICHA" class="sm-v sm-link">—</div></div>
+              <div class="sm-row"><div class="sm-k">Agenda</div><div id="sm-URL_AGENDA" class="sm-v sm-link">—</div></div>
+              <!--<div class="sm-row"><div class="sm-k">Contacto Fallido</div><div id="sm-URL_CONTACTO_FALLIDO" class="sm-v sm-link">—</div></div>-->
+              <!-- ✅ PENÚLTIMA: Estado del Pago (CH) + Refresh -->
+              <div class="sm-row sm-row-inline-actions">
+                <div class="sm-k">Estado Pago Registro</div>
+                <div class="sm-v sm-v-inline-actions">
+                  <span id="sm-ESTADO_PAGO">—</span>
+                  <span id="sm-pay-shimmer" class="sm-shimmer-line" aria-hidden="true"></span>
+                  <button id="sm-btn-refresh-pay" class="sm-icon-btn sm-icon-btn-mini" type="button" aria-label="Actualizar estado del pago">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      class="lucide lucide-refresh-cw-icon lucide-refresh-cw">
+                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                      <path d="M21 3v5h-5"/>
+                      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                      <path d="M8 16H3v5"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="sm-row"><div class="sm-k">Ficha Vigilancia</div><div id="sm-URL_FICHA_VIGILANCIA" class="sm-v sm-link">—</div></div>
+              <!-- ✅ NUEVO: Estado del Pago Vigilancia (CM) + Refresh -->
+<div class="sm-row sm-row-inline-actions">
+  <div class="sm-k">Estado Pago Vigilancia</div>
+  <div class="sm-v sm-v-inline-actions">
+    <span id="sm-ESTADO_PAGO_VIGILANCIA">—</span>
+    <span id="sm-payv-shimmer" class="sm-shimmer-line" aria-hidden="true"></span>
+    <button id="sm-btn-refresh-payv" class="sm-icon-btn sm-icon-btn-mini" type="button" aria-label="Actualizar estado del pago vigilancia">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        class="lucide lucide-refresh-cw-icon lucide-refresh-cw">
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+        <path d="M8 16H3v5"/>
+      </svg>
+    </button>
+  </div>
+</div>
+              <!-- ✅ ÚLTIMA: Log trato (BP) -->
+              <div class="sm-row sm-row-inline-actions">
+                <div class="sm-k">Log trato</div>
+                <div class="sm-v sm-v-inline-actions">
+                  <button id="sm-btn-open-log" class="sm-btn sm-btn-secondary sm-btn-xs" type="button">Abrir</button>
+                </div>
+              </div>
+            </div>
+            <!-- Columna derecha -->
+            <div class="sm-card sm-card-right">
+              <div class="sm-right-content">
+                <div class="sm-k" style="margin-bottom:6px;">Teléfono</div>
+                <div class="sm-phone-line">
+                  <input id="sm-phone" class="sm-input" placeholder="+569..." />
+                  <button id="sm-btn-copy-phone" class="sm-copy-btn" aria-label="Copiar teléfono" type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      class="lucide lucide-copy-icon lucide-copy">
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="sm-k" style="margin:14px 0 6px;">Observaciones (editable)</div>
+                  <textarea id="sm-obs" class="sm-textarea" rows="5" placeholder="Escribe observaciones..."></textarea>
+                  <!-- ✅ NUEVO: Historial (BT) -->
+                  <div class="sm-k" style="margin:14px 0 6px;">Historial</div>
+                  <div id="sm-history" class="sm-calls"></div>
+                  <div class="sm-k" style="margin:14px 0 6px;">Log Llamadas</div>
+                  <div id="sm-calls" class="sm-calls"></div>
+                <button id="sm-btn-llamar" class="sm-btn sm-btn-primary sm-btn-full" type="button" style="margin-top:12px;">
+                  Llamar
+                </button>
+              </div>
+              <!-- botones mini abajo derecha -->
+              <div class="sm-right-actions">
+                <a id="sm-btn-guiones" class="sm-mini-btn" href="https://www.simplemarcas.cl/guiones1764271749738" target="_blank" rel="noopener noreferrer">💬 Guiones</a>
+                <button id="sm-btn-venta-analisis" class="sm-mini-btn" type="button">📊 Venta de Análisis</button>
+                <button id="sm-btn-venta-asistido" class="sm-mini-btn" type="button">💻 Venta Registro Asistido</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- ===== [B3.2] VIEW: ENCUESTA  ===== -->
+<div id="sm-view-survey" style="display:none;">
+  <div class="sm-card">
+    <div id="sm-typeform-min"></div>
+  </div>
+</div>
+      </div>
+      <!-- Footer buttons: DEAL -->
+      <div id="sm-foot-deal" class="sm-sheet-foot">
+        <button id="sm-btn-omitir" class="sm-link-action" type="button">Omitir</button>
+        <button id="sm-btn-aceptar-continuar" class="sm-btn sm-btn-secondary" type="button">Aceptar y continuar</button>
+      </div>
+      <!-- Footer buttons: SURVEY (solo volver al trato) -->
+<div id="sm-foot-survey" class="sm-sheet-foot" style="display:none;justify-content:flex-start;">
+  <button id="sm-btn-atras" class="sm-btn sm-btn-secondary" type="button">Atrás</button>
+</div>
+      <!-- ===================== [B3.3] MODAL: OMITIR ===================== -->
+      <div id="sm-omit-modal" class="sm-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="sm-modal-backdrop"></div>
+        <div class="sm-modal-card">
+          <div class="sm-modal-title">¿Por qué debes omitir esta llamada?</div>
+          <div class="sm-modal-sub">Se informará al coordinador.</div>
+          <textarea id="sm-omit-reason" class="sm-textarea" rows="4" placeholder="Escribe el motivo..."></textarea>
+          <div class="sm-modal-actions">
+            <button id="sm-btn-omit-cancel" class="sm-btn sm-btn-secondary" type="button">Cancelar</button>
+            <button id="sm-btn-omit-confirm" class="sm-btn sm-btn-primary" type="button">Enviar</button>
+          </div>
+        </div>
+      </div>
+      <!-- ===================== [B3.4] MODAL: BUSCAR ===================== -->
+      <div id="sm-search-modal" class="sm-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="sm-modal-backdrop"></div>
+        <div class="sm-modal-card">
+          <div class="sm-modal-title">Buscar trato</div>
+          <div class="sm-modal-sub">Puedes ingresar un IDPIPE o un Email.</div>
+          <div class="sm-search-bar">
+            <input id="sm-search-q" class="sm-input sm-search-input" placeholder="IDPIPE o email..." />
+            <button id="sm-btn-search-run" class="sm-btn sm-btn-primary sm-btn-search" type="button">Buscar</button>
+          </div>
+          <div id="sm-search-results" class="sm-search-results">
+            <div class="sm-search-hint">Ingresa un <strong>IDPIPE</strong> o un <strong>Email</strong>.</div>
+          </div>
+          <div class="sm-modal-actions">
+            <button id="sm-btn-search-cancel" class="sm-btn sm-btn-secondary" type="button">Cerrar</button>
+          </div>
+        </div>
+      </div>
+      <!-- ===================== [B3.5] MODAL: LOG TRATO ===================== -->
+      <div id="sm-log-modal" class="sm-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="sm-modal-backdrop"></div>
+        <div id="sm-log-modal-card" class="sm-modal-card">
+          <div class="sm-modal-title">Log trato</div>
+          <div class="sm-modal-sub">Información histórica del trato.</div>
+      <div class="sm-log-wrap">
+        <div id="sm-log-shimmer" class="sm-shimmer-block" aria-hidden="true"></div>
+        <pre id="sm-log-text" class="sm-log-pre">—</pre>
+      </div>
+      <div class="sm-modal-actions">
+        <button id="sm-btn-log-close" class="sm-btn sm-btn-secondary" type="button">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  <!-- ===================== [B3.6] MODAL: INACTIVIDAD ===================== -->
+  <div id="sm-idle-modal" class="sm-idle-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="sm-idle-backdrop"></div>
+    <div class="sm-idle-card">
+      <div class="sm-idle-sub">Han pasado 2 minutos sin actividad.</div>
+      <div class="sm-idle-count">Se cerrará en <span id="sm-idle-count">60</span>s</div>
+    </div>
+  </div>
+      <!-- Toast -->
+      <div id="sm-toast" class="sm-toast">Copiado</div>
+    </div>
+  </div>
+  <!-- ===================== [B4] ZOOM IFRAME OCULTO (motor) ===================== -->
+  <iframe
+    id="sm-zoomphone-iframe"
+    allow="microphone; clipboard-read; clipboard-write https://applications.zoom.us"
+    style="position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;border:0;">
+  </iframe>
+  <!-- Panel inline para login de Zoom cuando falta sesión -->
+  <div id="sm-zoom-login" class="sm-zoom-login" style="display:none;">
+    <div class="sm-zoom-login-head">
+      <div class="sm-zoom-login-title">Inicia sesión en Zoom Phone</div>
+      <button type="button" id="sm-zoom-login-close" class="sm-icon-btn sm-icon-btn-mini" aria-label="Cerrar panel Zoom">✕</button>
+    </div>
+    <div class="sm-zoom-login-msg">Inicia sesión aquí sin salir de la página y luego vuelve a llamar.</div>
+    <div id="sm-zoom-login-frame"></div>
+  </div>
+  <!-- ===================== [B5] POST TARGET (anti-CORS) ===================== -->
+  <iframe name="sm-post-target" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;border:0;"></iframe>
+  <form id="sm-post-form" target="sm-post-target" method="POST" style="display:none;"></form>
+</div>
+<!-- ===================== [B5.1] LOADER OVERLAY GLOBAL ===================== -->
+<div id="sm-loader-overlay" class="sm-loader-overlay" style="display:none;" aria-hidden="true">
+  <div class="sm-loader-box" role="status" aria-live="polite" aria-label="Cargando">
+    <div id="sm-loader-pct" class="sm-loader-pct">0%</div>
+    <div class="sm-loader-track">
+      <div id="sm-loader-bar" class="sm-loader-bar"></div>
+    </div>
+  </div>
+</div>
+<!-- ===================== [B6] STYLES ===================== -->
+<style>
+  #sm-vendedores-app { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+.sm-start-wrap{
+  width:100%;
+  height:80vh;           /* altura exacta de pantalla */
+  box-sizing:border-box;  /* el padding ya no suma altura extra */
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:14px;
+  padding:16px;           
+  text-align:center;
+}
+.sm-start-title{
+  font-size:27px;
+  line-height:1.35;
+  font-weight:600;               
+  color:#111827;
+  max-width:720px;
+  padding:0 16px;
+  box-sizing:border-box;
+  margin-bottom: 10px;
+}
+  .sm-btn{
+    border-radius:999px; padding:12px 16px; border:1px solid #111;
+    font-size:14px; font-weight:500; cursor:pointer; line-height:1;
+    white-space:nowrap; background:#fff; color:#111;
+  }
+  .sm-btn-primary{ background:#0069ec; color:#fff; border-color:#0069ec; }
+  .sm-btn-secondary{ background:#f5f5f7; color:#111; border-color:#ffffff; }
+  .sm-btn-full{ width:100%; }
+  .sm-link-action{ border:0; background:transparent; padding:0; cursor:pointer; color:#111; font-size:14px; text-decoration:underline; }
+  .sm-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:999999; display:flex; align-items:stretch; justify-content:stretch; }
+  .sm-sheet{
+    width:100vw; height:100vh; background:#F5F5F7; border-radius:0; box-shadow:none;
+    transform:translateY(100%); animation:smUp .22s ease-out forwards;
+    display:flex; flex-direction:column;
+  }
+  @keyframes smUp{ to{ transform:translateY(0);} }
+  .sm-sheet-head{
+    padding:14px 25px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    border-bottom:0px solid rgba(0,0,0,.08);
+    background:#F5F5F7;
+  }
+  .sm-sheet-brand{ display:flex; align-items:center; justify-content:flex-start; flex:0 0 auto; }
+  .sm-sheet-brand img{ max-width:100px; height:auto; display:block; }
+  .sm-sheet-actions{ display:flex; align-items:center; justify-content:flex-end; gap:10px; }
+  .sm-icon-btn{
+    border:0; background:transparent; cursor:pointer; padding:8px;
+    border-radius:999px; color:#8a8a8b;
+  }
+  .sm-icon-btn:hover{ background:rgba(0,0,0,.0); }
+  .sm-sheet-body{
+  padding: 5px 16px 14px 16px;
+  overflow:auto;
+  flex:1;
+  /* NUEVO: para que la vista interna pueda tomar la altura completa del body */
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+  .sm-grid{ display:grid; grid-template-columns:1.2fr .8fr; gap:12px; }
+  @media (max-width:860px){ .sm-grid{ grid-template-columns:1fr; } }
+  .sm-card{ background:#fff; border:0px solid rgba(0,0,0,.08); border-radius:25px; padding:25px; }
+  .sm-row{
+    display:flex; justify-content:space-between; gap:10px; padding:10px 0;
+    border-bottom:1px solid rgba(0,0,0,.06); align-items:center;
+  }
+  .sm-row:last-child{ border-bottom:0; padding-bottom:0; }
+  .sm-k{ font-size:12px; color:#6b7280; min-width:130px; }
+  .sm-v{ font-size:13px; color:#1d1d1f; text-align:right; word-break:break-word; }
+  .sm-v-copy{ display:flex; gap:8px; align-items:center; justify-content:flex-end; text-align:right; }
+  .sm-link a{ color:#111; text-decoration:none; }
+  .sm-link a.sm-btn{ display:inline-flex; align-items:center; justify-content:center; font-size:12px; }
+  .sm-input{
+    width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(0,0,0,.15);
+    outline:none; font-size:14px; background:#f5f5f7;
+    box-sizing:border-box;
+  }
+  .sm-textarea{
+    width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(0,0,0,.15);
+    outline:none; font-size:14px; resize:vertical; background:#f5f5f7;
+    box-sizing:border-box;
+  }
+  .sm-phone-line{ display:flex; gap:8px; align-items:center; }
+  .sm-copy-btn, .sm-copy-mini{
+    border:0px solid rgba(0,0,0,.15); background:#fff; border-radius:12px;
+    padding:10px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#8a8a8b;
+  }
+  .sm-copy-mini{ padding:8px; border-radius:10px; }
+  .sm-copy-mini svg{ width:16px; height:16px; }
+  .sm-calls{
+    border:1px solid rgba(0,0,0,.08); border-radius:12px; padding:8px 10px;
+    min-height:44px; font-size:13px; color:#111;
+    box-sizing:border-box;
+  }
+  /* Historial (BT) dentro de caja estilo sm-calls */
+.sm-calls-pre{
+  margin:0;
+  white-space:pre-wrap;
+  word-break:break-word;
+  font:inherit;
+  color:inherit;
+}
+/* ===== Historial (BT) alto máximo + scroll ===== */
+#sm-history .sm-calls-pre{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0px;
+}
+/* ===== Historial (BT) zebra ===== */
+#sm-history{
+  max-height: 90px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  background: #fff;
+}
+/* contenedor */
+#sm-history .sm-history-list{
+  display:block;
+}
+/* cada línea */
+#sm-history .sm-history-line{
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  color:#111;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+#sm-history .sm-history-line:last-child{
+  padding-bottom:0;
+}
+/* alternado blanco/gris */
+#sm-history .sm-history-line:nth-child(even){
+  background: #F5F5F7;
+}
+  .sm-call-item{ padding:8px 0; border-bottom:1px solid rgba(0,0,0,.06); }
+  .sm-call-item:last-child{ border-bottom:0; padding-bottom:0; }
+  .sm-radio{ display:flex; gap:10px; align-items:center; padding:10px 0; font-size:14px; color:#111; }
+  .sm-sheet-foot{
+    padding:12px 16px; display:flex; gap:10px; justify-content:flex-end;
+    border-top:1px solid rgba(0,0,0,.08); background:#ffffff;
+  }
+  .sm-toast{
+    position:fixed; left:50%; top:18px; transform:translateX(-50%);
+    background:rgba(17,17,17,.92); color:#fff; font-size:13px;
+    padding:10px 12px; border-radius:999px; opacity:0; pointer-events:none;
+    transition:opacity .18s ease; z-index:1000000;
+    font-family:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  .sm-toast.is-show{ opacity:1; }
+  /* Loader global */
+  .sm-loader-overlay{
+    position:fixed; inset:0; background:rgba(255,255,255,.97); display:none;
+    align-items:center; justify-content:center; z-index:2147483647;
+  }
+  .sm-loader-box{ width:min(180px, calc(100vw - 48px)); }
+  .sm-loader-pct{ font-size:14px; font-weight:600; color:#0069ec; text-align:center; margin-bottom:10px; }
+  .sm-loader-track{ width:100%; height:6px; border-radius:999px; background:rgba(0,0,0,.10); overflow:hidden; }
+  .sm-loader-bar{ width:0%; height:100%; border-radius:999px; background:#0069ec; transform-origin:left center; }
+  .sm-loader-bar.is-loading{ animation: smLoad95 16s linear forwards; }
+  @keyframes smLoad95{
+    0%{width:2%} 8%{width:35%} 28%{width:55%} 55%{width:66%} 72%{width:73%} 86%{width:85%} 100%{width:95%}
+  }
+  /* Modales */
+  .sm-modal{
+    position:fixed; inset:0; z-index:1000001; display:none; align-items:center; justify-content:center; padding:18px;
+  }
+  .sm-modal-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.35); }
+  .sm-modal-card{
+    position:relative; width:min(560px, calc(100vw - 36px)); background:#fff; border-radius:18px;
+    padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.22);
+  }
+  .sm-modal-title{ font-size:16px; font-weight:700; color:#111827; margin-bottom:6px; }
+  .sm-modal-sub{ font-size:13px; color:#6b7280; margin-bottom:12px; }
+  .sm-modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
+  /* Modal inactividad */
+  .sm-idle-modal{
+    position:fixed; inset:0; z-index:2147483646; display:none; align-items:center; justify-content:center; padding:18px;
+    font-family:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  .sm-idle-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.4); }
+  .sm-idle-card{
+    position:relative; width:min(420px, calc(100vw - 36px)); background:#fff; border-radius:18px;
+    padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.25); z-index:1;
+  }
+  .sm-idle-sub{
+    font-size:14px;
+    color:#111827;
+    margin-bottom:10px;
+    text-align:center;
+    font-weight:600;
+  }
+  .sm-idle-count{
+    font-size:13px;
+    color:#4b5563;
+    margin-bottom:0;
+    text-align:center;
+  }
+  /* Search UI */
+  .sm-search-bar{ display:flex; gap:10px; align-items:center; }
+  .sm-search-input{ flex:1; }
+  .sm-btn-search{ padding:12px 18px; }
+  .sm-search-results{ margin-top:12px; padding: 12px 0px; background:#fff; }
+  .sm-search-hint{ font-size:13px; color:#6b7280; }
+  .sm-search-meta{ font-size:12px; color:#6b7280; margin-bottom:10px; }
+  .sm-search-empty{ font-size:13px; color:#111; }
+  .sm-search-list{ display:flex; flex-direction:column; gap:10px; }
+  .sm-search-item{
+    display:flex; gap:10px; align-items:center; justify-content:space-between;
+    padding:10px; border:1px solid rgba(0,0,0,.1); border-radius:12px;
+  }
+  .sm-search-left{ display:flex; flex-direction:column; gap:3px; }
+  .sm-search-idpipe{ font-weight:400; color:#6b7280; font-size:12px; }
+  .sm-search-marca{ color:#111827; font-size:14px; font-weight:700; }
+  .sm-btn-xs{ padding:10px 12px; font-size:13px; }
+  /* Mini buttons right-bottom */
+  .sm-card-right{ display:flex; flex-direction:column; }
+  .sm-right-actions{
+    margin-top:auto; display:flex; gap:8px; justify-content:flex-end; align-items:center; padding-top:12px;
+  }
+  .sm-mini-btn{
+    background:#f5f5f7; border:none; font-size:10px; font-weight:600;
+    border-radius:999px; padding:6px 10px; cursor:pointer; color:#111;
+    text-decoration:none; line-height:1; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap;
+  }
+  .sm-mini-btn:hover, .sm-mini-btn:focus, .sm-mini-btn:active{ text-decoration:none; }
+  .sm-mini-btn:disabled{ cursor:default; }
+  /* ===== Estado del Pago: shimmer inline ===== */
+  .sm-row-inline-actions .sm-k{ min-width:130px; }
+  .sm-v-inline-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:10px;
+    text-align:right;
+  }
+  .sm-icon-btn-mini{
+    padding:6px;
+    color:#8a8a8b;
+    border-radius:999px;
+  }
+  .sm-icon-btn-mini:hover{ background:rgba(0,0,0,.0); }
+  .sm-shimmer-line{
+    width:120px;
+    height:12px;
+    border-radius:999px;
+    background:rgba(0,0,0,.08);
+    position:relative;
+    overflow:hidden;
+    display:none;
+  }
+  .sm-shimmer-line.is-loading{ display:inline-block; }
+  .sm-shimmer-line.is-loading::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    transform:translateX(-120%);
+    background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.55), rgba(255,255,255,0));
+    animation: smShimmer 1.05s ease-in-out infinite;
+  }
+  @keyframes smShimmer{
+    0%{ transform:translateX(-120%); }
+    100%{ transform:translateX(120%); }
+  }
+  /* ===== Log modal ===== */
+  .sm-log-wrap{
+    position:relative;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:12px;
+    background:#f5f5f7;
+    padding:12px;
+    min-height:180px;
+    max-height:55vh;
+    overflow:auto;
+  }
+  .sm-log-pre{
+    margin:0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size:12px;
+    color:#111827;
+    white-space:pre-wrap;
+    word-break:break-word;
+    border: 0px solid #ccc;
+  }
+  .sm-shimmer-block{
+    display:none;
+    height:140px;
+    border-radius:10px;
+    background:rgba(0,0,0,.08);
+    position:relative;
+    overflow:hidden;
+    margin-bottom:12px;
+  }
+  .sm-shimmer-block.is-loading{ display:block; }
+  .sm-shimmer-block.is-loading::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    transform:translateX(-120%);
+    background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.55), rgba(255,255,255,0));
+    animation: smShimmer 1.05s ease-in-out infinite;
+  }
+  /* ===== Tracking Estados (columna izquierda) ===== */
+.sm-tracking{
+  margin: 0 0 40px 0;
+  padding: 12px 12px;
+  background:#fff;
+}
+/* FLEX sin gap para que las líneas calcen perfecto */
+.sm-track{
+  --dot: 10px;
+  --line: 2px;
+  display:flex;
+  align-items:flex-start;
+}
+.sm-track-step{
+  flex:1;
+  min-width:0;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+}
+/* Conectores: mitad izquierda y mitad derecha, terminando en el borde del dot */
+.sm-track-step::before,
+.sm-track-step::after{
+  content:"";
+  position:absolute;
+  top: calc((var(--dot) / 2) - (var(--line) / 2));
+  height: var(--line);
+  background: rgba(0,0,0,.10);
+  border-radius: 999px;
+}
+.sm-track-step::before{
+  left: 0;
+  right: 50%;
+  margin-right: calc(var(--dot) / 2);
+}
+.sm-track-step::after{
+  left: 50%;
+  right: 0;
+  margin-left: calc(var(--dot) / 2);
+}
+/* Primer y último: no dibujan hacia afuera */
+.sm-track-step:first-child::before{ display:none; }
+.sm-track-step:last-child::after{ display:none; }
+.sm-track-dot{
+  width: var(--dot);
+  height: var(--dot);
+  border-radius:999px;
+  margin:0 auto 6px auto;
+  background: rgba(0,0,0,.18);
+  position:relative;
+  z-index: 1; /* el dot por sobre la línea */
+}
+.sm-track-label{
+  font-size:10px;
+  line-height:1.15;
+  font-weight:600;
+  color:#6b7280;
+  word-break:break-word;
+  padding: 0 6px;
+}
+/* Completadas / activas */
+.sm-track-step.is-on .sm-track-dot{ background:#0069ec; }
+/* Pintar línea "completada" hasta el punto actual */
+.sm-track-step.is-on::before,
+.sm-track-step.is-on::after{ background: rgba(0,105,236,.55); }
+/* Pero: si es el step ACTIVO, su línea derecha NO debe verse completada (solo hasta el dot) */
+.sm-track-step.is-active::after{ background: rgba(0,0,0,.10); }
+.sm-track-step.is-active .sm-track-dot{
+  box-shadow:0 0 0 4px rgba(0,105,236,.14);
+}
+.sm-track-step.is-active .sm-track-label{ color:#111827; }
+/* ===== Encuesta ===== */
+  #sm-typeform-min{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .smf{max-width:630px;margin:0 auto;padding:0;background:transparent}
+  .smf-q{font-size:20px;line-height:1.25;font-weight:600;color:#111827;margin:0 0 40px 0;white-space:pre-wrap}
+  .smf-opts{display:flex;flex-direction:column;gap:12px;margin:0 0 40px 0}
+  .smf-opt{
+    width:100%;
+    max-width:380px;
+    text-align:left;
+    background:#F5F5F7;
+    border:0px solid rgba(17,24,39,.10);
+    border-radius:14px;
+    padding:14px 14px;
+    cursor:pointer;
+    color:#111827;
+    font-size:15px;
+    line-height:1.3;
+    padding-left:14px;
+    padding-right:14px;
+    transition:padding .14s ease,border-color .14s ease,background .14s ease;
+  }
+  .smf-opt:hover{
+    padding-left:16px;
+    padding-right:16px;
+    border-color:rgba(17,24,39,.18);
+    background:rgba(17,24,39,.045);
+  }
+  .smf-opt.is-selected{
+    font-weight:600;
+    background:#FFFFFF !important;
+    border:2px solid #3469ec;
+  }
+  .smf-opt{display:flex;align-items:center;gap:10px}
+  .smf-letter{
+    width:24px;height:24px;min-width:24px;border-radius:6px;
+    border:1px solid rgba(17,24,39,.22);
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;line-height:1;color:#111827;background:transparent;
+  }
+  .smf-opt:hover .smf-letter{background:transparent;color:#111827;border-color:rgba(17,24,39,.22)}
+  .smf-opt.is-selected .smf-letter{background:#0069ec;border-color:#0069ec;color:#fff}
+  .smf-extra{margin:4px 0 16px 0}
+  .smf-input{
+    width:100%;box-sizing:border-box;border:none;border-bottom:1px solid rgba(17,24,39,.28);
+    border-radius:0;padding:10px 2px;font-size:14px;outline:none;background:transparent;color:#111827; margin-bottom: 35px;
+  }
+  .smf-input:focus{border-bottom-color:rgba(17,24,39,.70)}
+  .smf-nav{display:flex;gap:10px;justify-content:space-between;align-items:center}
+  .smf-btn{
+    border:none;background:transparent;padding:10px 0;font-weight:500;text-decoration:underline;
+    cursor:pointer;color:#111827;font-size:14px;
+  }
+  .smf-btn-primary{
+    padding:10px 14px;border-radius:999px;background:#0069ec;color:#fff;
+    font-weight:600;text-decoration:none;
+  }
+  .smf-done{font-size:20px;font-weight:800;color:#111827;margin:0}
+  .smf-anim{will-change:transform,opacity}
+  @keyframes smfOutUp { from{transform:translateY(0);opacity:1} to{transform:translateY(-20px);opacity:0} }
+  @keyframes smfInUp  { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .smf-leave{animation:smfOutUp .18s ease forwards;}
+  .smf-enter{animation:smfInUp  .20s ease forwards;}
+  @media (max-width:720px){
+    .smf-q{font-size:18px}
+    .smf-opt{padding:13px 12px;border-radius:13px}
+    .smf-opt:hover{padding-left:14px;padding-right:14px}
+  }
+  .smf-opt{ }          /* para que 2 líneas queden bien */
+.smf-opt .smf-opt-text{ display:block; }
+.smf-opt .smf-opt-pay{
+  display:block;
+  margin-top:10px;
+  font-weight:600;
+}
+/* ===== Encuesta (centrada en altura) ===== */
+/* La vista encuesta ocupa toda la altura útil del body */
+#sm-view-survey{
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+/* El card debe ocupar TODO el alto y ancho */
+#sm-view-survey .sm-card{
+  width: 100%;
+  height: 100%;
+  /* centra el componente en altura (y también en ancho) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* opcional pero recomendado: padding ya está en .sm-card global */
+  box-sizing: border-box;
+}
+/* El componente dentro del card: ancho completo con límite */
+#sm-view-survey #sm-typeform-min{
+  width: 100%;
+  max-width: 980px;
+}
+/* DEBUG: borrar esto para verlo */
+#sm-debug-wrap{ display:none !important; }
+
+/* =======================================================================
+   SIMPLE MARCAS — FORZAR INTER EN TODO (incluye popup/overlay)
+   ======================================================================= */
+
+/* 1) Fuente base del contenedor de la app */
+#sm-vendedores-app{
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 2) Fuerza herencia en TODO lo que cuelga del contenedor */
+#sm-vendedores-app *,
+#sm-vendedores-app *::before,
+#sm-vendedores-app *::after{
+  font-family: inherit !important;
+}
+
+/* 3) Fuerza aún más dentro del popup/overlay (ClickFunnels a veces gana por especificidad) */
+#sm-overlay,
+#sm-overlay *,
+#sm-overlay *::before,
+#sm-overlay *::after,
+#sm-sheet,
+#sm-sheet *,
+#sm-sheet *::before,
+#sm-sheet *::after{
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif !important;
+}
+
+/* 4) Controles de formulario (algunos browsers no heredan bien) */
+#sm-vendedores-app input,
+#sm-vendedores-app textarea,
+#sm-vendedores-app select,
+#sm-vendedores-app button{
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif !important;
+}
+
+/* 5) Loader también (por consistencia) */
+  #sm-loader-overlay,
+  #sm-loader-overlay *{
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif !important;
+  }
+
+  /* ===== Zoom login inline ===== */
+  .sm-zoom-login{
+    position:fixed;
+    bottom:16px;
+    right:16px;
+    width:min(420px, calc(100vw - 32px));
+    background:#ffffff;
+    border:1px solid rgba(0,0,0,.12);
+    border-radius:16px;
+    box-shadow:0 18px 60px rgba(0,0,0,.22);
+    padding:12px;
+    z-index:1000002;
+  }
+  .sm-zoom-login-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .sm-zoom-login-title{
+    font-weight:700;
+    color:#111827;
+    font-size:14px;
+  }
+  .sm-zoom-login-msg{
+    font-size:12px;
+    color:#4b5563;
+    margin-bottom:10px;
+    line-height:1.4;
+  }
+  #sm-zoom-login-frame iframe{
+    width:100%;
+    height:420px;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:10px;
+  }
+
+</style>
+
+<script>
+(function(){
+  const el = document.getElementById("sm-start-title");
+  if(!el) return;
+  const params = new URLSearchParams(window.location.search);
+  const name = (params.get("name") || "").trim();
+  el.textContent = name ? `Hola, ${name} 👋` : "Hola 👋";
+})();
+</script>
+
+<script>
+    (function(){
+  if (window.__smCRMAppLoaded) return;
+  window.__smCRMAppLoaded = true;
+
+  /* ===================== [F1] CONFIG ===================== */
+  // ENDPOINT (principal):
+  // - Web App de Google Apps Script (URL /exec).
+  // - Este es el backend principal que recibe los datos del front (call.html).
+  // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
+  // - Código fuente (copia local para editar/analizar con Codex): /apps-script/call/code.gs
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyq3_b9KcKfT99KWdLHiRHbCHVSznzXSvoGGvOSOQOAT7MIpZOmWXQdQPvPpInrEY8y/exec";
+  const ZOOM_ORIGIN = "https://applications.zoom.us";
+  
+  // ENDPOINT_LOG_MENSUAL (logs):
+  // - Web App de Google Apps Script (URL /exec) dedicada a registrar métricas/logs mensuales.
+  // - Separado del ENDPOINT principal para aislar carga y mantener el backend principal más limpio.
+  // - Nota: esta URL también apunta al despliegue en Google, no a tu carpeta local.
+  // - Código fuente (copia local para editar/analizar con Codex): /apps-script/log-mensual/code.gs
+  const ENDPOINT_LOG_MENSUAL = "https://script.google.com/macros/s/AKfycbzYjrCG36UnjyoZfgw_NOVAhgYn2kNQmKSQLigFMO9drgoPCVLgRyITN8OUyJDSrs4d/exec";
+
+  // ZAPIER WEBHOOKS
+  const ZAPIER_ANALISIS = "https://hooks.zapier.com/hooks/catch/6030955/ukh9o60/";
+  const ZAPIER_ASISTIDO = "https://hooks.zapier.com/hooks/catch/6030955/ukh9mx9/";
+  const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
+  const IDLE_WARNING_SECONDS = 60;
+
+  const qs = s => document.querySelector(s);
+  const qsa = s => Array.from(document.querySelectorAll(s));
+
+  /* ===================== [F2] UI HELPERS ===================== */
+  function toast(msg, ms=1600){
+  let t = qs('#sm-toast');
+
+  // si no existe, lo creamos en el body
+  if(!t){
+    t = document.createElement("div");
+    t.id = "sm-toast";
+    document.body.appendChild(t);
+  }
+
+  // si está dentro del overlay/popup, lo movemos al body para que no se oculte al cerrar
+  const ov = qs("#sm-overlay");
+  if (ov && ov.contains(t)){
+    document.body.appendChild(t);
+  }
+
+  t.textContent = msg;
+  t.classList.add('is-show');
+
+  if (t.__hideTimer) clearTimeout(t.__hideTimer);
+  t.__hideTimer = setTimeout(()=> t.classList.remove('is-show'), ms);
+}
+
+
+  function getIDC(){
+    const p = new URLSearchParams(location.search);
+    return (p.get('idc') || "").trim();
+  }
+
+  function setLinkOrDash(el, url, label){
+    if (!el) return;
+    url = (url || "").trim();
+    const txt = (label || "Abrir").trim();
+    if(!url){
+      el.textContent = "—";
+      return;
+    }
+    el.innerHTML = `<a class="sm-btn sm-btn-secondary" href="${url}" target="_blank" rel="noopener noreferrer">${txt}</a>`;
+  }
+
+  function openPopup(){
+    const o = qs("#sm-overlay");
+    if(!o) return;
+    o.style.display = "flex";
+    startIdleWatch();
+  }
+
+  function closePopup(){
+    const o = qs("#sm-overlay");
+        try{ presenceLeave_(); }catch(_){}
+    if(!o) return;
+    o.style.display = "none";
+    stopIdleWatch();
+  }
+
+  function isPopupOpen(){
+    const o = qs("#sm-overlay");
+    return !!(o && o.style.display === "flex");
+  }
+
+  function clearIdleTimer(){
+    if(state.__idleTimer){
+      clearTimeout(state.__idleTimer);
+      state.__idleTimer = null;
+    }
+  }
+
+  function clearIdleCountdown(){
+    if(state.__idleCountdownInterval){
+      clearInterval(state.__idleCountdownInterval);
+      state.__idleCountdownInterval = null;
+    }
+    state.__idleCountdown = null;
+  }
+
+  function hideIdleModal(){
+    const m = qs("#sm-idle-modal");
+    if(m){
+      m.style.display = "none";
+      m.setAttribute("aria-hidden", "true");
+    }
+    clearIdleCountdown();
+  }
+
+  function showIdleModal(){
+    const m = qs("#sm-idle-modal");
+    const c = qs("#sm-idle-count");
+    if(!m) return;
+
+    clearIdleTimer();
+    clearIdleCountdown();
+
+    state.__idleCountdown = IDLE_WARNING_SECONDS;
+    if (c) c.textContent = state.__idleCountdown;
+    m.style.display = "flex";
+    m.setAttribute("aria-hidden", "false");
+
+    state.__idleCountdownInterval = setInterval(()=>{
+      state.__idleCountdown = (state.__idleCountdown == null ? IDLE_WARNING_SECONDS : state.__idleCountdown) - 1;
+      if (state.__idleCountdown < 0) state.__idleCountdown = 0;
+      if (c) c.textContent = state.__idleCountdown;
+      if (state.__idleCountdown <= 0){
+        hideIdleModal();
+        closePopup();
+      }
+    }, 1000);
+  }
+
+  function resetIdleTimer(){
+    if(!isPopupOpen()) return;
+    clearIdleTimer();
+    clearIdleCountdown();
+    state.__idleTimer = setTimeout(showIdleModal, IDLE_TIMEOUT_MS);
+  }
+
+  function bindIdleListeners(){
+    if(state.__idleListenersAttached) return;
+    const handler = ()=>{
+      if(!isPopupOpen()) return;
+      if(state.__idleCountdownInterval) hideIdleModal();
+      resetIdleTimer();
+    };
+    document.addEventListener("mousemove", handler);
+    document.addEventListener("click", handler);
+    state.__idleActivityHandler = handler;
+    state.__idleListenersAttached = true;
+  }
+
+  function unbindIdleListeners(){
+    if(!state.__idleListenersAttached) return;
+    const h = state.__idleActivityHandler;
+    if(h){
+      document.removeEventListener("mousemove", h);
+      document.removeEventListener("click", h);
+    }
+    state.__idleActivityHandler = null;
+    state.__idleListenersAttached = false;
+  }
+
+  function startIdleWatch(){
+    bindIdleListeners();
+    resetIdleTimer();
+  }
+
+  function stopIdleWatch(){
+    clearIdleTimer();
+    clearIdleCountdown();
+    hideIdleModal();
+    unbindIdleListeners();
+  }
+
+  function showDealView(){
+    qs("#sm-view-deal") && (qs("#sm-view-deal").style.display = "block");
+    qs("#sm-view-survey") && (qs("#sm-view-survey").style.display = "none");
+    qs("#sm-foot-deal") && (qs("#sm-foot-deal").style.display = "flex");
+    qs("#sm-foot-survey") && (qs("#sm-foot-survey").style.display = "none");
+  }
+
+  function showSurveyView(){
+    qs("#sm-view-deal") && (qs("#sm-view-deal").style.display = "none");
+    qs("#sm-view-survey") && (qs("#sm-view-survey").style.display = "block");
+    qs("#sm-foot-deal") && (qs("#sm-foot-deal").style.display = "none");
+    qs("#sm-foot-survey") && (qs("#sm-foot-survey").style.display = "flex");
+  }
+
+  /* ===================== [F2.1] MODAL OMITIR ===================== */
+  function openOmitModal(){
+    const m = qs("#sm-omit-modal");
+    const t = qs("#sm-omit-reason");
+    if(!m) return;
+    if(t) t.value = "";
+    m.style.display = "flex";
+    m.setAttribute("aria-hidden", "false");
+    setTimeout(()=>{
+      try{ t && t.focus(); }catch(_){}
+    }, 0);
+  }
+
+  function closeOmitModal(){
+    const m = qs("#sm-omit-modal");
+    if(!m) return;
+    m.style.display = "none";
+    m.setAttribute("aria-hidden", "true");
+  }
+
+  /* ===================== [F2.2] MODAL BUSCAR ===================== */
+  function openSearchModal(){
+    const m = qs("#sm-search-modal");
+    const inp = qs("#sm-search-q");
+    const res = qs("#sm-search-results");
+    if(!m) return;
+    if (inp) inp.value = "";
+    if (res) res.innerHTML = `<div class="sm-search-hint">Ingresa un <strong>IDPIPE</strong> o un <strong>Email</strong>.</div>`;
+    m.style.display = "flex";
+    m.setAttribute("aria-hidden", "false");
+    setTimeout(()=>{
+      try{ inp && inp.focus(); }catch(_){}
+    }, 0);
+  }
+
+  function closeSearchModal(){
+    const m = qs("#sm-search-modal");
+    if(!m) return;
+    m.style.display = "none";
+    m.setAttribute("aria-hidden", "true");
+  }
+
+  /* ===================== [F2.3] MODAL LOG TRATO ===================== */
+  function openLogModal(){
+    const m = qs("#sm-log-modal");
+    if(!m) return;
+    m.style.display = "flex";
+    m.setAttribute("aria-hidden", "false");
+  }
+
+  function closeLogModal(){
+    const m = qs("#sm-log-modal");
+    if(!m) return;
+    m.style.display = "none";
+    m.setAttribute("aria-hidden", "true");
+  }
+
+  function isEmail_(s){
+    const v = String(s || "").trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  function lockBtn(btn, loadingText){
+    if(!btn) return ()=>{};
+    const prev = btn.textContent;
+    btn.disabled = true;
+    btn.setAttribute("aria-disabled", "true");
+    btn.style.opacity = ".75";
+    btn.style.pointerEvents = "none";
+    if (loadingText) btn.textContent = loadingText;
+    return ()=>{
+      btn.disabled = false;
+      btn.removeAttribute("aria-disabled");
+      btn.style.opacity = "";
+      btn.style.pointerEvents = "";
+      btn.textContent = prev;
+    };
+  }
+
+  /* ===================== [F2.4] SEND WEBHOOK (NO-CORS via FORM) ===================== */
+  function sendWebhookViaForm(url, payload){
+    const form = qs("#sm-post-form");
+    if(!form) throw new Error("missing_post_form");
+    form.setAttribute("action", url);
+    form.setAttribute("method", "POST");
+    form.innerHTML = "";
+    Object.keys(payload || {}).forEach((k)=>{
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = k;
+      input.value = (payload[k] == null) ? "" : String(payload[k]);
+      form.appendChild(input);
+    });
+    form.submit();
+  }
+
+  function payloadFromDeal(){
+    const d = state.deal || {};
+    return {
+      Nombre: d.NOMBRE || "",
+      IDPIPE: d.IDPIPE || "",
+      Email: d.EMAIL || "",
+      Marca: d.MARCA || "",
+      PDF: d.PDF || ""
+    };
+  }
+
+  /* ===================== [F3] DEBUG UI ===================== */
+  function ensureDebugUI(){
+    if (qs("#sm-debug-wrap")) return;
+
+    const wrap = document.createElement("div");
+    wrap.id = "sm-debug-wrap";
+    wrap.style.cssText = "position:fixed;right:14px;bottom:14px;z-index:999999;display:flex;flex-direction:column;gap:8px;font-family:Inter,system-ui,Arial;font-size:12px;";
+    wrap.innerHTML = `
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="sm-debug-toggle" style="border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:999px;padding:8px 10px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.08);">Debug</button>
+        <button id="sm-debug-copy" style="border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:999px;padding:8px 10px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.08);display:none;">Copiar</button>
+      </div>
+      <div id="sm-debug-panel" style="display:none;width:360px;max-width:calc(100vw - 28px);max-height:40vh;overflow:auto;border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:16px;padding:12px;box-shadow:0 12px 40px rgba(0,0,0,.12);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-weight:700;color:#111827;">Perf / Debug</div>
+          <div id="sm-debug-badge" style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.06);color:#111827;">—</div>
+        </div>
+        <pre id="sm-debug-pre" style="white-space:pre-wrap;word-break:break-word;margin:0;color:#111827;line-height:1.35;">—</pre>
+      </div>
+    `;
+
+    document.body.appendChild(wrap);
+
+    qs("#sm-debug-toggle")?.addEventListener("click", ()=>{
+      const p = qs("#sm-debug-panel");
+      const c = qs("#sm-debug-copy");
+      const show = p && p.style.display === "none";
+      if (p) p.style.display = show ? "block" : "none";
+      if (c) c.style.display = show ? "inline-flex" : "none";
+    });
+
+    qs("#sm-debug-copy")?.addEventListener("click", async ()=>{
+      const txt = qs("#sm-debug-pre")?.textContent || "";
+      if (!txt || txt === "—") return toast("Nada que copiar");
+      try{
+        await navigator.clipboard.writeText(txt);
+        toast("Debug copiado");
+      }catch(e){
+        toast("No se pudo copiar");
+      }
+    });
+  }
+
+  function renderDebug(debug){
+    ensureDebugUI();
+    const pre = qs("#sm-debug-pre");
+    const badge = qs("#sm-debug-badge");
+    if (!pre || !badge) return;
+
+    if (!debug){
+      badge.textContent = "—";
+      pre.textContent = "—";
+      return;
+    }
+
+    badge.textContent = (debug.ms_total != null) ? (debug.ms_total + " ms") : "debug";
+
+    const lines = [];
+    lines.push(`ms_total: ${debug.ms_total ?? "—"}`);
+    lines.push(`ms_lastRow: ${debug.ms_lastRow ?? "—"} | ms_readCols: ${debug.ms_readCols ?? "—"} | ms_scan: ${debug.ms_scan ?? "—"} | ms_readDealRow: ${debug.ms_readDealRow ?? "—"}`);
+    lines.push(`lastRow: ${debug.lastRow ?? "—"} | n: ${debug.n ?? "—"} | sheet_getLastRow: ${debug.sheet_getLastRow ?? "—"}`);
+    lines.push(`scanned: ${debug.scanned ?? "—"} | match_idc: ${debug.match_idc ?? "—"} | excluded_out: ${debug.excluded_out ?? "—"} | estado_ok: ${debug.estado_ok ?? "—"} | p1_found: ${debug.p1_found ?? "—"}`);
+    lines.push(`bestRow: ${debug.bestRow ?? "—"} | detail: ${debug.detail ?? "—"}`);
+
+    pre.textContent = lines.join("\n");
+  }
+
+    /* ===================== [PRESENCE] POPUP ACTIVE (COL B) ===================== */
+  function getPresenceSid_(){
+    if (state.__presenceSid) return state.__presenceSid;
+    try{
+      const k = "sm_presence_sid";
+      let sid = sessionStorage.getItem(k);
+      if(!sid){
+        sid = "sid_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+        sessionStorage.setItem(k, sid);
+      }
+      state.__presenceSid = sid;
+      return sid;
+    }catch(_){
+      // fallback si sessionStorage no disponible
+      const sid = "sid_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+      state.__presenceSid = sid;
+      return sid;
+    }
+  }
+
+function presenceSend_(action, rid, prevRid){
+  try{
+    const sid = getPresenceSid_();
+    const payload = {
+      mode: "presence",
+      action: String(action || ""),
+      sid: String(sid || ""),
+      rid: String(rid || ""),
+      prevRid: prevRid ? String(prevRid) : ""
+    };
+
+    fetch(ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      keepalive: true,
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify(payload)
+    });
+  }catch(_){}
+}
+
+
+
+function presenceStartHeartbeat_(){
+  if (state.__presenceTimer || state.__presenceTimeout) return;
+
+  // Queremos 1 ping por “bucket” de 10 minutos (como tu sweep).
+  const PERIOD_MS = 10 * 60 * 1000;
+  // Lo mandamos un poco antes del borde del bucket para dar margen.
+  const EARLY_MS  = 15000; // 15s antes
+
+  function tick_(){
+    const ov = qs("#sm-overlay");
+    const isOpen = ov && ov.style.display === "flex";
+    const rid = state.deal?.RID;
+
+    if (!isOpen || !rid){
+      presenceStopHeartbeat_();
+      return;
+    }
+
+    presenceSend_("ping", rid);
+  }
+
+  // Programa el primer ping “justo antes” del próximo bloque de 10 min
+  const now = Date.now();
+  let delay = (PERIOD_MS - (now % PERIOD_MS)) - EARLY_MS;
+  if (delay < 0) delay = 0;
+
+  state.__presenceTimeout = setTimeout(()=>{
+    state.__presenceTimeout = null;
+
+    tick_();
+
+    // Luego queda fijo cada 10 min
+    state.__presenceTimer = setInterval(tick_, PERIOD_MS);
+  }, delay);
+}
+
+
+function presenceStopHeartbeat_(){
+  if (state.__presenceTimeout){
+    clearTimeout(state.__presenceTimeout);
+    state.__presenceTimeout = null;
+  }
+  if (state.__presenceTimer){
+    clearInterval(state.__presenceTimer);
+    state.__presenceTimer = null;
+  }
+}
+
+
+  function presenceEnterOrSwitch_(newRid){
+    const prev = state.__presenceRid;
+    state.__presenceRid = newRid || null;
+
+    const ov = qs("#sm-overlay");
+    const isOpen = ov && ov.style.display === "flex";
+
+    if (!newRid) return;
+
+    // Solo consideramos “en trato” si el popup está abierto (o está por abrirse en el flujo)
+    // Igual mandamos "switch" cuando cambia deal para desmarcar el anterior.
+    presenceSend_(prev ? "switch" : "enter", newRid, prev || "");
+
+    presenceStartHeartbeat_();
+  }
+
+  function presenceLeave_(){
+    const rid = state.__presenceRid || state.deal?.RID || "";
+    presenceSend_("leave", rid, rid);
+
+    state.__presenceRid = null;
+    presenceStopHeartbeat_();
+  }
+
+  // intento extra al cerrar pestaña (no dependemos de esto)
+window.addEventListener("pagehide", ()=>{
+  try{
+    const rid = state.__presenceRid || state.deal?.RID;
+    if(!rid) return;
+    presenceSend_("leave", rid, rid);
+  }catch(_){}
+});
+
+
+
+  /* ===================== [F4] API ===================== */
+  async function apiNext(idc, skipRids){
+    const skip = Array.isArray(skipRids) ? skipRids.filter(Boolean).join(",") : "";
+    const url = `${ENDPOINT}?mode=next&idc=${encodeURIComponent(idc)}&debug=1${skip ? `&skip=${encodeURIComponent(skip)}` : ""}&_=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`next ${res.status}`);
+    return res.json();
+  }
+
+  async function apiFinalize({ rid, obs, calls_text, survey, recorrido }){
+  const body = new URLSearchParams({
+    mode: "finalize",
+    rid: String(rid || ""),
+    obs: obs || "",
+    calls_text: calls_text || "",
+    survey: survey || "",
+    recorrido: recorrido || ""   
+  });
+  const res = await fetch(ENDPOINT, { method:"POST", body });
+  if (!res.ok) throw new Error(`finalize ${res.status}`);
+  return res.json();
+}
+
+
+  async function apiLogMensual({ idc, idpipe, fecha_completa, recorrido, tiempo_total, tiempo_total_sec, final_code }){
+  const body = new URLSearchParams({
+    idc: idc || "",
+    idpipe: idpipe || "",
+    fecha_completa: fecha_completa || "",
+    recorrido: recorrido || "",
+    tiempo_total: tiempo_total || "",
+    tiempo_total_sec: String(tiempo_total_sec ?? ""),
+    final_code: final_code || ""
+  });
+
+  //  no preflight + no CORS issues (envío “fire and forget”)
+  await fetch(ENDPOINT_LOG_MENSUAL, {
+    method: "POST",
+    mode: "no-cors",
+    keepalive: true,
+    body
+  });
+
+  // No podemos leer respuesta en no-cors (queda “opaque”), pero el POST sí llega.
+  return { ok: true };
+}
+
+
+
+  async function apiOmit({ rid, motivo }){
+    const body = new URLSearchParams({
+      mode: "omit",
+      rid: String(rid || ""),
+      motivo: motivo || ""
+    });
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error(`omit ${res.status}`);
+    return res.json();
+  }
+
+  async function apiDealByRid(rid){
+    const url = `${ENDPOINT}?mode=deal&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}`;
+    const res = await fetch(url, { cache:"no-store" });
+    if (!res.ok) throw new Error(`deal ${res.status}`);
+    return res.json();
+  }
+
+  async function apiSearch(q){
+    const url = `${ENDPOINT}?mode=search&q=${encodeURIComponent(String(q||""))}&_=${Date.now()}`;
+    const res = await fetch(url, { cache:"no-store" });
+    if (!res.ok) throw new Error(`search ${res.status}`);
+    return res.json();
+  }
+
+  // ✅ ultra liviano: solo CH
+  async function apiPayState(rid){
+    const url = `${ENDPOINT}?mode=paystate&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}`;
+    const res = await fetch(url, { cache:"no-store" });
+    if (!res.ok) throw new Error(`paystate ${res.status}`);
+    return res.json();
+  }
+
+  async function apiPayStateVig(rid){
+    const url = `${ENDPOINT}?mode=paystate_vig&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}`;
+    const res = await fetch(url, { cache:"no-store" });
+    if (!res.ok) throw new Error(`paystate_vig ${res.status}`);
+    return res.json();
+  }
+
+  // ✅ ultra liviano: solo BP
+  async function apiLog(rid){
+    const url = `${ENDPOINT}?mode=log&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}`;
+    const res = await fetch(url, { cache:"no-store" });
+    if (!res.ok) throw new Error(`log ${res.status}`);
+    return res.json();
+  }
+
+  /* ===================== [F4.9] TRACKING ESTADO ===================== */
+  function renderTracking(estadoRaw){
+    const box = qs("#sm-tracking");
+    if(!box) return;
+
+    const raw = String(estadoRaw || "").trim();
+    const est = raw.toUpperCase();
+
+    // Solo se muestra si el estado está dentro de estos
+    const allowed = new Set([
+      "",
+      "AGENDADO",
+      "PEND. PAGO REGISTRO",
+      "AGENDADO PAGO REGISTRO",
+      "REGISTRO PAGADO",
+      "PEND. PAGO VIGILANCIA",
+      "AGENDADO PAGO VIGILANCIA",
+      "VIGILANCIA PAGADA"
+    ]);
+
+    if(!allowed.has(est)){
+      box.style.display = "none";
+      box.innerHTML = "";
+      return;
+    }
+
+    // Determina etapa actual (1..5)
+    let active = 0;
+    if (est === "" || est === "AGENDADO") active = 1;
+    else if (est === "PEND. PAGO REGISTRO" || est === "AGENDADO PAGO REGISTRO") active = 2;
+    else if (est === "REGISTRO PAGADO") active = 3;
+    else if (est === "PEND. PAGO VIGILANCIA" || est === "AGENDADO PAGO VIGILANCIA") active = 4;
+    else if (est === "VIGILANCIA PAGADA") active = 5;
+
+    // Labels: siempre la primera opción, excepto si el estado es "AGENDADO ..." (ahí muestra esa)
+    const label1 = (est === "AGENDADO") ? "AGENDADO" : "NUEVO CONTACTO";
+    const label2 = (est === "AGENDADO PAGO REGISTRO") ? "AGENDADO PAGO REGISTRO" : "PEND. PAGO REGISTRO";
+    const label3 = "REGISTRO PAGADO";
+    const label4 = (est === "AGENDADO PAGO VIGILANCIA") ? "AGENDADO PAGO VIGILANCIA" : "PEND. PAGO VIGILANCIA";
+    const label5 = "VIGILANCIA PAGADA";
+
+    const labels = [label1, label2, label3, label4, label5];
+
+    box.style.display = "block";
+    box.innerHTML = `
+      <div class="sm-track">
+        ${labels.map((t, i) => {
+          const idx = i + 1;
+          const cls = (idx < active) ? "is-on" : (idx === active ? "is-on is-active" : "");
+          return `
+            <div class="sm-track-step ${cls}">
+              <div class="sm-track-dot"></div>
+              <div class="sm-track-label">${t}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  /* ===================== [F5] STATE + RENDER ===================== */
+  const state = {
+    deal: null,
+    calls: [],
+    pending: null,
+    zpReady: false,
+    skipRids: [],
+    __omitBusy: false,
+    __saleBusy: false,
+    __searchBusy: false,
+    __payBusy: false,
+    __payVigBusy: false,
+    __logBusy: false,
+    __callBusy: false,
+    __callInProgress: false,
+    __callTry: 0,
+    __queuedCall: null,
+    __callWatchdog: null,
+    __preloadRid: null,
+    __preloadPromise: null,
+    __preloadResult: null,
+    __preloadTs: 0,
+    __presenceSid: null,
+    __presenceRid: null,
+    __presenceTimer: null,
+    __presenceTimeout: null,
+    __idleTimer: null,
+    __idleCountdownInterval: null,
+    __idleCountdown: null,
+    __idleActivityHandler: null,
+    __idleListenersAttached: false
+
+
+  };
+
+  const __smCLFmt = new Intl.DateTimeFormat("es-CL", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+
+  function fmtChile(iso){
+    try{
+      const parts = __smCLFmt.formatToParts(new Date(iso));
+      const m = {};
+      parts.forEach(p => { if (p.type !== "literal") m[p.type] = p.value; });
+      return `${m.day}-${m.month}-${m.year} ${m.hour}:${m.minute}:${m.second}`;
+    }catch(_){
+      return String(iso || "");
+    }
+  }
+
+  function formatMSS(totalSec){
+    const s = Math.max(0, Number(totalSec || 0) | 0);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${m}:${String(r).padStart(2,"0")}`;
+  }
+
+  function renderCalls(){
+    const box = qs("#sm-calls");
+    if(!box) return;
+    if(!state.calls.length){
+      box.textContent = "—";
+      return;
+    }
+    box.innerHTML = state.calls.map(c => `
+      <div class="sm-call-item">
+        <div><strong>${c.number}</strong></div>
+        <div style="color:#6b7280;font-size:12px;">Inicio: ${fmtChile(c.start_iso)}</div>
+        <div style="color:#6b7280;font-size:12px;">Fin: ${fmtChile(c.end_iso)}</div>
+        <div style="color:#6b7280;font-size:12px;">Duración: ${c.duration_sec}s</div>
+      </div>
+    `).join("");
+  }
+
+    function smScrollHistoryBottom(){
+    const el = qs("#sm-history");
+    if(!el) return;
+    requestAnimationFrame(() => {
+      if (el.scrollHeight > el.clientHeight) el.scrollTop = el.scrollHeight;
+    });
+  }
+
+  function renderHistorialBT(txt){
+  const box = qs("#sm-history");
+  if(!box) return;
+
+  const t = String(txt || "").trim();
+  if(!t){
+    box.textContent = "—";
+    smScrollHistoryBottom();
+    return;
+  }
+
+  // separa por líneas y dibuja zebra
+  const lines = t.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+
+  box.innerHTML = `
+    <div class="sm-history-list">
+      ${lines.map((line)=> `<div class="sm-history-line">${escapeHtml(line)}</div>`).join("")}
+    </div>
+  `;
+
+  smScrollHistoryBottom();
+}
+
+// helper simple para no romper el HTML si viene algo raro
+function escapeHtml(s){
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+}
+
+
+
+  function dealToUI(d){
+    const __prevRid = state.deal?.RID || null;
+    state.deal = d;
+    state.calls = [];
+    state.pending = null;
+    state.__preloadRid = null;
+    state.__preloadPromise = null;
+    state.__preloadResult = null;
+    state.__preloadTs = 0;
+
+
+    renderCalls();
+    showDealView();
+    renderTracking(d.ESTADO);
+    renderHistorialBT(d.LOG_BT || d.BT || "");
+
+    // Reset encuesta para cada trato
+    try{ window.__smTypeformMinReset && window.__smTypeformMinReset(); }catch(_){}
+
+    const setText = (k) => {
+      const el = qs("#sm-"+k);
+      if (el) el.textContent = (d[k] || "—");
+    };
+
+    [
+      "CONSULTOR","NOMBRE","IDPIPE","EMAIL","MARCA","CLASES","CANT_CLASES",
+      "OPCION","MONTO_BASE","DESCUENTO","TIPO","ESTADO","ULTIMO_CONTACTO",
+      "ESTADO_PAGO","ESTADO_PAGO_VIGILANCIA"
+    ].forEach(setText);
+
+    setLinkOrDash(qs("#sm-PDF"), d.PDF, "PDF");
+    setLinkOrDash(qs("#sm-URL_FICHA"), d.URL_FICHA, "FICHA REGISTRO");
+    setLinkOrDash(qs("#sm-URL_AGENDA"), d.URL_AGENDA, "AGENDA");
+    setLinkOrDash(qs("#sm-URL_CONTACTO_FALLIDO"), d.URL_CONTACTO_FALLIDO, "CONTACTO FALLIDO");
+    setLinkOrDash(qs("#sm-URL_FICHA_VIGILANCIA"), d.URL_FICHA_VIGILANCIA, "FICHA VIGILANCIA");
+
+    const phone = qs("#sm-phone");
+    const obs = qs("#sm-obs");
+    if(phone) phone.value = d.TELEFONO || "";
+    if(obs) obs.value = d.OBS || "";
+
+    qsa('input[name="sm-survey"]').forEach(r => r.checked = false);
+
+    const sn = qs("#sm-survey-note");
+    if(sn) sn.value = "";
+
+    // Limpia shimmer por si quedó encendido
+    const shimmer = qs("#sm-pay-shimmer");
+    if (shimmer) shimmer.classList.remove("is-loading");
+    const payVal = qs("#sm-ESTADO_PAGO");
+    if (payVal) payVal.style.display = "";
+
+    const shimmerV = qs("#sm-payv-shimmer");
+    if (shimmerV) shimmerV.classList.remove("is-loading");
+    const payVVal = qs("#sm-ESTADO_PAGO_VIGILANCIA");
+    if (payVVal) payVVal.style.display = "";
+
+        try{ presenceEnterOrSwitch_(d?.RID || null); }catch(_){}
+
+  }
+
+  function callsToText(){
+    if(!state.calls.length) return "";
+    return state.calls.map(c => {
+      const s = fmtChile(c.start_iso);
+      const e = fmtChile(c.end_iso);
+      const mss = formatMSS(c.duration_sec);
+      const note = c.dialed_custom ? ` | Se marca al ${c.number}` : "";
+      return `${s} / ${e} = ${mss}${note}`;
+    }).join("\n");
+  }
+
+  /* ===================== [F5.x] SURVEY BRIDGE (TYPEFORM) ===================== */
+  function totalCallsSec_(){
+    return (state.calls || []).reduce((acc, c)=> acc + (Number(c?.duration_sec) || 0), 0);
+  }
+
+  function totalCallsMSS_(){
+    return formatMSS(totalCallsSec_());
+  }
+
+  // Contexto para el webhook del componente
+  window.__smSurveyGetContext = function(){
+    return {
+      idc: getIDC(),
+      idpipe: (state.deal?.IDPIPE || ""),
+      total_calls_sec: totalCallsSec_(),
+      total_calls_mss: totalCallsMSS_()
+    };
+  };
+
+  // Esta función la llama el componente al apretar "Aceptar y enviar"
+  window.__smSurveyFinalizeFromTypeform = async function(payload){
+  // payload esperado: { numero_pregunta, detalle, recorrido }
+  const startedAt = Date.now();
+
+  // 1) Asegura pending (como antes)
+  if(!state.pending?.rid){
+    if(!state.deal?.RID) {
+      toast("Sin trato");
+      return { ok:false, error:"no_deal" };
+    }
+    const obs = (qs("#sm-obs")?.value || "").trim();
+    const calls_text = callsToText();
+    state.pending = { rid: state.deal.RID, obs, calls_text };
+  }
+
+  const rid = state.pending.rid;
+  const idc = getIDC();
+
+
+  // 2) Usa preload ya corriendo (si existe) o crea uno ahora
+const skipNow = Array.isArray(state.skipRids) ? state.skipRids.slice() : [];
+if (rid && !skipNow.includes(rid)) skipNow.push(rid);
+
+const nextPromise =
+  (state.__preloadPromise && state.__preloadRid === rid)
+    ? state.__preloadPromise
+    : (idc ? apiNext(idc, skipNow) : Promise.resolve(null))
+        .catch(err => ({ ok:false, error:String(err?.message || err), __preloadFail:true }));
+
+    startDealLoader();
+
+  try{
+    // 3) Guardado (lento)
+    const data = await apiFinalize({
+      rid,
+      obs: state.pending.obs || "",
+      calls_text: state.pending.calls_text || "",
+      survey: String(payload?.numero_pregunta || ""),
+      recorrido: String(payload?.recorrido || "")
+    });
+
+    if(!data?.ok) throw new Error(data?.error || "bad_finalize");
+
+    // 4) Log mensual (no bloquea fuerte, pero lo dejamos aquí)
+    try{
+      await apiLogMensual({
+        idc,
+        idpipe: (state.deal?.IDPIPE || ""),
+        fecha_completa: fmtChile(new Date().toISOString()),
+        recorrido: String(payload?.recorrido || ""),
+        tiempo_total: totalCallsMSS_(),
+        tiempo_total_sec: totalCallsSec_(),
+        final_code: String(payload?.numero_pregunta || "")
+      });
+    }catch(err){
+      console.error("[SM] log mensual error", err);
+    }
+
+    // 5) Marca RID como “saltado” apenas guardó
+    if (!state.skipRids.includes(rid)) state.skipRids.push(rid);
+    state.pending = null;
+
+    // 6) Si el preload ya llegó, lo usamos (si no, lo esperamos ahora)
+    const nextData = await nextPromise;
+
+    //  consume/limpia precarga
+    state.__preloadRid = null;
+    state.__preloadPromise = null;
+    state.__preloadResult = null;
+    state.__preloadTs = 0;
+
+
+    if (nextData?.ok && nextData.deal){
+      // opcional: debug panel como loadDeal()
+      try{ renderDebug(nextData?.debug); }catch(_){}
+      dealToUI(nextData.deal);
+      openPopup();
+    } else {
+  toast("No quedan llamadas disponibles");
+  closePopup();
+  showDealView();
+  try{ window.__smTypeformMinReset && window.__smTypeformMinReset(); }catch(_){}
+}
+
+
+
+    return { ok:true, ms: Date.now() - startedAt };
+  }catch(e){
+    console.error("[SM] finalize(typeform) error", e);
+    toast("Error al guardar");
+    return { ok:false, error:String(e?.message || e) };
+  }finally{
+    finishDealLoader();
+  }
+};
+
+
+
+  /* ===================== [F5.1] LOADER OVERLAY GLOBAL ===================== */
+  function startDealLoader(){
+    const ov = qs("#sm-loader-overlay");
+    const bar = qs("#sm-loader-bar");
+    const pct = qs("#sm-loader-pct");
+    const track = bar ? bar.parentElement : null;
+    if(!ov || !bar || !track) return;
+
+    ov.style.display = "flex";
+    ov.setAttribute("aria-hidden", "false");
+
+    if (window.__smLoaderRAF) cancelAnimationFrame(window.__smLoaderRAF);
+    window.__smLoaderRAF = null;
+
+    bar.classList.remove("is-loading");
+    bar.style.transition = "";
+    bar.style.width = "0%";
+    void bar.offsetWidth;
+
+    if (pct) pct.textContent = "0%";
+
+    bar.classList.add("is-loading");
+
+    const t0 = performance.now();
+    const DURATION_MS = 16000;
+
+    const tick = ()=>{
+      if (ov.style.display !== "flex") return;
+
+      let val = 0;
+      try{
+        const tw = track.getBoundingClientRect().width || 0;
+        const bw = bar.getBoundingClientRect().width || 0;
+        if (tw > 0){
+          val = Math.round((bw / tw) * 100);
+          val = Math.max(0, Math.min(95, val));
+        }else{
+          const t = performance.now() - t0;
+          val = Math.round(Math.min(95, (t / DURATION_MS) * 95));
+        }
+      }catch(_){
+        const t = performance.now() - t0;
+        val = Math.round(Math.min(95, (t / DURATION_MS) * 95));
+      }
+
+      if (pct) pct.textContent = val + "%";
+      window.__smLoaderRAF = requestAnimationFrame(tick);
+    };
+
+    window.__smLoaderRAF = requestAnimationFrame(tick);
+  }
+
+  function finishDealLoader(){
+    const ov = qs("#sm-loader-overlay");
+    const bar = qs("#sm-loader-bar");
+    const pct = qs("#sm-loader-pct");
+    if(!ov || !bar) return;
+
+    if (window.__smLoaderRAF) cancelAnimationFrame(window.__smLoaderRAF);
+    window.__smLoaderRAF = null;
+
+    bar.classList.remove("is-loading");
+    bar.style.transition = "width 220ms ease-out";
+    bar.style.width = "100%";
+
+    if (pct) pct.textContent = "100%";
+
+    setTimeout(()=>{
+      ov.style.display = "none";
+      ov.setAttribute("aria-hidden", "true");
+      bar.style.transition = "";
+      bar.style.width = "0%";
+      if (pct) pct.textContent = "0%";
+    }, 260);
+  }
+
+  async function loadDeal(opts){
+    const o = opts || {};
+    const resetSkip = !!o.resetSkip;
+    const idc = getIDC();
+    if(!idc){
+      toast("Falta ?idc");
+      return;
+    }
+
+    if (resetSkip) state.skipRids = [];
+    renderDebug(null);
+    startDealLoader();
+
+    try{
+      const data = await apiNext(idc, state.skipRids);
+      renderDebug(data?.debug);
+      if(!data?.ok) throw new Error(data?.error || "bad_next");
+      dealToUI(data.deal);
+      openPopup();
+    }catch(e){
+  console.error("[SM] next error", e);
+
+  const msg = String(e?.message || e || "");
+  if (msg.includes("no_deals")){
+    closePopup();
+    showDealView();
+    try{ window.__smTypeformMinReset && window.__smTypeformMinReset(); }catch(_){}
+    toast("No quedan llamadas disponible");
+    return;
+  }
+
+  toast("No se pudo cargar");
+}finally{
+  finishDealLoader();
+}
+
+  }
+
+  async function loadDealByRid(rid){
+    startDealLoader();
+    try{
+      const data = await apiDealByRid(rid);
+      if(!data?.ok) throw new Error(data?.error || "bad_deal");
+      dealToUI(data.deal);
+      openPopup();
+    }catch(e){
+      console.error("[SM] deal error", e);
+      toast("No se pudo cargar");
+    }finally{
+      finishDealLoader();
+    }
+  }
+
+  /* ===================== [F6] ZOOM PHONE ===================== */
+  function initZoom(){
+    const iframe = qs("#sm-zoomphone-iframe");
+    if(!iframe) return;
+    const iframeHome = iframe.parentElement;
+
+    function ensureZoomLogin_(){
+      const wrap = qs("#sm-zoom-login");
+      const close = qs("#sm-zoom-login-close");
+      if (close && !close.__smHandler){
+        close.__smHandler = true;
+        close.addEventListener("click", hideZoomLogin_);
+      }
+      return wrap;
+    }
+
+    function hideZoomLogin_(){
+      const wrap = qs("#sm-zoom-login");
+      if (wrap) wrap.style.display = "none";
+      // vuelve a ocultar el iframe motor
+      if(iframe){
+        iframe.style.position = "fixed";
+        iframe.style.width = "1px";
+        iframe.style.height = "1px";
+        iframe.style.left = "-9999px";
+        iframe.style.top = "-9999px";
+        iframe.style.opacity = "0";
+        iframe.style.pointerEvents = "none";
+        iframe.style.border = "0";
+        const slot = qs("#sm-zoom-login-frame");
+        if (slot && slot.contains(iframe)){
+          slot.removeChild(iframe);
+          if (iframeHome){
+            iframeHome.appendChild(iframe);
+          }else{
+            document.body.appendChild(iframe);
+          }
+        }
+      }
+    }
+
+    function showZoomLogin_(url){
+      const wrap = ensureZoomLogin_();
+      if(!wrap) return;
+      const slot = qs("#sm-zoom-login-frame");
+
+      // mueve iframe al panel visible
+      if (iframe && slot && !slot.contains(iframe)){
+        slot.innerHTML = "";
+        slot.appendChild(iframe);
+      }
+
+      // fuerza estilo visible
+      if (iframe){
+        iframe.style.position = "relative";
+        iframe.style.left = "0";
+        iframe.style.top = "0";
+        iframe.style.width = "100%";
+        iframe.style.height = "420px";
+        iframe.style.opacity = "1";
+        iframe.style.pointerEvents = "auto";
+        iframe.style.border = "1px solid rgba(0,0,0,.08)";
+      }
+
+      if (url) iframe.src = url;
+      wrap.style.display = "block";
+    }
+
+    function setZoomSrc_(){
+      const originDomain = encodeURIComponent(window.location.origin);
+      iframe.src = `${ZOOM_ORIGIN}/integration/phone/embeddablephone/home?originDomain=${originDomain}&_=${Date.now()}`;
+    }
+
+    function initConfig_(){
+      try{
+        iframe.contentWindow && iframe.contentWindow.postMessage({
+          type: "zp-init-config",
+          data: {
+            enableSavingLog: false,
+            enableAutoLog: false,
+            enableContactSearching: false,
+            enableContactMatching: false
+          }
+        }, ZOOM_ORIGIN);
+      }catch(_){}
+    }
+
+    function setCallBtnBusy_(on, text){
+      const btn = qs("#sm-btn-llamar");
+      if(!btn) return;
+      btn.disabled = !!on;
+      btn.setAttribute("aria-disabled", on ? "true" : "false");
+      btn.style.opacity = on ? ".7" : "";
+      btn.style.pointerEvents = on ? "none" : "";
+      if(text) btn.textContent = text;
+      if(!on) btn.textContent = "Llamar";
+    }
+
+    function clearWatchdog_(){
+      if(state.__callWatchdog){
+        clearTimeout(state.__callWatchdog);
+        state.__callWatchdog = null;
+      }
+    }
+
+function rebuildZoom_(reason){
+  // “reinicia” el embeddable sin recargar navegador
+  state.zpReady = false;
+  window.__smConnTs = null;
+  window.__smRingTs = null;
+
+  // corta cualquier watchdog anterior
+  clearWatchdog_();
+
+  try{ setCallBtnBusy_(true, "Conectando..."); }catch(_){}
+
+  // vuelve a cargar el iframe (por si acaso)
+  try{ setZoomSrc_(); }catch(_){}
+
+  // watchdog: si NO llega zp-ready en 6.5s, libera y abre pestaña de login
+  state.__callWatchdog = setTimeout(()=>{
+    if (state.zpReady) return;
+
+    // limpia estado de llamada
+    state.__queuedCall = null;
+    state.__callBusy = false;
+    state.__callInProgress = false;
+    state.__callTry = 0;
+
+    setCallBtnBusy_(false);
+
+    // construye la misma URL que usa el iframe
+    var iframe = document.querySelector("#sm-zoomphone-iframe");
+    var url = iframe && iframe.src;
+
+    if (!url){
+      try{
+        var originDomain = encodeURIComponent(window.location.origin);
+        url = ZOOM_ORIGIN + "/integration/phone/embeddablephone/home?originDomain=" + originDomain + "&_=" + Date.now();
+      }catch(_){}
+    }
+
+if (url){
+  showZoomLogin_(url);
+  toast("Inicia sesión en el panel lateral de Zoom y vuelve a llamar.", 7000);
+}else{
+  toast("Zoom no conectó. Intenta de nuevo o recarga.");
+}
+
+
+  }, 6500);
+}
+
+
+
+    // expone make call (siempre)
+    window.__smMakeZoomCall = (number)=>{
+      try{
+        iframe.contentWindow && iframe.contentWindow.postMessage(
+          { type:"zp-make-call", data:{ number } },
+          ZOOM_ORIGIN
+        );
+      }catch(_){}
+    };
+
+    // listener UNA sola vez (aunque “rebuild” cambie src)
+    if(!window.__smZpListenerInstalled){
+      window.__smZpListenerInstalled = true;
+
+      window.addEventListener("message", (e)=>{
+        if(e.origin !== ZOOM_ORIGIN) return;
+        const msg = e.data || {};
+        if(!msg.type) return;
+
+        if(msg.type === "zp-ready"){
+  clearWatchdog_(); //  suelta cualquier watchdog de reconexión
+
+  state.zpReady = true;
+  initConfig_();
+  hideZoomLogin_();
+
+  // si había llamada en cola, dispara 1 sola vez
+  if(state.__queuedCall){
+    const n = state.__queuedCall;
+    state.__queuedCall = null;
+
+    setTimeout(()=> window.__smMakeZoomCall && window.__smMakeZoomCall(n), 250);
+  }
+  return;
+}
+
+
+        if(msg.type === "zp-call-ringing-event"){
+          window.__smRingTs = window.__smRingTs || new Date();
+          state.__callInProgress = true;
+          clearWatchdog_();
+          return;
+        }
+
+        if(msg.type === "zp-call-connected-event"){
+          window.__smConnTs = new Date();
+          state.__callInProgress = true;
+          clearWatchdog_();
+          return;
+        }
+
+        if(msg.type === "zp-call-ended-event"){
+          const end = new Date();
+          const start = window.__smConnTs || window.__smRingTs;
+          window.__smConnTs = null;
+          window.__smRingTs = null;
+
+          // guarda log llamada (igual que antes)
+          const phone = (qs("#sm-phone")?.value || "").trim();
+          const defaultPhone = (state.deal?.TELEFONO || "").trim();
+          if(start && phone && state.deal){
+            const dur = Math.max(0, Math.round((end.getTime() - start.getTime())/1000));
+            state.calls.push({
+              number: phone,
+              dialed_custom: !!(phone && defaultPhone && phone !== defaultPhone),
+              start_iso: start.toISOString(),
+              end_iso: end.toISOString(),
+              duration_sec: dur
+            });
+            renderCalls();
+          }
+
+          // libera lock (1 click = 1 llamada)
+          state.__callInProgress = false;
+          state.__callBusy = false;
+          state.__callTry = 0;
+          clearWatchdog_();
+          setCallBtnBusy_(false);
+
+          return;
+        }
+      });
+    }
+
+    // primera carga
+    setZoomSrc_();
+
+    // expone helpers para doCall()
+    window.__smZoomRebuild = rebuildZoom_;
+    window.__smZoomSetCallBtnBusy = setCallBtnBusy_;
+    window.__smZoomClearWatchdog = clearWatchdog_;
+  }
+
+  function doCall(){
+    const num = (qs("#sm-phone")?.value || "").trim();
+    if(!num){ toast("Falta teléfono"); return; }
+
+    // 1 click = 1 llamada (no se acumulan)
+    if(state.__callBusy || state.__callInProgress){
+      toast("Ya hay una llamada en curso");
+      return;
+    }
+
+    state.__callBusy = true;
+    state.__callTry = 0;
+
+    // deshabilita botón inmediatamente
+    window.__smZoomSetCallBtnBusy && window.__smZoomSetCallBtnBusy(true, "Llamando...");
+
+    const attempt = ()=>{
+      state.__callTry++;
+
+      // watchdog: si en X ms no hay ringing/connected, reinicia iframe y reintenta (máx 2)
+      window.__smZoomClearWatchdog && window.__smZoomClearWatchdog();
+      state.__callWatchdog = setTimeout(()=>{
+        if(state.__callInProgress) return;
+
+        if(state.__callTry >= 2){
+          state.__callBusy = false;
+          window.__smZoomSetCallBtnBusy && window.__smZoomSetCallBtnBusy(false);
+          toast("Zoom no respondió. Recarga la página si sigue.");
+          return;
+        }
+
+        // reintento: reconstruye iframe y deja llamada en cola
+        state.__queuedCall = num;
+        toast("Reconectando Zoom...");
+        window.__smZoomRebuild && window.__smZoomRebuild("watchdog");
+      }, 4500);
+
+      if(state.zpReady){
+        window.__smMakeZoomCall && window.__smMakeZoomCall(num);
+      }else{
+        // no está listo: cola + rebuild
+        state.__queuedCall = num;
+        toast("Conectando Zoom...");
+        window.__smZoomRebuild && window.__smZoomRebuild("not_ready");
+      }
+    };
+
+    attempt();
+  }
+
+  /* ===================== [F6.1] REFRESH ESTADO PAGO (SHIMMER) ===================== */
+  async function doRefreshPayState(){
+    if(!state.deal?.RID){
+      toast("Sin trato");
+      return;
+    }
+    if (state.__payBusy) return;
+    state.__payBusy = true;
+
+    const rid = state.deal.RID;
+    const btn = qs("#sm-btn-refresh-pay");
+    const val = qs("#sm-ESTADO_PAGO");
+    const sh = qs("#sm-pay-shimmer");
+
+    if (btn){
+      btn.disabled = true;
+      btn.setAttribute("aria-disabled","true");
+      btn.style.opacity = ".7";
+      btn.style.pointerEvents = "none";
+    }
+    if (sh) sh.classList.add("is-loading");
+    if (val) val.style.display = "none";
+
+    try{
+      const data = await apiPayState(rid);
+      if(!data?.ok) throw new Error(data?.error || "bad_paystate");
+      const next = String(data.value || "").trim();
+      if (val){
+        val.textContent = next || "—";
+        val.style.display = "inline";
+      }
+      // también actualiza el estado en el objeto, por si lo usas después
+      if (state.deal) state.deal.ESTADO_PAGO = next;
+    }catch(e){
+      console.error("[SM] paystate error", e);
+      if (val) val.style.display = "inline";
+      toast("No se pudo actualizar");
+    }finally{
+      if (sh) sh.classList.remove("is-loading");
+      if (btn){
+        btn.disabled = false;
+        btn.removeAttribute("aria-disabled");
+        btn.style.opacity = "";
+        btn.style.pointerEvents = "";
+      }
+      state.__payBusy = false;
+    }
+  }
+
+  async function doRefreshPayStateVig(){
+    if(!state.deal?.RID){
+      toast("Sin trato");
+      return;
+    }
+    if (state.__payVigBusy) return;
+    state.__payVigBusy = true;
+
+    const rid = state.deal.RID;
+    const btn = qs("#sm-btn-refresh-payv");
+    const val = qs("#sm-ESTADO_PAGO_VIGILANCIA");
+    const sh = qs("#sm-payv-shimmer");
+
+    if (btn){
+      btn.disabled = true;
+      btn.setAttribute("aria-disabled","true");
+      btn.style.opacity = ".7";
+      btn.style.pointerEvents = "none";
+    }
+    if (sh) sh.classList.add("is-loading");
+    if (val) val.style.display = "none";
+
+    try{
+      const data = await apiPayStateVig(rid);
+      if(!data?.ok) throw new Error(data?.error || "bad_paystate_vig");
+      const next = String(data.value || "").trim();
+      if (val){
+        val.textContent = next || "—";
+        val.style.display = "inline";
+      }
+      if (state.deal) state.deal.ESTADO_PAGO_VIGILANCIA = next;
+    }catch(e){
+      console.error("[SM] paystate_vig error", e);
+      if (val) val.style.display = "inline";
+      toast("No se pudo actualizar");
+    }finally{
+      if (sh) sh.classList.remove("is-loading");
+      if (btn){
+        btn.disabled = false;
+        btn.removeAttribute("aria-disabled");
+        btn.style.opacity = "";
+        btn.style.pointerEvents = "";
+      }
+      state.__payVigBusy = false;
+    }
+  }
+
+  /* ===================== [F6.2] LOG TRATO ===================== */
+  async function doOpenLog(){
+    if(!state.deal?.RID){
+      toast("Sin trato");
+      return;
+    }
+    if (state.__logBusy) return;
+    state.__logBusy = true;
+
+    const pre = qs("#sm-log-text");
+    const sh = qs("#sm-log-shimmer");
+    if (pre) pre.textContent = "";
+    if (sh) sh.classList.add("is-loading");
+
+    openLogModal();
+
+    try{
+      const data = await apiLog(state.deal.RID);
+      if(!data?.ok) throw new Error(data?.error || "bad_log");
+      const txt = String(data.value || "").trim();
+      if (sh) sh.classList.remove("is-loading");
+      if (pre) pre.textContent = txt || "—";
+    }catch(e){
+      console.error("[SM] log error", e);
+      if (sh) sh.classList.remove("is-loading");
+      if (pre) pre.textContent = "No se pudo cargar el log.";
+      toast("No se pudo cargar");
+    }finally{
+      state.__logBusy = false;
+    }
+  }
+  /* ===================== [F6.9] PRE CARGA ===================== */
+
+  function preloadNextDealForCurrent(){
+  const idc = getIDC();
+  const rid = state.deal?.RID;
+  if(!idc || !rid) return;
+
+  // si ya está precargando para ESTE rid, no hagas nada
+  if(state.__preloadRid === rid && state.__preloadPromise) return;
+
+  const skipNow = Array.isArray(state.skipRids) ? state.skipRids.slice() : [];
+  if(rid && !skipNow.includes(rid)) skipNow.push(rid);
+
+  state.__preloadRid = rid;
+  state.__preloadTs = Date.now();
+  state.__preloadResult = null;
+
+  state.__preloadPromise = apiNext(idc, skipNow)
+    .then(d => {
+      state.__preloadResult = d;
+      return d;
+    })
+    .catch(err => {
+      const o = { ok:false, error:String(err?.message || err), __preloadFail:true };
+      state.__preloadResult = o;
+      return o;
+    });
+}
+
+  
+  /* ===================== [F7] FLOW ACTIONS ===================== */
+  function doAcceptAndContinue(){
+    if(!state.deal?.RID){
+      toast("Sin RID");
+      return;
+    }
+    const obs = (qs("#sm-obs")?.value || "").trim();
+    const calls_text = callsToText();
+    state.pending = { rid: state.deal.RID, obs, calls_text };
+
+    preloadNextDealForCurrent();
+    
+    showSurveyView();
+  }
+
+  async function doSendSurvey(){
+    if(!state.pending?.rid){
+      toast("Falta data");
+      return;
+    }
+    const picked = qsa('input[name="sm-survey"]').find(r => r.checked);
+    const survey = picked ? picked.value : "";
+    const note = (qs("#sm-survey-note")?.value || "").trim();
+
+    try{
+      const data = await apiFinalize({
+        rid: state.pending.rid,
+        obs: state.pending.obs || "",
+        calls_text: state.pending.calls_text || "",
+        survey,
+        note
+      });
+      if(!data?.ok) throw new Error(data?.error || "bad_finalize");
+      if (!state.skipRids.includes(state.pending.rid)) state.skipRids.push(state.pending.rid);
+      state.pending = null;
+      await loadDeal();
+    }catch(e){
+      console.error("[SM] finalize error", e);
+      toast("Error al guardar");
+    }
+  }
+
+  function doBack(){ showDealView(); }
+
+  function doOmit(){
+    if(!state.deal?.RID){
+      toast("Sin RID");
+      return;
+    }
+    openOmitModal();
+  }
+
+  async function doConfirmOmit(){
+    if(!state.deal?.RID){
+      toast("Sin RID");
+      return;
+    }
+    if (state.__omitBusy) return;
+    state.__omitBusy = true;
+
+    const btn = qs("#sm-btn-omit-confirm");
+    const unlock = lockBtn(btn, "Enviando...");
+
+    const motivo = (qs("#sm-omit-reason")?.value || "").trim();
+    if(!motivo){
+      toast("Escribe el motivo");
+      state.__omitBusy = false;
+      unlock();
+      return;
+    }
+
+    try{
+      const data = await apiOmit({ rid: state.deal.RID, motivo });
+      if(!data?.ok) throw new Error(data?.error || "bad_omit");
+      if(state.deal?.RID && !state.skipRids.includes(state.deal.RID)){
+        state.skipRids.push(state.deal.RID);
+      }
+      closeOmitModal();
+      state.__omitBusy = false;
+      unlock();
+      await loadDeal();
+    }catch(e){
+      console.error("[SM] omit error", e);
+      toast("Error al omitir");
+      state.__omitBusy = false;
+      unlock();
+    }
+  }
+
+  /* ===================== [F7.1] BUSCAR ===================== */
+  function renderSearchResultsEmail(list){
+    const box = qs("#sm-search-results");
+    if(!box) return;
+
+    if(!Array.isArray(list) || !list.length){
+      box.innerHTML = `<div class="sm-search-empty">No encontré tratos activos (Q vacío) para ese email.</div>`;
+      return;
+    }
+
+    box.innerHTML = `
+      <div class="sm-search-meta">Resultados: <strong>${list.length}</strong></div>
+      <div class="sm-search-list">
+        ${list.map(item => `
+          <div class="sm-search-item">
+            <div class="sm-search-left">
+              <div class="sm-search-idpipe">${(item.IDPIPE || "—")}</div>
+              <div class="sm-search-marca">${(item.MARCA || "—")}</div>
+            </div>
+            <button class="sm-btn sm-btn-primary sm-btn-xs" type="button" data-pick-rid="${item.RID}">Ver trato</button>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  async function doSearch(){
+    if(state.__searchBusy) return;
+
+    const q = (qs("#sm-search-q")?.value || "").trim();
+    if(!q) return toast("Ingresa un IDPIPE o Email");
+
+    const btn = qs("#sm-btn-search-run");
+    const unlock = lockBtn(btn, "Buscando...");
+
+    state.__searchBusy = true;
+    startDealLoader();
+
+    try{
+      const isEmail = isEmail_(q);
+      const data = await apiSearch(q);
+      if(!data?.ok) throw new Error(data?.error || "bad_search");
+
+      if (isEmail){
+        renderSearchResultsEmail(data.results || []);
+      } else {
+        if (data.type !== "idpipe" || !data.deal) throw new Error("not_found");
+        closeSearchModal();
+        dealToUI(data.deal);
+        openPopup();
+        toast("Trato cargado");
+      }
+    }catch(e){
+      console.error("[SM] search error", e);
+      toast("No se pudo buscar");
+    }finally{
+      finishDealLoader();
+      state.__searchBusy = false;
+      unlock();
+    }
+  }
+
+  /* ===================== [F7.2] VENTAS (ZAPIER) ===================== */
+  function doVentaAnalisis(){
+    if(!state.deal) return toast("Sin trato cargado");
+    if (state.__saleBusy) return;
+
+    const ok = window.confirm("Vas a enviar una solicitud de pago para analisis de marca ¿Confirmar?...");
+    if(!ok) return;
+
+    const btn = qs("#sm-btn-venta-analisis");
+    state.__saleBusy = true;
+    const unlock = lockBtn(btn, "Enviando...");
+
+    try{
+      const payload = payloadFromDeal();
+      sendWebhookViaForm(ZAPIER_ANALISIS, payload);
+      toast("Solicitud enviada");
+    }catch(e){
+      console.error("[SM] zapier analisis error", e);
+      toast("No se pudo enviar");
+    }finally{
+      setTimeout(()=>{
+        state.__saleBusy = false;
+        unlock();
+      }, 800);
+    }
+  }
+
+  function doVentaAsistido(){
+    if(!state.deal) return toast("Sin trato cargado");
+    if (state.__saleBusy) return;
+
+    const ok = window.confirm("Vas a enviar una solicitud de pago para Venta de Registro Asistido ¿Confirmar?...");
+    if(!ok) return;
+
+    const btn = qs("#sm-btn-venta-asistido");
+    state.__saleBusy = true;
+    const unlock = lockBtn(btn, "Enviando...");
+
+    try{
+      const payload = payloadFromDeal();
+      sendWebhookViaForm(ZAPIER_ASISTIDO, payload);
+      toast("Solicitud enviada");
+    }catch(e){
+      console.error("[SM] zapier asistido error", e);
+      toast("No se pudo enviar");
+    }finally{
+      setTimeout(()=>{
+        state.__saleBusy = false;
+        unlock();
+      }, 800);
+    }
+  }
+
+  /* ===================== [F8] COPY HANDLERS ===================== */
+  function wireCopy(){
+    qs("#sm-btn-copy-phone")?.addEventListener("click", async ()=>{
+      const v = (qs("#sm-phone")?.value || "").trim();
+      if (!v) return;
+      try{
+        await navigator.clipboard.writeText(v);
+        toast("Copiado. Advertencia: Marca desde esta plataforma para que se cuenten tus puntos.", 7000);
+      }catch(_){
+        toast("No se pudo copiar");
+      }
+    });
+
+    document.addEventListener("click", async (ev)=>{
+      const el = ev.target;
+
+      // COPIAR (para todos los botones con data-copy="#selector")
+      const copyBtn = el && el.closest && el.closest("[data-copy]");
+      if (copyBtn){
+        ev.preventDefault();
+        const sel = copyBtn.getAttribute("data-copy") || "";
+        const target = sel ? qs(sel) : null;
+
+        // puede ser span/div (textContent) o input/textarea (value)
+        const val = String((target && ("value" in target ? target.value : target.textContent)) || "").trim();
+        if (!val) return;
+
+        try{
+          await navigator.clipboard.writeText(val);
+          toast("Copiado");
+        }catch(_){
+          // fallback simple si clipboard bloqueado
+          try{ window.prompt("Copia esto:", val); }catch(__){}
+          toast("No se pudo copiar");
+        }
+        return;
+      }
+
+      // Header stats (abre nueva pestaña)
+      const statsBtn = el && el.closest && el.closest("#sm-btn-stats");
+      if (statsBtn){
+      ev.preventDefault();
+      const p = new URLSearchParams(location.search);
+      const idc = getIDC();
+      const codep = (p.get("codep") || "").trim();
+      const url = `https://www.simplemarcas.cl/stats4342755671134?idc=${encodeURIComponent(idc)}&codep=${encodeURIComponent(codep)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+
+      // Header calendar (abre nueva pestaña)
+      const calBtn = el && el.closest && el.closest("#sm-btn-calendar");
+      if (calBtn){
+      ev.preventDefault();
+      const idc = getIDC();
+      const url = `https://www.simplemarcas.cl/agendamiento-calendario1764009390297?idc=${encodeURIComponent(idc)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+      }
+
+
+      // Header search (funciona aunque cliquees el SVG/path)
+      const searchBtn = el && el.closest && el.closest("#sm-btn-search");
+      if (searchBtn){
+        ev.preventDefault();
+        openSearchModal();
+        return;
+      }
+
+      const id = el?.id;
+
+      if(id === "sm-btn-comenzar"){
+        ev.preventDefault();
+        loadDeal({ resetSkip:true });
+        return;
+      }
+
+      if(id === "sm-btn-llamar"){
+        ev.preventDefault();
+        doCall();
+        return;
+      }
+
+      if(id === "sm-btn-aceptar-continuar"){
+        ev.preventDefault();
+        doAcceptAndContinue();
+        return;
+      }
+
+      if(id === "sm-btn-omitir"){
+        ev.preventDefault();
+        doOmit();
+        return;
+      }
+
+      if(id === "sm-btn-atras"){
+        ev.preventDefault();
+        doBack();
+        return;
+      }
+
+      if(id === "sm-btn-enviar-encuesta"){
+        ev.preventDefault();
+        doSendSurvey();
+        return;
+      }
+
+      // Modal omit
+      if(id === "sm-btn-omit-cancel"){
+        ev.preventDefault();
+        closeOmitModal();
+        return;
+      }
+
+      if(id === "sm-btn-omit-confirm"){
+        ev.preventDefault();
+        doConfirmOmit();
+        return;
+      }
+
+      // Modal search
+      if(id === "sm-btn-search-cancel"){
+        ev.preventDefault();
+        closeSearchModal();
+        return;
+      }
+
+      if(id === "sm-btn-search-run"){
+        ev.preventDefault();
+        doSearch();
+        return;
+      }
+
+      // Pick from email results
+      const pick = el && el.closest && el.closest("[data-pick-rid]");
+      if(pick){
+        ev.preventDefault();
+        const rid = pick.getAttribute("data-pick-rid");
+        if(!rid) return;
+        closeSearchModal();
+        await loadDealByRid(rid);
+        return;
+      }
+
+      // Mini buttons right-bottom
+      if(id === "sm-btn-venta-analisis"){
+        ev.preventDefault();
+        doVentaAnalisis();
+        return;
+      }
+
+      if(id === "sm-btn-venta-asistido"){
+        ev.preventDefault();
+        doVentaAsistido();
+        return;
+      }
+    });
+  }
+
+  /* ===================== [F9] EVENT WIRING ===================== */
+  document.addEventListener("keydown", (ev)=>{
+    if(ev.key === "Escape"){
+      const om = qs("#sm-omit-modal");
+      if(om && om.style.display === "flex"){
+        closeOmitModal();
+        return;
+      }
+
+      const sm = qs("#sm-search-modal");
+      if(sm && sm.style.display === "flex"){
+        closeSearchModal();
+        return;
+      }
+
+      const lm = qs("#sm-log-modal");
+      if(lm && lm.style.display === "flex"){
+        closeLogModal();
+        return;
+      }
+    }
+
+    // Enter para buscar
+    if(ev.key === "Enter"){
+      const sm = qs("#sm-search-modal");
+      if(sm && sm.style.display === "flex"){
+        const active = document.activeElement;
+        if(active && active.id === "sm-search-q"){
+          ev.preventDefault();
+          doSearch();
+        }
+      }
+    }
+  });
+
+  function wirePayAndLog(){
+    // ✅ listeners directos (no depende de ev.target.id ni del path del svg)
+    qs("#sm-btn-refresh-pay")?.addEventListener("click", (ev)=>{
+      ev.preventDefault();
+      doRefreshPayState();
+    });
+
+    qs("#sm-btn-open-log")?.addEventListener("click", (ev)=>{
+      ev.preventDefault();
+      doOpenLog();
+    });
+
+    qs("#sm-btn-log-close")?.addEventListener("click", (ev)=>{
+      ev.preventDefault();
+      closeLogModal();
+    });
+
+    // click fuera para cerrar (solo log)
+    qs("#sm-log-modal")?.addEventListener("click", (ev)=>{
+      const card = qs("#sm-log-modal-card");
+      if (!card) return;
+      if (ev.target && !card.contains(ev.target)){
+        closeLogModal();
+      }
+    });
+
+    qs("#sm-btn-refresh-payv")?.addEventListener("click", (ev)=>{
+      ev.preventDefault();
+      doRefreshPayStateVig();
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", ()=>{
+    ensureDebugUI();
+    initZoom();
+    wireCopy();
+    wirePayAndLog();
+  });
+})();
+
+
+
+(function(){
+  const WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/6030955/uk5zalw/";
+
+  function init(){
+    // ====== UI-only labels (NO afecta webhook) ======
+    const qp = new URLSearchParams(location.search);
+    const SHOW_PAYOUTS = (qp.get("codep") === "917830109");
+
+    const PAYOUT_SUFFIX = {
+      "A.1.2": "+$390",
+      "A.2.1": "+$390",
+      "A.2.3": "+$390",
+      "A.2.4": "+$520",
+      "A.2.2.3": "+$390",
+      "A.2.2.1.1": "+$650",
+      "A.2.2.1.2": "+$390",
+      "A.2.2.2.1": "+$650",
+      "A.2.2.2.2": "+$390",
+      "A.2.5": "+$1300",
+      "A.3.2.2": "+$260",
+      "A.3.1": "+$650",
+      "A.5.2.2": "+$260",
+      "A.5.1": "+$650",
+      "A.5.1.1": "+$650",
+      "A.5.1.2": "+$650",
+      "B.1.2": "+$390",
+      "B.2.1": "+$390",
+      "B.2.3": "+$390",
+      "B.2.4": "+$520",
+      "B.2.2.3": "+$390",
+      "B.2.2.1.1": "+$650",
+      "B.2.2.1.2": "+$390",
+      "B.2.2.2.1": "+$650",
+      "B.2.2.2.2": "+$390",
+      "B.2.5": "+$780",
+      "B.4.2.2": "+$260",
+      "B.4.1.1": "+$650",
+      "B.4.1.2": "+$650",
+      "C.1.2": "+$390",
+      "C.2.1": "+$390",
+      "C.2.3": "+$390",
+      "C.2.4": "+$520",
+      "C.2.2.1": "+$390",
+      "C.2.2.2": "+$390",
+      "C.2.5": "+$780",
+      "C.2.5.1": "+$650",
+      "C.2.5.2": "+$650"
+    };
+
+    function displayLabel(option){
+      if(!SHOW_PAYOUTS) return option.label;
+      const s = PAYOUT_SUFFIX[option.id];
+      return s ? (option.label + " " + s) : option.label;
+    }
+
+    const FLOW = {
+      start: {
+        id: "Q0",
+        text: "Selecciona el tipo de llamada o desde donde se retoma",
+        options: [
+          { id:"A", label:"Llamada desde el Inicio", next:"A|Q1" },
+          { id:"B", label:"Pendiente de pago de Registro", next:"B|Q1" },
+          { id:"C", label:"Pendiente de pago de Vigilancia", next:"C|Q1" }
+        ]
+      },
+      nodes: {
+        "A|Q1": {
+          id:"A|Q1",
+          text:"¿Qué pasó en la llamada?",
+          options:[
+            { id:"A.1.1", label:"Telefono Inválido (Numero con error o no existe)", next:null, requires_text:false },
+            { id:"A.1.2", label:"No contestó o no se escucha, 2 intentos seguidos", next:null, requires_text:false },
+            { id:"A.1.3", label:"Contestó", next:"A|Q2", requires_text:false }
+          ]
+        },
+        "A|Q2": {
+          id:"A|Q2",
+          text:"¿Qué pasó al inicio de la llamada?",
+          options:[
+            { id:"A.2.1", label:"Número equivocado", next:null, requires_text:false },
+            { id:"A.2.3", label:"Quiere el servicio, pero no quiere agendar (cliente dice se comunicará en el futuro)", next:null, requires_text:false },
+            { id:"A.2.4", label:"Agendado (no podía hablar ahora)", next:null, requires_text:false },
+            { id:"A.2.2", label:"Ya no quiere el Registro", next:"A|Q2_2", requires_text:false },
+            { id:"A.2.5", label:"Se envía Ficha", next:"A|Q3", requires_text:false }
+          ]
+        },
+        "A|Q2_2": {
+          id:"A|Q2_2",
+          text:"¿Cuál fué el motivo?",
+          options:[
+            { id:"A.2.2.3", label:"Otros: (Rellenar Manual)", next:null, requires_text:true },
+            { id:"A.2.2.1", label:"Porque quiere análisis", next:"A|Q2_2_1", requires_text:false },
+            { id:"A.2.2.2", label:"Por presupuesto", next:"A|Q2_2_2", requires_text:false }
+          ]
+        },
+        "A|Q2_2_1": {
+          id:"A|Q2_2_1",
+          text:"¿El cliente accedió a comprar análisis y se enviaron datos?",
+          options:[
+            { id:"A.2.2.1.1", label:"Sí", next:null, requires_text:false },
+            { id:"A.2.2.1.2", label:"No", next:null, requires_text:false }
+          ]
+        },
+        "A|Q2_2_2": {
+          id:"A|Q2_2_2",
+          text:"¿Se envío información registro asistido?",
+          options:[
+            { id:"A.2.2.2.1", label:"Sí", next:null, requires_text:false },
+            { id:"A.2.2.2.2", label:"No", next:null, requires_text:false }
+          ]
+        },
+        "A|Q3": {
+          id:"A|Q3",
+          text:"¿Pagó en la llamada?",
+          options:[
+            { id:"A.3.2", label:"No", next:"A|Q3_2", requires_text:false },
+            { id:"A.3.1", label:"Sí (Se asistió el pago)", next:"A|Q3_1", requires_text:false }
+          ]
+        },
+        "A|Q3_2": {
+          id:"A|Q3_2",
+          text:"¿Se agendó para verificar el pago?",
+          options:[
+            { id:"A.3.2.1", label:"No quiere agendar dice que se comunicará en el futuro", next:null, requires_text:false },
+            { id:"A.3.2.2", label:"Agendado (no podía pagar ahora)", next:null, requires_text:false }
+          ]
+        },
+        "A|Q3_1": {
+          id:"A|Q3_1",
+          text:"¿Como pagó?",
+          options:[
+            { id:"A.3.1.2", label:"Por transferencia (Se agenda)", next:null, requires_text:false },
+            { id:"A.3.1.1", label:"Por botón de pago", next:"A|Q4", requires_text:false }
+          ]
+        },
+        "A|Q4": {
+          id:"A|Q4",
+          text:"¿Cual fué la opcion elegida en la ficha de vigilancia?",
+          options:[
+            { id:"A.4.2", label:"No", next:null, requires_text:false },
+            { id:"A.4.1", label:"Sí", next:"A|Q5", requires_text:false }
+          ]
+        },
+        "A|Q5": {
+          id:"A|Q5",
+          text:"¿Pagó en la llamada?",
+          options:[
+            { id:"A.5.2", label:"No", next:"A|Q5_2", requires_text:false },
+            { id:"A.5.1", label:"Sí (Se asistió el pago)", next:"A|Q5_1", requires_text:false }
+          ]
+        },
+        "A|Q5_2": {
+          id:"A|Q5_2",
+          text:"¿Se agendó para verificar el pago?",
+          options:[
+            { id:"A.5.2.1", label:"No quiere agendar dice que se comunicará en el futuro", next:null, requires_text:false },
+            { id:"A.5.2.2", label:"Agendado (no podía pagar ahora)", next:null, requires_text:false }
+          ]
+        },
+        "A|Q5_1": {
+          id:"A|Q5_1",
+          text:"¿Como pagó?",
+          options:[
+            { id:"A.5.1.1", label:"Por botón de pago", next:null, requires_text:false },
+            { id:"A.5.1.2", label:"Por transferencia (Se agenda)", next:null, requires_text:false }
+          ]
+        },
+        "B|Q1": {
+          id:"B|Q1",
+          text:"¿Qué pasó en la llamada?",
+          options:[
+            { id:"B.1.1", label:"Telefono Inválido (Numero con error o no existe)", next:null, requires_text:false },
+            { id:"B.1.2", label:"No contestó o no se escucha, 2 intentos seguidos", next:null, requires_text:false },
+            { id:"B.1.3", label:"Contestó", next:"B|Q2", requires_text:false }
+          ]
+        },
+        "B|Q2": {
+          id:"B|Q2",
+          text:"¿Qué pasó al inicio de la llamada?",
+          options:[
+            { id:"B.2.1", label:"Número equivocado", next:null, requires_text:false },
+            { id:"B.2.3", label:"Quiere el servicio, pero no quiere agendar (cliente dice se comunicará en el futuro)", next:null, requires_text:false },
+            { id:"B.2.4", label:"Agendado (no podía hablar ahora)", next:null, requires_text:false },
+            { id:"B.2.2", label:"Ya no quiere el Registro", next:"B|Q2_2", requires_text:false },
+            { id:"B.2.5", label:"Se asistió el pago", next:"B|Q2_5", requires_text:false }
+          ]
+        },
+        "B|Q2_2": {
+          id:"B|Q2_2",
+          text:"¿Cuál fué el motivo?",
+          options:[
+            { id:"B.2.2.3", label:"Otros: (Rellenar Manual)", next:null, requires_text:true },
+            { id:"B.2.2.1", label:"Porque quiere análisis", next:"B|Q2_2_1", requires_text:false },
+            { id:"B.2.2.2", label:"Por presupuesto", next:"B|Q2_2_2", requires_text:false }
+          ]
+        },
+        "B|Q2_2_1": {
+          id:"B|Q2_2_1",
+          text:"¿El cliente accedió a comprar análisis y se enviaron datos?",
+          options:[
+            { id:"B.2.2.1.1", label:"Sí", next:null, requires_text:false },
+            { id:"B.2.2.1.2", label:"No", next:null, requires_text:false }
+          ]
+        },
+        "B|Q2_2_2": {
+          id:"B|Q2_2_2",
+          text:"¿Se envío información registro asistido?",
+          options:[
+            { id:"B.2.2.2.1", label:"Sí", next:null, requires_text:false },
+            { id:"B.2.2.2.2", label:"No", next:null, requires_text:false }
+          ]
+        },
+        "B|Q2_5": {
+          id:"B|Q2_5",
+          text:"¿Como pagó?",
+          options:[
+            { id:"B.2.5.2", label:"Por transferencia (Se agenda)", next:null, requires_text:false },
+            { id:"B.2.5.1", label:"Por botón de pago", next:"B|Q3", requires_text:false }
+          ]
+        },
+        "B|Q3": {
+          id:"B|Q3",
+          text:"¿Cual fué la opcion elegida en la ficha de vigilancia?",
+          options:[
+            { id:"B.3.2", label:"No", next:null, requires_text:false },
+            { id:"B.3.1", label:"Sí", next:"B|Q4", requires_text:false }
+          ]
+        },
+        "B|Q4": {
+          id:"B|Q4",
+          text:"¿Pagó en la llamada?",
+          options:[
+            { id:"B.4.2", label:"No", next:"B|Q4_2", requires_text:false },
+            { id:"B.4.1", label:"Sí (Se asistió el pago)", next:"B|Q4_1", requires_text:false }
+          ]
+        },
+        "B|Q4_2": {
+          id:"B|Q4_2",
+          text:"¿Se agendó para verificar el pago?",
+          options:[
+            { id:"B.4.2.1", label:"No quiere agendar dice que se comunicará en el futuro", next:null, requires_text:false },
+            { id:"B.4.2.2", label:"Agendado (no podía pagar ahora)", next:null, requires_text:false }
+          ]
+        },
+        "B|Q4_1": {
+          id:"B|Q4_1",
+          text:"¿Como pagó?",
+          options:[
+            { id:"B.4.1.1", label:"Por botón de pago", next:null, requires_text:false },
+            { id:"B.4.1.2", label:"Por transferencia (Se agenda)", next:null, requires_text:false }
+          ]
+        },
+        "C|Q1": {
+          id:"C|Q1",
+          text:"¿Qué pasó en la llamada?",
+          options:[
+            { id:"C.1.1", label:"Telefono Inválido (Numero con error o no existe)", next:null, requires_text:false },
+            { id:"C.1.2", label:"No contestó o no se escucha, 2 intentos seguidos", next:null, requires_text:false },
+            { id:"C.1.3", label:"Contestó", next:"C|Q2", requires_text:false }
+          ]
+        },
+        "C|Q2": {
+          id:"C|Q2",
+          text:"¿Qué pasó al inicio de la llamada?",
+          options:[
+            { id:"C.2.1", label:"Número equivocado", next:null, requires_text:false },
+            { id:"C.2.3", label:"Quiere el servicio, pero no quiere agendar (cliente dice se comunicará en el futuro)", next:null, requires_text:false },
+            { id:"C.2.4", label:"Agendado (no podía hablar ahora)", next:null, requires_text:false },
+            { id:"C.2.2", label:"Ya no quiere la Vigilancia", next:"C|Q2_2", requires_text:false },
+            { id:"C.2.5", label:"Se asistió el pago", next:"C|Q2_5", requires_text:false }
+          ]
+        },
+        "C|Q2_2": {
+          id:"C|Q2_2",
+          text:"¿Cuál fué el motivo?",
+          options:[
+            { id:"C.2.2.1", label:"Por presupuesto", next:null, requires_text:false },
+            { id:"C.2.2.2", label:"Otros: (Rellenar Manual)", next:null, requires_text:true }
+          ]
+        },
+        "C|Q2_5": {
+          id:"C|Q2_5",
+          text:"¿Como pagó?",
+          options:[
+            { id:"C.2.5.1", label:"Por botón de pago", next:null, requires_text:false },
+            { id:"C.2.5.2", label:"Por transferencia (Se agenda)", next:null, requires_text:false }
+          ]
+        }
+      }
+    };
+
+    const ROOT = document.getElementById("sm-typeform-min");
+    if(!ROOT) return;
+
+    const st = {
+      nodeId: "Q0",
+      branch: null,
+      selected: null,
+      detalle: "",
+      history: [],
+      answers: {}
+    };
+
+    let smfAutoTimer = null;
+
+    function ce(t, c, txt){
+      const el = document.createElement(t);
+      if(c) el.className = c;
+      if(txt !== undefined) el.textContent = txt;
+      return el;
+    }
+
+    function getNodeById(nodeId){
+      return nodeId === "Q0" ? FLOW.start : FLOW.nodes[nodeId];
+    }
+
+    function optionsOfById(nodeId, node){
+      return nodeId === "Q0" ? (FLOW.start.options || []) : (node.options || []);
+    }
+
+    function findOptionInNode(nodeId, node, optId){
+      const opts = optionsOfById(nodeId, node);
+      return opts.find(o => o.id === optId) || null;
+    }
+
+    function paintSelected(optsWrap, selectedId){
+      const btns = optsWrap.querySelectorAll(".smf-opt");
+      btns.forEach(btn=>{
+        btn.classList.toggle("is-selected", btn.getAttribute("data-optid") === selectedId);
+      });
+    }
+
+    function cleanQuestionText(t){
+      return String(t || "")
+        .replace(/^PREGUNTA\s*:\s*/i, "PREGUNTA ")
+        .replace(/^PREGUNTA\s*[\d.]*\s*:?\s*/i, "")
+        .trim();
+    }
+
+    function isFinal(option){
+      return !!option && !option.next && st.nodeId !== "Q0";
+    }
+
+    function canProceedFinal(option){
+      if(!isFinal(option)) return true;
+      if(!option.requires_text) return true;
+      return (st.detalle || "").trim().length > 0;
+    }
+
+    function buildRecorridoString(){
+      const norm = (s) => String(s || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      function isYesNoNode(nodeId, node){
+        const opts = optionsOfById(nodeId, node) || [];
+        if(opts.length !== 2) return false;
+        const a = norm(opts[0].label);
+        const b = norm(opts[1].label);
+        const isSi = (x) => x.startsWith("si");
+        const isNo = (x) => x.startsWith("no");
+        return (isSi(a) && isNo(b)) || (isNo(a) && isSi(b));
+      }
+
+      const nodeIds = st.history.map(h=>h.nodeId).concat([st.nodeId]);
+      const steps = [];
+
+      nodeIds.forEach(nid=>{
+        const node = getNodeById(nid);
+        const ans = st.answers[nid];
+        if(!node || !ans || !ans.selected) return;
+        const opt = findOptionInNode(nid, node, ans.selected);
+        if(!opt) return;
+
+        const det = (ans.detalle || "").trim();
+        let step;
+
+        if(isYesNoNode(nid, node)){
+          step = cleanQuestionText(node.text) + ": " + opt.label;
+        }else{
+          step = opt.label;
+        }
+
+        if(opt.requires_text && det) step += " — " + det;
+        steps.push(step);
+      });
+
+      //  elimina duplicados consecutivos
+const compact = [];
+for (let i = 0; i < steps.length; i++){
+  if (steps[i] && steps[i] !== compact[compact.length - 1]) compact.push(steps[i]);
+}
+return compact.join(" > ");
+
+    }
+
+    function postWebhook(payload, ctx){
+      const safe = ctx || {};
+      const data = {
+        numero_pregunta: payload.numero_pregunta ?? "",
+        detalle: payload.detalle ?? "",
+        recorrido: payload.recorrido ?? "",
+        // NUEVO: datos del popup
+        idpipe: safe.idpipe || "",
+        idc: safe.idc || "",
+        tiempo_total_llamadas_sec: (safe.total_calls_sec ?? ""),
+        tiempo_total_llamadas: (safe.total_calls_mss ?? "")
+      };
+
+      try{
+        const iframeName = "sm_zap_iframe_" + Math.random().toString(16).slice(2);
+        const ifr = document.createElement("iframe");
+        ifr.name = iframeName;
+        ifr.style.display = "none";
+        document.body.appendChild(ifr);
+
+        const form = document.createElement("form");
+        form.action = WEBHOOK_URL;
+        form.method = "POST";
+        form.enctype = "application/x-www-form-urlencoded";
+        form.target = iframeName;
+        form.style.display = "none";
+
+        Object.keys(data).forEach(k=>{
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = k;
+          input.value = String(data[k]);
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+
+        setTimeout(()=>{
+          try{ form.remove(); }catch(e){}
+          try{ ifr.remove(); }catch(e){}
+        }, 1200);
+
+        return;
+      }catch(e){}
+
+      try{
+        fetch(WEBHOOK_URL, {
+          method:"POST",
+          mode:"no-cors",
+          keepalive:true,
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(data)
+        });
+      }catch(e){}
+    }
+
+    function renderDone(){
+      ROOT.innerHTML = "";
+      const wrap = ce("div","smf smf-anim smf-enter");
+      wrap.appendChild(ce("p","smf-done","Listo"));
+      ROOT.appendChild(wrap);
+    }
+
+    function animateOutThen(cb){
+      const wrap = ROOT.querySelector("[data-wrap='1']");
+      if(!wrap){
+        cb();
+        return;
+      }
+      wrap.classList.remove("smf-enter");
+      wrap.classList.add("smf-leave");
+      setTimeout(cb,190);
+    }
+
+    function animateTo(newNodeId){
+      animateOutThen(()=>{
+        const a = st.answers[newNodeId];
+        st.selected = a ? a.selected : null;
+        st.detalle = a ? (a.detalle || "") : "";
+        render(newNodeId,true);
+      });
+    }
+
+    function goNext(option){
+      st.answers[st.nodeId] = { selected: st.selected, detalle: st.detalle };
+
+      if(st.nodeId === "Q0"){
+        st.history.push({ nodeId:"Q0", branch: st.branch });
+        st.branch = option.id;
+        st.nodeId = st.branch + "|Q1";
+        st.selected = null;
+        st.detalle = "";
+        animateTo(st.nodeId);
+        return;
+      }
+
+      st.history.push({ nodeId: st.nodeId, branch: st.branch });
+      st.nodeId = option.next;
+      st.selected = null;
+      st.detalle = "";
+      animateTo(st.nodeId);
+    }
+
+    function render(nodeId, withEnter){
+      ROOT.innerHTML = "";
+
+      const node = getNodeById(nodeId);
+      const wrap = ce("div","smf smf-anim" + (withEnter ? " smf-enter" : ""));
+      wrap.setAttribute("data-wrap","1");
+
+      wrap.appendChild(ce("div","smf-q", node.text));
+
+      const optsWrap = ce("div","smf-opts");
+
+      optionsOfById(nodeId, node).forEach((o, idx)=>{
+        const b = ce("button","smf-opt");
+        b.type = "button";
+        b.setAttribute("data-optid", o.id);
+
+        const letter = String.fromCharCode(65 + idx);
+        const tag = ce("span","smf-letter", letter);
+
+        const txtWrap = ce("span","smf-opt-text","");
+        const shown = displayLabel(o);
+        const m = shown.match(/\s(\+\$\d+)\s*$/);
+        if(m){
+          txtWrap.textContent = shown.replace(/\s(\+\$\d+)\s*$/,"");
+          const pay = ce("span","smf-opt-pay", m[1]);
+          txtWrap.appendChild(pay);
+        }else{
+          txtWrap.textContent = shown;
+        }
+
+        b.appendChild(tag);
+        b.appendChild(txtWrap);
+
+        if(st.selected === o.id) b.classList.add("is-selected");
+
+        b.addEventListener("click", ()=>{
+          if(smfAutoTimer){
+            clearTimeout(smfAutoTimer);
+            smfAutoTimer = null;
+          }
+
+          st.selected = o.id;
+          if(!o.requires_text) st.detalle = "";
+          paintSelected(optsWrap, o.id);
+
+          if(o.next){
+            smfAutoTimer = setTimeout(()=>{
+              smfAutoTimer = null;
+              goNext(o);
+            }, 120);
+            return;
+          }
+
+          render(st.nodeId,false);
+        });
+
+        optsWrap.appendChild(b);
+      });
+
+      wrap.appendChild(optsWrap);
+
+      const currentOpt = findOptionInNode(nodeId, node, st.selected);
+
+      if(currentOpt && !currentOpt.next && currentOpt.requires_text){
+        const extra = ce("div","smf-extra");
+        const input = ce("input","smf-input");
+        input.type = "text";
+        input.placeholder = "Escribe el motivo...";
+        input.value = st.detalle || "";
+
+        input.addEventListener("input", (e)=>{
+          st.detalle = e.target.value;
+          const btn = ROOT.querySelector("[data-sendbtn='1']");
+          if(btn) btn.disabled = !canProceedFinal(currentOpt);
+        });
+
+        extra.appendChild(input);
+        wrap.appendChild(extra);
+      }
+
+      const nav = ce("div","smf-nav");
+
+      const back = ce("button","smf-btn","Atrás");
+      back.type = "button";
+      back.disabled = st.history.length === 0;
+
+      back.addEventListener("click", ()=>{
+        if(st.history.length === 0) return;
+
+        if(smfAutoTimer){
+          clearTimeout(smfAutoTimer);
+          smfAutoTimer = null;
+        }
+
+        const prev = st.history.pop();
+        st.nodeId = prev.nodeId;
+        st.branch = prev.branch;
+
+        const a = st.answers[st.nodeId];
+        st.selected = a ? a.selected : null;
+        st.detalle = a ? (a.detalle || "") : "";
+
+        animateTo(st.nodeId);
+      });
+
+      const finalOpt = !!(currentOpt && isFinal(currentOpt));
+      const sendBtn = ce("button","smf-btn smf-btn-primary", finalOpt ? "Aceptar y enviar" : "Siguiente");
+      sendBtn.type = "button";
+      sendBtn.setAttribute("data-sendbtn","1");
+
+      if(!currentOpt){
+        sendBtn.disabled = true;
+      }else if(finalOpt){
+        sendBtn.disabled = !canProceedFinal(currentOpt);
+      }else{
+        sendBtn.disabled = false;
+      }
+
+      sendBtn.addEventListener("click", async ()=>{
+        if(!currentOpt) return;
+
+        if(!finalOpt){
+          if(currentOpt.next) goNext(currentOpt);
+          return;
+        }
+
+        if(!canProceedFinal(currentOpt)) return;
+
+        st.answers[st.nodeId] = { selected: st.selected, detalle: st.detalle };
+        const recorrido = buildRecorridoString();
+
+        const payload = {
+          numero_pregunta: currentOpt.id,
+          detalle: (currentOpt.requires_text ? (st.detalle || "").trim() : ""),
+          recorrido
+        };
+
+        const ctx = (window.__smSurveyGetContext && window.__smSurveyGetContext()) || {};
+
+        // Bloquea botón mientras envía
+        sendBtn.disabled = true;
+        const prevTxt = sendBtn.textContent;
+        sendBtn.textContent = "Enviando...";
+
+        // 1) Primero: hacer lo que hacía el botón Enviar del popup (finalize + siguiente trato)
+        const fin = await (window.__smSurveyFinalizeFromTypeform ? window.__smSurveyFinalizeFromTypeform(payload) : Promise.resolve({ok:false,error:"missing_bridge"}));
+        if(!fin?.ok){
+          sendBtn.disabled = false;
+          sendBtn.textContent = prevTxt;
+          return;
+        }
+
+        // 2) Luego: webhook propio del componente (mismo endpoint) + datos extra
+        postWebhook(payload, ctx);
+
+        animateOutThen(()=>{
+          reset(); // deja el componente listo para el siguiente trato
+        });
+      });
+
+      // En la primera pregunta (Q0) NO mostrar "Atrás"
+      if(st.history.length > 0 && nodeId !== "Q0"){
+        nav.appendChild(back);
+      }
+
+      nav.appendChild(sendBtn);
+      wrap.appendChild(nav);
+      ROOT.appendChild(wrap);
+    }
+
+    function reset(){
+      st.nodeId = "Q0";
+      st.selected = null;
+      st.detalle = "";
+      st.history = [];
+      st.answers = {};
+      render("Q0", true);
+    }
+
+    // Permite reset desde el popup (cuando cambia el trato)
+    window.__smTypeformMinReset = reset;
+
+    reset();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  }else{
+    init();
+  }
+})();
+
+</script>
+</body>
+</html>
