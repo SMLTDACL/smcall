@@ -61,11 +61,10 @@ const SCORE = {
   "C.2.5.2":[11,1430]
 };
 
-const DEFAULT_TOKEN_SECRET = "bF6pQmD8nK3vW2sH7tR9yX4aC1eZ0uJ5Lh8GqT2mV7wN9pS3dK6xR1cY4fH8jZ2Q";
-
 function getSecret_(){
   const s = PropertiesService.getScriptProperties().getProperty("TOKEN_SECRET");
-  return (s && s.trim()) ? s.trim() : DEFAULT_TOKEN_SECRET;
+  if (!s || !s.trim()) throw new Error("missing_token_secret");
+  return s.trim();
 }
 function b64webEncode_(bytesOrString){
   const bytes = (typeof bytesOrString === "string")
