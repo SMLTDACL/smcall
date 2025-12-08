@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title></title>
+</head>
+<body>
+<div id="sm-puntos-app" class="ga">
+  <div class="ga-wrap">
+    <!-- Top bar -->
+    <div class="ga-top">
+      <div class="ga-title-wrap">
+        <div class="ga-title">Puntos</div>
+        <div class="ga-subtitle" id="gaRangeLabel"></div>
+      </div>
+      <div class="ga-controls">
+        <!-- GA-like range picker -->
+        <div class="ga-range">
+          <button type="button" id="gaRangeBtn" class="ga-range-btn" aria-haspopup="dialog" aria-expanded="false">
+            <span class="ga-range-name" id="gaRangeName">Hoy</span>
+            <span class="ga-range-sep">·</span>
+            <span class="ga-range-dates" id="gaRangeDates"></span>
+            <span class="ga-range-caret" aria-hidden="true"></span>
+          </button>
+          <div class="ga-range-pop" id="gaRangePop" style="display:none;">
+            <div class="ga-range-inner">
+              <div class="ga-range-body">
+                <div class="ga-range-left" role="listbox" aria-label="Rangos">
+                  <button type="button" class="ga-range-item ga-range-item-active" data-range="today">Hoy</button>
+                  <button type="button" class="ga-range-item" data-range="yesterday">Ayer</button>
+                  <button type="button" class="ga-range-item" data-range="7d">Últimos 7 días</button>
+                  <button type="button" class="ga-range-item" data-range="28d">Últimos 28 días</button>
+                  <button type="button" class="ga-range-item" data-range="month">Este mes</button>
+                  <button type="button" class="ga-range-item" data-range="prevmonth">Mes anterior</button>
+                  <button type="button" class="ga-range-item" data-range="custom">Personalizado</button>
+                </div>
+                <div class="ga-range-right">
+                  <div class="ga-cal-head">
+                    <div class="ga-cal-selected" id="gaCalSelected">Selecciona un rango</div>
+                  </div>
+                  <div class="ga-cal-scroll" id="gaCalScroll" aria-label="Calendario"></div>
+                </div>
+              </div>
+              <div class="ga-range-foot">
+                <button type="button" class="ga-range-action ga-range-cancel" id="gaRangeCancel">Cancelar</button>
+                <button type="button" class="ga-range-action ga-range-apply" id="gaRangeApply">Aplicar</button>
+              </div>
+            </div>
+          </div>
+          <!-- se mantienen para tu lógica actual (hidden) -->
+          <input type="hidden" id="smrStart">
+          <input type="hidden" id="smrEnd">
+        </div>
+      </div>
+    </div>
+    <!-- KPI cards -->
+    <div class="ga-grid">
+      <!-- PUNTOS -->
+      <div class="ga-card ga-kpi">
+        <div class="ga-kpi-title">Puntos</div>
+        <div class="ga-kpi-value" id="smrTotal" style="display:none;">0</div>
+        <div class="ga-skeleton" id="smrTotalLoading"></div>
+        <div class="ga-kpi-meta" id="smrMeta"></div>
+      </div>
+      <!-- PESOS (solo con codep=917830109) -->
+      <div class="ga-card ga-kpi ga-pesos-only" id="gaPesosCard">
+        <div class="ga-kpi-title">Pesos</div>
+        <div class="ga-kpi-value" id="gaPesos" style="display:none;">$ 0</div>
+        <div class="ga-skeleton" id="gaPesosLoading"></div>
+        <div class="ga-kpi-meta" id="gaRowsCount"></div>
+      </div>
+    </div>
+    <!-- Chart -->
+    <div class="ga-card ga-chart">
+      <div class="ga-card-head">
+        <div class="ga-card-title">Puntos en el tiempo</div>
+        <div class="ga-card-note">Suma diaria (según rango)</div>
+      </div>
+      <div class="ga-chart-canvas">
+        <canvas id="smrChart"></canvas>
+      </div>
+    </div>
+    <!-- Table -->
+    <div class="ga-card ga-table">
+      <div class="ga-card-head">
+        <div class="ga-card-title">Histórico</div>
+        <div class="ga-card-note">Últimas filas dentro del rango</div>
+      </div>
+      <div class="ga-skeleton" id="smrListLoading"></div>
+      <div class="ga-table-wrap" style="display:none;" id="smrTableWrap">
+        <table class="ga-t">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>IDPIPE</th>
+              <th>Recorrido</th>
+              <th>Tiempo</th>
+              <th class="ga-right">Puntos</th>
+              <th class="ga-right ga-col-pesos">Pesos</th>
+            </tr>
+          </thead>
+          <tbody id="smrTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  /* Base */
+  #sm-puntos-app.ga{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1f2937}
+  .ga-wrap{max-width:1180px;margin:0 auto;padding:18px;box-sizing:border-box}
+  .ga-card{
+    background:#fff;border:1px solid rgba(17,24,39,.10);
+    border-radius:14px; box-shadow:0 1px 0 rgba(17,24,39,.04);
+  }
+  /* Top */
+  .ga-top{
+    display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .ga-title{font-size:18px;font-weight:800;letter-spacing:-.01em}
+  .ga-subtitle{font-size:12px;color:#6b7280;margin-top:4px}
+  .ga-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+  /* KPI grid */
+  .ga-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px}
+  @media(min-width:920px){ .ga-grid{grid-template-columns:1fr 1fr} }
+  .ga-kpi{padding:14px 14px 12px}
+  .ga-kpi-title{font-size:12px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .ga-kpi-value{font-size:40px;line-height:1.05;font-weight:800;margin-top:6px;letter-spacing:-.02em}
+  .ga-kpi-meta{font-size:12px;color:#6b7280;margin-top:8px}
+  /* Skeleton */
+  .ga-skeleton{
+    margin-top:10px;border-radius:10px;padding:10px 12px;
+    background:linear-gradient(90deg,#f3f4f6,#fafafa,#f3f4f6);
+    background-size:200% 100%;
+    animation:gaShimmer 1.2s infinite linear;
+    display:none;
+  }
+  @keyframes gaShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  #smrTotalLoading{ min-height: 48px; }
+  #gaPesosLoading{ min-height: 48px; }
+  #smrListLoading{ min-height: 56px; }
+  /* Chart */
+  .ga-chart{padding:0;overflow:hidden}
+  .ga-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 14px 8px}
+  .ga-card-title{font-size:14px;font-weight:800}
+  .ga-card-note{font-size:12px;color:#6b7280}
+  .ga-chart-canvas{padding:0 10px 12px}
+  .ga-chart-canvas canvas{width:100% !important;height:320px !important}
+  /* Table */
+  .ga-table{margin-top:12px}
+  .ga-table-wrap{overflow:auto;padding:6px 10px 12px}
+  .ga-t{width:100%;border-collapse:separate;border-spacing:0}
+  .ga-t thead th{
+    position:sticky;top:0;background:#fff;
+    text-align:left;font-size:12px;color:#6b7280;font-weight:800;
+    padding:10px 10px;border-bottom:1px solid rgba(17,24,39,.10);
+    white-space:nowrap;
+  }
+  .ga-t tbody td{
+    font-size:13px;padding:10px 10px;border-bottom:1px solid rgba(17,24,39,.06);
+    white-space:nowrap;vertical-align:top;
+  }
+  .ga-t tbody tr:hover{background:#fafafa}
+  .ga-right{text-align:right}
+  /* Recorrido */
+  .ga-rec{
+    white-space:nowrap;
+    max-width:220px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    display:inline-block;
+    vertical-align:top;
+  }
+  /* ===================== PESOS: solo con codep ===================== */
+  #sm-puntos-app.ga .ga-pesos-only{ display:none; }
+  #sm-puntos-app.ga .ga-col-pesos{ display:none; }
+  #sm-puntos-app.ga.ga-show-pesos .ga-pesos-only{ display:block; }
+  #sm-puntos-app.ga.ga-show-pesos .ga-col-pesos{ display:table-cell; }
+  #sm-puntos-app.ga.ga-no-pesos .ga-grid{ grid-template-columns:1fr !important; }
+  /* ===================== GA RANGE (UNIFICADO / SIN DUPLICADOS) ===================== */
+  .ga-range{position:relative;display:flex;align-items:center}
+  .ga-range-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    border:1px solid rgba(17,24,39,.12);
+    background:#fff;color:#111827;
+    border-radius:12px;
+    padding:10px 12px;
+    cursor:pointer;
+    font-size:13px;
+    line-height:1;
+    user-select:none;
+  }
+  .ga-range-btn:hover{background:#fafafa}
+  .ga-range-name{font-weight:800}
+  .ga-range-sep{color:#9ca3af}
+  .ga-range-dates{color:#6b7280}
+  .ga-range-caret{
+    width:0;height:0;margin-left:2px;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-top:6px solid rgba(17,24,39,.55);
+  }
+  .ga-range-pop{
+    position:absolute;
+    top:calc(100% + 8px);
+    right:0;
+    z-index:999999;
+    width: 500px;
+    max-width: calc(100vw - 24px);
+    background:#fff;
+    border:1px solid rgba(17,24,39,.12);
+    border-radius:14px;
+    box-shadow:0 14px 38px rgba(17,24,39,.12);
+    overflow:hidden;
+  }
+  .ga-range-inner{
+  display:flex;
+  flex-direction:column;
+  min-height:320px;
+}
+.ga-range-body{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  flex:1 1 auto;
+  min-height:0; /* clave para que el scroll del calendario funcione */
+}
+.ga-range-foot{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding:12px;
+  border-top:1px solid rgba(17,24,39,.08);
+  background:#fff;
+}
+  @media(max-width:860px){
+    .ga-range-pop{right:auto;left:0}
+    .ga-range-body{grid-template-columns:1fr}
+    .ga-range-left{border-right:0;border-bottom:1px solid rgba(17,24,39,.08)}
+  }
+  .ga-range-left{
+    padding:10px;
+    background:#fbfbfc;
+    border-right:1px solid rgba(17,24,39,.08);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .ga-range-item{
+    text-align:left;
+    border:1px solid transparent;
+    background:transparent;
+    border-radius:10px;
+    padding:10px 10px;
+    cursor:pointer;
+    font-size:13px;
+    color:#111827;
+  }
+  .ga-range-item:hover{background:#f3f4f6}
+  .ga-range-item-active{
+    background:#edf2ff;
+    border-color:rgba(54,116,232,.25);
+  }
+  .ga-range-right{
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-height:0; /* clave */
+}
+  .ga-cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .ga-cal-selected{font-size:13px;font-weight:800;color:#111827}
+  .ga-range-action{
+    border:1px solid rgba(17,24,39,.12);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:13px;
+    cursor:pointer;
+    background:#fff;
+  }
+  .ga-range-apply{
+    background:#111827;
+    color:#fff;
+    border-color:#111827;
+  }
+  .ga-range-apply:hover{filter:brightness(.98)}
+  .ga-cal-scroll{
+    max-height:360px;
+    overflow:auto;
+    padding-right:6px;
+  }
+  /* Mes */
+  .ga-month{
+    padding:10px 8px;
+    border:1px solid rgba(17,24,39,.08);
+    border-radius:12px;
+    background:#fff;
+    margin-bottom:10px
+  }
+  .ga-month-title{font-size:13px;font-weight:800;margin-bottom:8px}
+  .ga-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px}
+  .ga-dow div{font-size:11px;color:#6b7280;font-weight:800;text-align:center}
+ /* Días */
+.ga-days{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  column-gap:0;
+  row-gap:5px;
+}
+.ga-day{
+  height:30px;
+  border-radius:0;                 /* rango continuo */
+  border:1px solid transparent;
+  background:#fff;
+  cursor:pointer;
+  font-size:12px;
+  line-height:1;
+  color:#111827;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  isolation:isolate;   
+  overflow:visible;
+  z-index:0;
+            /* CLAVE para z-index negativos */
+}
+/* Eleva el rango sobre los días vecinos para que no se "muerda" */
+.ga-day.is-inrange{ z-index:1; }
+.ga-day.is-start,
+.ga-day.is-end{ z-index:2; }
+.ga-day:hover{ background:#fafafa; }
+.ga-day.is-empty{ visibility:hidden; pointer-events:none; }
+.ga-day.is-disabled{ opacity:.35; pointer-events:none; }
+/* Rango intermedio: usa background (cero cortes blancos) */
+.ga-day.is-inrange{
+  background:rgba(54,116,232,.12);
+}
+/* Start/End: texto blanco (el círculo va detrás) */
+.ga-day.is-start,
+.ga-day.is-end{
+  color:#fff;
+}
+/* círculo perfecto DETRÁS del número (por eso se ve el número) */
+.ga-day.is-start::after,
+.ga-day.is-end::after{
+  content:"";
+  position:absolute;
+  width:32px;
+  height:32px;
+  border-radius:999px;
+  background:#3674E8;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:-1;                      /* CLAVE: atrás del texto */
+  pointer-events:none;
+}
+/* barra que conecta start/end con el rango (también atrás) */
+.ga-day.is-start::before,
+.ga-day.is-end::before{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  z-index:-2;
+  pointer-events:none;
+}
+/* bleeds para eliminar líneas blancas por subpixel */
+.ga-day.is-start::before{
+  left:50%;
+  right:-2px;
+}
+.ga-day.is-end::before{
+  left:-2px;
+  right:50%;
+}
+/* si es un solo día: sin barra */
+.ga-day.is-start.is-end::before{
+  display:none;
+}
+</style>
+
+    <script>
+(function(){
+  const ENDPOINT_LOG_MENSUAL = "https://script.google.com/macros/s/AKfycbxrmsylT0j-lHvkAf_g_HQQ2NrbN7LFjWsInGTB-MAHI9GIWr_tcSJ-ppZ2bFwUeRHh/exec";
+  const TZ = "America/Santiago";
+  function getToken(){
+    const k = "sm_token";
+    const params = new URLSearchParams(location.search);
+    const urlT = (params.get("t") || "").trim();
+    if (urlT){
+      try{ sessionStorage.setItem(k, urlT); }catch(_){}
+      return urlT;
+    }
+    try{
+      const st = sessionStorage.getItem(k);
+      if (st) return st.trim();
+    }catch(_){}
+    return "";
+  }
+  function authFetch(url, opts){
+    const token = getToken();
+    const o = opts ? { ...opts } : {};
+    const headers = new Headers(o.headers || {});
+    if (token) headers.set("Authorization", "Bearer " + token);
+    o.headers = headers;
+    return fetch(url, o);
+  }
+
+  function whenReady(fn){
+    if (document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", fn, { once:true });
+    } else {
+      fn();
+    }
+  }
+
+  whenReady(()=>{
+    let tries = 0;
+    const t = setInterval(()=>{
+      tries++;
+      const root = document.getElementById("sm-puntos-app");
+      if (!root){
+        if (tries >= 60) clearInterval(t);
+        return;
+      }
+      clearInterval(t);
+      boot(root);
+    }, 150);
+  });
+
+  function boot(root){
+    const qs  = (s)=> root.querySelector(s);
+    const qsa = (s)=> Array.from(root.querySelectorAll(s));
+
+    // limpiar subtítulo
+    const rangeLbl = qs("#gaRangeLabel");
+    if (rangeLbl) rangeLbl.textContent = "";
+
+    // ========= PESOS: SOLO si codep=917830109 =========
+    const showPesos = (function(){
+      const p = new URLSearchParams(location.search);
+      return String(p.get("codep") || "").trim() === "917830109";
+    })();
+
+    if (showPesos){
+      root.classList.add("ga-show-pesos");
+    } else {
+      root.classList.add("ga-no-pesos");
+      const pesosCard = qs("#gaPesosCard");
+      if (pesosCard) pesosCard.remove();
+      const pesosTh = qs("th.ga-col-pesos");
+      if (pesosTh) pesosTh.remove();
+    }
+
+    function getIDCFilter(){
+      const p = new URLSearchParams(location.search);
+      return String(p.get("IDC") || p.get("idc") || "").trim();
+    }
+
+    function sameIDC(rowIDC, urlIDC){
+      const a = String(rowIDC ?? "").trim();
+      const b = String(urlIDC ?? "").trim();
+      if (/^\d+$/.test(a) && /^\d+$/.test(b)) return Number(a) === Number(b);
+      return a === b;
+    }
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+
+    // ---- TZ offset helper (para timestamps correctos en Chile) ----
+    const _dtfOffset = new Intl.DateTimeFormat("en-US", {
+      timeZone: TZ,
+      hourCycle: "h23",
+      year:"numeric", month:"2-digit", day:"2-digit",
+      hour:"2-digit", minute:"2-digit", second:"2-digit"
+    });
+
+    function tzOffsetMs(utcTs){
+      const parts = _dtfOffset.formatToParts(new Date(utcTs));
+      const get = (t)=> parts.find(p=>p.type===t)?.value;
+      const y = Number(get("year"));
+      const m = Number(get("month"));
+      const d = Number(get("day"));
+      const hh = Number(get("hour"));
+      const mi = Number(get("minute"));
+      const ss = Number(get("second"));
+      const asUTC = Date.UTC(y, m-1, d, hh, mi, ss);
+      return asUTC - utcTs;
+    }
+
+    function tzMidnightTsFromYMD(ymd){
+      const m = String(ymd||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return NaN;
+      const y = Number(m[1]), mo = Number(m[2]), da = Number(m[3]);
+      const baseUtc = Date.UTC(y, mo-1, da, 0,0,0);
+      return baseUtc - tzOffsetMs(baseUtc);
+    }
+
+    function tzEndOfDayTsFromYMD(ymd){
+      const start = tzMidnightTsFromYMD(ymd);
+      if (!isFinite(start)) return NaN;
+      return start + 24*60*60*1000 - 1;
+    }
+
+    function setLoading(on){
+      const t  = qs("#smrTotal");
+      const tl = qs("#smrTotalLoading");
+      const p  = qs("#gaPesos");
+      const pl = qs("#gaPesosLoading");
+      const lw = qs("#smrListLoading");
+      const tw = qs("#smrTableWrap");
+
+      if (t)  t.style.display  = on ? "none" : "block";
+      if (tl) tl.style.display = on ? "block" : "none";
+      if (p)  p.style.display  = on ? "none" : "block";
+      if (pl) pl.style.display = on ? "block" : "none";
+      if (lw) lw.style.display = on ? "block" : "none";
+      if (tw) tw.style.display = on ? "none" : "block";
+    }
+
+    function esc(s){
+      return String(s).replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[c]));
+    }
+
+    // ======== TIEMPO (duración) ========
+    function fmtTimeHHMM(v){
+      if (v === null || v === undefined) return "";
+
+      if (typeof v === "string"){
+        const s = v.trim();
+        const m = s.match(/^(\d{1,3}):(\d{2})(?::(\d{2}))?$/);
+        if (m) return `${Number(m[1])}:${pad2(m[2])}`;
+
+        const mi = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+        if (mi){
+          const y = Number(mi[1]);
+          let totalMin = Number(mi[4]) * 60 + Number(mi[5]); // UTC
+          if (y <= 1901) totalMin = (totalMin - 282 + 1440) % 1440; // corrige 04:42
+          const hh = Math.floor(totalMin / 60);
+          const mm = totalMin % 60;
+          return `${hh}:${pad2(mm)}`;
+        }
+      }
+
+      const n = Number(v);
+      if (!isNaN(n) && isFinite(n) && n >= 0 && n < 1){
+        const totalMin = Math.round(n * 24 * 60);
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        return `${h}:${pad2(m)}`;
+      }
+
+      const d = new Date(String(v).trim());
+      if (!isNaN(d.getTime())){
+        const y = d.getUTCFullYear();
+        let totalMin = d.getUTCHours() * 60 + d.getUTCMinutes();
+        if (y <= 1901) totalMin = (totalMin - 282 + 1440) % 1440;
+        const hh = Math.floor(totalMin / 60);
+        const mm = totalMin % 60;
+        return `${hh}:${pad2(mm)}`;
+      }
+
+      return String(v).trim();
+    }
+
+    // ======== RANGE PICKER PRO (scroll meses) ========
+    function ymdNowInTZ(){
+      return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit" }).format(new Date());
+    }
+
+    function ymdToUTCDate(ymd){
+      const m = String(ymd||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return null;
+      return new Date(Date.UTC(Number(m[1]), Number(m[2])-1, Number(m[3]), 0,0,0));
+    }
+
+    function utcDateToYMD(d){
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth()+1).padStart(2,"0");
+      const da = String(d.getUTCDate()).padStart(2,"0");
+      return `${y}-${m}-${da}`;
+    }
+
+    function addDaysYMD(ymd, days){
+      const d = ymdToUTCDate(ymd);
+      if (!d) return "";
+      d.setUTCDate(d.getUTCDate() + days);
+      return utcDateToYMD(d);
+    }
+
+    function compareYMD(a,b){
+      if (a === b) return 0;
+      return a < b ? -1 : 1;
+    }
+
+    function fmtRangeTextFromYMD(sYMD, eYMD){
+      const sD = ymdToUTCDate(sYMD);
+      const eD = ymdToUTCDate(eYMD);
+      if (!sD || !eD) return "";
+      const clean = (x)=> String(x||"").replace(/\./g,"");
+      const fmt = (d, withYear)=> clean(new Intl.DateTimeFormat("es-CL", withYear
+        ? { day:"numeric", month:"short", year:"numeric", timeZone: TZ }
+        : { day:"numeric", month:"short", timeZone: TZ }
+      ).format(d));
+      const sameYear = sD.getUTCFullYear() === eD.getUTCFullYear();
+      return sameYear ? `${fmt(sD,false)} — ${fmt(eD,true)}` : `${fmt(sD,true)} — ${fmt(eD,true)}`;
+    }
+
+    function setActivePresetKey(key){
+      qsa(".ga-range-item").forEach(b=>{
+        b.classList.toggle("ga-range-item-active", b.getAttribute("data-range") === key);
+      });
+    }
+
+    function monthTitleES(year, monthIndex0){
+      const d = new Date(Date.UTC(year, monthIndex0, 1, 12,0,0));
+      const txt = new Intl.DateTimeFormat("es-CL", { timeZone: TZ, month:"long", year:"numeric" }).format(d);
+      return txt.charAt(0).toUpperCase() + txt.slice(1);
+    }
+
+    function buildMonthGrid(year, monthIndex0){
+      const first = new Date(Date.UTC(year, monthIndex0, 1, 0,0,0));
+      const next = new Date(Date.UTC(year, monthIndex0+1, 1, 0,0,0));
+      const daysInMonth = Math.round((next - first) / 86400000);
+
+      // Monday=0..Sunday=6
+      const dowSunday0 = first.getUTCDay(); // 0..6
+      const dowMon0 = (dowSunday0 + 6) % 7;
+
+      const wrap = document.createElement("div");
+      wrap.className = "ga-month";
+      wrap.setAttribute("data-month", `${year}-${String(monthIndex0+1).padStart(2,"0")}`);
+
+      const title = document.createElement("div");
+      title.className = "ga-month-title";
+      title.textContent = monthTitleES(year, monthIndex0);
+      wrap.appendChild(title);
+
+      const dow = document.createElement("div");
+      dow.className = "ga-dow";
+      ["L","M","M","J","V","S","D"].forEach(x=>{
+        const el = document.createElement("div");
+        el.textContent = x;
+        dow.appendChild(el);
+      });
+      wrap.appendChild(dow);
+
+      const grid = document.createElement("div");
+      grid.className = "ga-days";
+
+      for (let i=0;i<dowMon0;i++){
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "ga-day is-empty";
+        b.textContent = "";
+        grid.appendChild(b);
+      }
+
+      for (let d=1; d<=daysInMonth; d++){
+        const ymd = `${year}-${String(monthIndex0+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "ga-day";
+        b.setAttribute("data-ymd", ymd);
+        b.textContent = String(d);
+        grid.appendChild(b);
+      }
+
+      wrap.appendChild(grid);
+      return wrap;
+    }
+
+    let applied = null; // {key,label,startYMD,endYMD}
+    let pending = null;
+
+    function syncTopButton(){
+      const nameEl = qs("#gaRangeName");
+      const datesEl = qs("#gaRangeDates");
+      if (!nameEl || !datesEl || !applied) return;
+      nameEl.textContent = applied.label;
+      datesEl.textContent = fmtRangeTextFromYMD(applied.startYMD, applied.endYMD);
+    }
+
+    function setHiddenRangeFromApplied(){
+      const startInp = qs("#smrStart");
+      const endInp   = qs("#smrEnd");
+      if (startInp) startInp.value = applied.startYMD;
+      if (endInp)   endInp.value   = applied.endYMD;
+    }
+
+    function paintSelection(){
+      const sel = qs("#gaCalSelected");
+      if (sel){
+        if (!pending || !pending.startYMD) sel.textContent = "Selecciona un rango";
+        else if (pending.startYMD && !pending.endYMD) sel.textContent = `Inicio: ${fmtRangeTextFromYMD(pending.startYMD, pending.startYMD)}`;
+        else sel.textContent = fmtRangeTextFromYMD(pending.startYMD, pending.endYMD);
+      }
+
+      qsa(".ga-day[data-ymd]").forEach(btn=>{
+        const ymd = btn.getAttribute("data-ymd");
+        btn.classList.remove("is-start","is-end","is-inrange");
+
+        if (!pending || !pending.startYMD) return;
+
+        const s = pending.startYMD;
+        const e = pending.endYMD;
+
+        if (ymd === s) btn.classList.add("is-start");
+        if (e && ymd === e) btn.classList.add("is-end");
+
+        if (e){
+          const lo = compareYMD(s,e) <= 0 ? s : e;
+          const hi = compareYMD(s,e) <= 0 ? e : s;
+          if (ymd > lo && ymd < hi) btn.classList.add("is-inrange");
+        }
+      });
+    }
+
+    function openPop(){
+      const pop = qs("#gaRangePop");
+      const btn = qs("#gaRangeBtn");
+      if (!pop || !btn) return;
+      pop.style.display = "block";
+      btn.setAttribute("aria-expanded","true");
+
+      // copiar applied->pending
+      pending = applied ? { ...applied } : null;
+      setActivePresetKey(pending?.key || "custom");
+      paintSelection();
+
+      // scroll al mes actual
+      const nowYMD = ymdNowInTZ();
+      const month = nowYMD.slice(0,7);
+      const monthEl = pop.querySelector(`.ga-month[data-month="${month}"]`);
+      const sc = qs("#gaCalScroll");
+      if (monthEl && sc){
+        const top = monthEl.offsetTop - 8;
+        sc.scrollTop = top > 0 ? top : 0;
+      }
+    }
+
+    function closePop(revert){
+      const pop = qs("#gaRangePop");
+      const btn = qs("#gaRangeBtn");
+      if (!pop || !btn) return;
+      pop.style.display = "none";
+      btn.setAttribute("aria-expanded","false");
+      if (revert) pending = applied ? { ...applied } : null;
+    }
+
+    function applyPending(){
+      if (!pending || !pending.startYMD) return;
+
+      // si no hay end, end=start
+      if (!pending.endYMD) pending.endYMD = pending.startYMD;
+
+      // normaliza orden
+      if (compareYMD(pending.endYMD, pending.startYMD) < 0){
+        const tmp = pending.startYMD;
+        pending.startYMD = pending.endYMD;
+        pending.endYMD = tmp;
+      }
+
+      applied = { ...pending };
+
+      // label
+      if (!applied.key || applied.key === "custom"){
+        applied.key = "custom";
+        applied.label = "Personalizado";
+      }
+
+      setHiddenRangeFromApplied();
+      syncTopButton();
+      closePop(false);
+      load();
+    }
+
+    function presetByKey(key){
+      const today = ymdNowInTZ();
+      if (key === "today"){
+        return { key, label:"Hoy", startYMD: today, endYMD: today };
+      }
+      if (key === "yesterday"){
+        const y = addDaysYMD(today, -1);
+        return { key, label:"Ayer", startYMD: y, endYMD: y };
+      }
+      if (key === "7d"){
+        return { key, label:"Últimos 7 días", startYMD: addDaysYMD(today, -6), endYMD: today };
+      }
+      if (key === "28d"){
+        return { key, label:"Últimos 28 días", startYMD: addDaysYMD(today, -27), endYMD: today };
+      }
+      if (key === "month"){
+        const d = ymdToUTCDate(today);
+        const y = d.getUTCFullYear();
+        const m0 = d.getUTCMonth();
+        const first = `${y}-${String(m0+1).padStart(2,"0")}-01`;
+        return { key, label:"Este mes", startYMD:first, endYMD: today };
+      }
+      if (key === "prevmonth"){
+        const d = ymdToUTCDate(today);
+        let y = d.getUTCFullYear();
+        let m0 = d.getUTCMonth() - 1;
+        if (m0 < 0){ m0 = 11; y -= 1; }
+        const first = new Date(Date.UTC(y, m0, 1));
+        const next = new Date(Date.UTC(y, m0+1, 1));
+        next.setUTCDate(next.getUTCDate() - 1);
+        const firstYMD = utcDateToYMD(first);
+        const lastYMD = utcDateToYMD(next);
+        return { key, label:"Mes anterior", startYMD:firstYMD, endYMD:lastYMD };
+      }
+      return null;
+    }
+
+    function initRangeUI(){
+      const btn = qs("#gaRangeBtn");
+      const pop = qs("#gaRangePop");
+      const sc  = qs("#gaCalScroll");
+      if (!btn || !pop || !sc) return;
+
+      // Render meses: -12 a +2 (scrolleable)
+      const now = ymdToUTCDate(ymdNowInTZ());
+      const baseY = now.getUTCFullYear();
+      const baseM = now.getUTCMonth();
+
+      sc.innerHTML = "";
+      for (let i=-12; i<=2; i++){
+        const d = new Date(Date.UTC(baseY, baseM + i, 1));
+        sc.appendChild(buildMonthGrid(d.getUTCFullYear(), d.getUTCMonth()));
+      }
+
+      // click afuera cierra
+      document.addEventListener("click", ()=> closePop(true));
+      pop.addEventListener("click", (ev)=> ev.stopPropagation());
+
+      // toggle
+      btn.addEventListener("click", (ev)=>{
+        ev.preventDefault();
+        ev.stopPropagation();
+        const open = pop.style.display === "block";
+        if (open) closePop(true);
+        else openPop();
+      });
+
+      // presets
+      qsa(".ga-range-item").forEach(b=>{
+        b.addEventListener("click", (ev)=>{
+          ev.preventDefault();
+          ev.stopPropagation();
+
+          const key = b.getAttribute("data-range");
+          if (!key) return;
+
+          if (key === "custom"){
+            if (pending){
+              pending.key = "custom";
+              pending.label = "Personalizado";
+            }
+            setActivePresetKey("custom");
+            paintSelection();
+            return;
+          }
+
+          const p = presetByKey(key);
+          if (!p) return;
+
+          pending = { ...p };
+          setActivePresetKey(key);
+          paintSelection();
+        });
+      });
+
+      // click día en calendario
+      sc.addEventListener("click", (ev)=>{
+        const b = ev.target && ev.target.closest && ev.target.closest(".ga-day[data-ymd]");
+        if (!b) return;
+        const ymd = b.getAttribute("data-ymd");
+        if (!ymd) return;
+
+        if (!pending || !pending.startYMD || (pending.startYMD && pending.endYMD)){
+          pending = pending || { key:"custom", label:"Personalizado" };
+          pending.key = "custom";
+          pending.label = "Personalizado";
+          pending.startYMD = ymd;
+          pending.endYMD = "";
+          setActivePresetKey("custom");
+          paintSelection();
+          return;
+        }
+
+        // start existe y no hay end
+        pending.key = "custom";
+        pending.label = "Personalizado";
+        pending.endYMD = ymd;
+        setActivePresetKey("custom");
+        paintSelection();
+      });
+
+      // acciones
+      const cancelBtn = qs("#gaRangeCancel");
+      const applyBtn  = qs("#gaRangeApply");
+
+      if (cancelBtn){
+        cancelBtn.addEventListener("click", (ev)=>{
+          ev.preventDefault();
+          ev.stopPropagation();
+          closePop(true);
+        });
+      }
+
+      if (applyBtn){
+        applyBtn.addEventListener("click", (ev)=>{
+          ev.preventDefault();
+          ev.stopPropagation();
+          applyPending();
+        });
+      }
+
+      // init: Hoy
+      applied = presetByKey("today");
+      pending = { ...applied };
+      setActivePresetKey("today");
+      setHiddenRangeFromApplied();
+      syncTopButton();
+      paintSelection();
+    }
+
+    // ======== CHART ========
+    let chart = null;
+
+    function computeTotals(rows){
+      let puntos = 0, pesos = 0;
+      for (const r of rows){
+        puntos += Number(r?.PUNTOS || 0);
+        pesos  += Number(r?.PESOS  || 0);
+      }
+      return { puntos, pesos };
+    }
+
+    function computeSeries(rows){
+      const map = new Map();
+      for (const r of rows){
+        const ts = Number(r?.TS_MS || 0);
+        const k = ts ? dayFmt.format(new Date(ts)) : "";
+        if (!k) continue;
+        map.set(k, (map.get(k) || 0) + Number(r?.PUNTOS || 0));
+      }
+      const labels = Array.from(map.keys()).sort();
+      return labels.map(d => ({ date:d, puntos: map.get(d) || 0 }));
+    }
+
+    const dayFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit" });
+
+    function renderAll(rowsFiltered){
+      const totals = computeTotals(rowsFiltered);
+      const series = computeSeries(rowsFiltered);
+
+      const pTotal = qs("#smrTotal");
+      const pMeta  = qs("#smrMeta");
+      if (pTotal) pTotal.textContent = totals.puntos.toLocaleString("es-CL");
+      if (pMeta)  pMeta.textContent  = "";
+
+      const pesosEl = qs("#gaPesos");
+      const rowsEl  = qs("#gaRowsCount");
+      if (showPesos && pesosEl) pesosEl.textContent = `$ ${totals.pesos.toLocaleString("es-CL")}`;
+      if (rowsEl) rowsEl.textContent = "";
+
+      const canvas = qs("#smrChart");
+      if (canvas && window.Chart){
+        const ctx = canvas.getContext("2d");
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: series.map(x=>x.date),
+            datasets: [{
+              label: "Puntos por día",
+              data: series.map(x=>Number(x.puntos || 0)),
+              tension: 0,
+              pointRadius: 3,
+              borderColor: "#3674E8",
+              pointBorderColor: "#3674E8",
+              pointBackgroundColor: "#3674E8"
+            }]
+          },
+          options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{ display:false, onClick:null } },
+            scales:{ y:{ beginAtZero:true } }
+          }
+        });
+      }
+
+      const tbody = qs("#smrTbody");
+      if (tbody){
+        tbody.innerHTML = "";
+        for (const r of rowsFiltered){
+          const ts = Number(r?.TS_MS || 0);
+          const d = ts ? new Date(ts).toLocaleString("es-CL") : (r["FECHA COMPLETA"] || "");
+          const tr = document.createElement("tr");
+
+          const pesosCell = showPesos
+            ? `<td class="ga-right ga-col-pesos">$ ${Number(r.PESOS || 0).toLocaleString("es-CL")}</td>`
+            : ``;
+
+          const fullRec = String(r.RECORRIDO ?? "");
+          const cutRec = fullRec.length > 80 ? fullRec.slice(0,80) + "..." : fullRec;
+
+          tr.innerHTML = `
+            <td>${esc(d)}</td>
+            <td>${esc(String(r.IDPIPE ?? ""))}</td>
+            <td><span class="ga-rec" title="${esc(fullRec)}">${esc(cutRec)}</span></td>
+            <td>${esc(fmtTimeHHMM(r["TIEMPO TOTAL EN LLAMADA"]))}</td>
+            <td class="ga-right"><b>${Number(r.PUNTOS || 0).toLocaleString("es-CL")}</b></td>
+            ${pesosCell}
+          `;
+          tbody.appendChild(tr);
+        }
+      }
+    }
+
+    async function load(){
+      const idcFilter = getIDCFilter();
+      if (!idcFilter){
+        setLoading(false);
+        renderAll([]);
+        return;
+      }
+
+      const startInp = qs("#smrStart");
+      const endInp   = qs("#smrEnd");
+      const sYMD = startInp ? String(startInp.value||"").trim() : "";
+      const eYMD = endInp ? String(endInp.value||"").trim() : "";
+
+      const start_ts = tzMidnightTsFromYMD(sYMD);
+      const end_ts   = tzEndOfDayTsFromYMD(eYMD);
+
+      if (!isFinite(start_ts) || !isFinite(end_ts)){
+        setLoading(false);
+        renderAll([]);
+        return;
+      }
+
+      setLoading(true);
+
+      try{
+        const token = getToken();
+        const url = `${ENDPOINT_LOG_MENSUAL}?action=report&start_ts=${encodeURIComponent(start_ts)}&end_ts=${encodeURIComponent(end_ts)}&limit=1000&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+        const res = await authFetch(url, { cache:"no-store" });
+        const text = await res.text();
+
+        let json;
+        try{ json = JSON.parse(text); } catch(_){ throw new Error("Respuesta no es JSON válido"); }
+        if (!json.ok) throw new Error(json.error || "Error en report");
+
+        const allRows = Array.isArray(json.rows) ? json.rows : [];
+        const rowsFiltered = allRows.filter(r => sameIDC(r?.IDC, idcFilter));
+
+        renderAll(rowsFiltered);
+      }catch(_){
+        renderAll([]);
+      }finally{
+        setLoading(false);
+      }
+    }
+
+    // INIT
+    initRangeUI();
+    load();
+  }
+})();
+</script>
+
+
+</body>
+</html>

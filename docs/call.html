@@ -4,7 +4,286 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex,nofollow" />
-  <title></title>
+  <title>Portal</title>
+
+  <script>
+(function(){
+  /* ===================== [SM-AUTH GUARD + LOADER PAINT-SAFE] ===================== */
+  if (window.__smAuthGuardLoaded) return;
+  window.__smAuthGuardLoaded = true;
+
+  const LOGIN_URL = "https://www.simplemarcas.cl/portal";
+  const LOADER_ID = "__sm_auth_overlay__";
+
+  let redirecting = false;
+  let watchdog = null;
+
+  function clearWatchdog(){
+    if (watchdog){
+      clearTimeout(watchdog);
+      watchdog = null;
+    }
+  }
+
+  function ensureLoader(){
+    if (document.getElementById(LOADER_ID)) return;
+
+    const ov = document.createElement("div");
+    ov.id = LOADER_ID;
+    ov.style.cssText =
+      "position:fixed;inset:0;z-index:2147483647;background:#fff;" +
+      "display:flex;align-items:center;justify-content:center;";
+
+    const ring = document.createElement("div");
+    ring.style.cssText =
+      "width:44px;height:44px;border-radius:999px;" +
+      "border:4px solid rgba(0,105,236,.20);" +
+      "border-top-color:#0069EC;";
+
+    ov.appendChild(ring);
+    document.documentElement.appendChild(ov);
+
+    try{
+      ring.animate(
+        [{ transform:"rotate(0deg)" }, { transform:"rotate(360deg)" }],
+        { duration: 900, iterations: Infinity }
+      );
+    }catch(_){}
+  }
+
+  function showLoader(){
+    ensureLoader();
+    const ov = document.getElementById(LOADER_ID);
+    if (ov) ov.style.display = "flex";
+  }
+
+  function hideLoader(){
+    const ov = document.getElementById(LOADER_ID);
+    if (ov) ov.style.display = "none";
+  }
+
+  function nextPaint(){
+    return new Promise((resolve)=>{
+      requestAnimationFrame(()=> requestAnimationFrame(resolve));
+    });
+  }
+
+  function lockStartBtn(on){
+    const btn = document.getElementById("sm-btn-comenzar");
+    if(!btn) return;
+    btn.disabled = !!on;
+    btn.setAttribute("aria-disabled", on ? "true" : "false");
+    btn.style.opacity = on ? ".7" : "";
+    btn.style.pointerEvents = on ? "none" : "";
+  }
+
+  function redirectToLogin(reason){
+    if (redirecting) return;
+    redirecting = true;
+    clearWatchdog();
+    showLoader();
+
+    const next = encodeURIComponent(location.href);
+    const url = LOGIN_URL + (LOGIN_URL.includes("?") ? "&" : "?") +
+      "next=" + next + "&r=" + encodeURIComponent(reason || "");
+
+    nextPaint().then(()=> {
+      try{ location.replace(url); } catch(_){ location.href = url; }
+    });
+  }
+
+  function b64urlToText(b64url){
+    var s = String(b64url || "").replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    try { return decodeURIComponent(escape(atob(s))); } catch(e) { return ""; }
+  }
+
+  function parseTokenPayload(t){
+    var parts = String(t || "").split(".");
+    if (!parts[0]) return null;
+    var txt = b64urlToText(parts[0]);
+    if (!txt) return null;
+    try { return JSON.parse(txt); } catch(e) { return null; }
+  }
+
+  function norm(s){ return String(s || "").trim(); }
+
+  // Mostrar loader al tiro (antes de validar)
+  showLoader();
+  try{ lockStartBtn(true); }catch(_){}
+
+  // Watchdog SOLO mientras validamos
+  watchdog = setTimeout(function(){
+    if (!redirecting){
+      redirectToLogin("timeout");
+    }
+  }, 12000);
+
+  try{
+    var qp = new URLSearchParams(location.search);
+
+    var t = norm(qp.get("t"));
+    var idcQ = norm(qp.get("idc"));
+    var codepQ = norm(qp.get("codep"));
+    var nameQ = norm(qp.get("name"));
+
+    var hasIDCOrCodep = !!(idcQ || codepQ);
+    var hasT = !!t;
+
+    // Regla: si viene idc/codep pero NO viene t -> login
+    if (hasIDCOrCodep && !hasT){
+      redirectToLogin("missing_t");
+      return;
+    }
+
+    // Si no viene nada -> login
+    if (!hasT && !hasIDCOrCodep){
+      redirectToLogin("missing_all");
+      return;
+    }
+
+    // Con t: parse payload
+    var payload = hasT ? parseTokenPayload(t) : null;
+    if (!payload){
+      redirectToLogin("bad_t");
+      return;
+    }
+
+    var idcT = norm(payload.idc);
+    var codepT = norm(payload.codep);
+
+    // ✅ nombre (solo nombre) desde token: soporta "nombre" o "name"
+    var nameT = norm(payload.nombre || payload.name || "");
+
+    // idc obligatorio en token
+    if (!idcT){
+      redirectToLogin("missing_idc_in_t");
+      return;
+    }
+
+    // Expiración (si viene)
+    var exp = Number(payload.exp || 0);
+    if (exp && Date.now() > exp * 1000){
+      redirectToLogin("t_expired");
+      return;
+    }
+
+    // Si URL trae idc/codep deben calzar con token
+    if (idcQ && idcQ !== idcT){
+      redirectToLogin("idc_mismatch");
+      return;
+    }
+
+    if (codepQ){
+      if (!codepT) { redirectToLogin("codep_missing_in_t"); return; }
+      if (codepQ !== codepT) { redirectToLogin("codep_mismatch"); return; }
+    }
+
+    // Inyectar idc/codep/name desde t si faltan (NO borrar t)
+    var url = new URL(location.href);
+
+    if (!idcQ) url.searchParams.set("idc", idcT);
+    if (!codepQ && codepT) url.searchParams.set("codep", codepT);
+
+    // ✅ name: si existe en token, lo seteamos (si no venía, lo inyecta; si venía, lo normaliza a token)
+    if (nameT){
+      url.searchParams.set("name", nameT);
+    } else if (nameQ) {
+      // si no hay name en token, dejamos el de la URL (si existía)
+      url.searchParams.set("name", nameQ);
+    }
+
+    history.replaceState({}, "", url.toString());
+
+    window.__smAuth = {
+      ok: true,
+      idc: norm(url.searchParams.get("idc")),
+      codep: norm(url.searchParams.get("codep")),
+      name: norm(url.searchParams.get("name")),
+      raw: payload
+    };
+
+    // Validación OK => cancelar watchdog y ocultar loader
+    clearWatchdog();
+
+    nextPaint().then(()=> {
+      if (!redirecting) hideLoader();
+    });
+
+  }catch(err){
+    redirectToLogin("fatal");
+    return;
+  }finally{
+    try{ lockStartBtn(false); }catch(_){}
+    if (!redirecting){
+      setTimeout(()=>{ try{ hideLoader(); }catch(_){} }, 1500);
+    }
+  }
+})();
+</script>
+
+
+<!-- OpenReplay Tracking Code -->
+<script>
+  // ===== 1) Obtener idc desde la URL =====
+  function smGetIDCFromURL() {
+    var search = window.location.search || "";
+    if (!search) return "";
+    try {
+      // Navegadores modernos
+      var params = new URLSearchParams(search);
+      return params.get("idc") || "";
+    } catch (e) {
+      // Fallback simple por si acaso
+      var m = search.match(/[?&]idc=([^&]+)/i);
+      return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+    }
+  }
+
+  // Guardamos el idc para usarlo como userID
+  var smIDC = smGetIDCFromURL();
+  window.__smIDC = smIDC; // por si lo quieres usar en otras partes de tu app
+
+  // ===== 2) Configuración OpenReplay =====
+  var initOpts = {
+    projectKey: "QonwVB9oKHTLvpz3EkMc",
+    // 0 - plain, 1 - obscured, 2 - ignored
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: false
+  };
+
+  // Aquí conectamos el idc al userID
+  var startOpts = { userID: smIDC || "" };
+
+  (function(A,s,a,y,e,r){
+    r = window.OpenReplay = [e, r, y, [s - 1, e]];
+    s = document.createElement('script');
+    s.src = A;
+    s.async = !a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+
+    r.start = function(v){ r.push([0]); };
+    r.stop = function(v){ r.push([1]); };
+    r.setUserID = function(id){ r.push([2, id]); };
+    r.setUserAnonymousID = function(id){ r.push([3, id]); };
+    r.setMetadata = function(k, v){ r.push([4, k, v]); };
+    r.event = function(k, p, i){ r.push([5, k, p, i]); };
+    r.issue = function(k, p){ r.push([6, k, p]); };
+    r.isActive = function(){ return false; };
+    r.getSessionToken = function(){};
+  })("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+
+  // (Opcional) Si quieres forzar el setUserID explícito cuando exista idc:
+  (function(){
+    if (!smIDC) return;
+    try {
+      if (window.OpenReplay && typeof OpenReplay.setUserID === "function") {
+        OpenReplay.setUserID(smIDC);
+      }
+    } catch (e) {}
+  })();
+</script>
 </head>
 <body>
 
@@ -893,7 +1172,7 @@
   // - Este es el backend principal que recibe los datos del front (call.html).
   // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/call/code.gs
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyq3_b9KcKfT99KWdLHiRHbCHVSznzXSvoGGvOSOQOAT7MIpZOmWXQdQPvPpInrEY8y/exec";
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbxKnQvbe-lquJxVPknGEbi7mOGAsZJzwEPyfr4TcM2SSYZNH1rJHqahhUIZmlE6TMHo/exec";
   const ZOOM_ORIGIN = "https://applications.zoom.us";
   
   // ENDPOINT_LOG_MENSUAL (logs):
@@ -901,7 +1180,7 @@
   // - Separado del ENDPOINT principal para aislar carga y mantener el backend principal más limpio.
   // - Nota: esta URL también apunta al despliegue en Google, no a tu carpeta local.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/log-mensual/code.gs
-  const ENDPOINT_LOG_MENSUAL = "https://script.google.com/macros/s/AKfycbzYjrCG36UnjyoZfgw_NOVAhgYn2kNQmKSQLigFMO9drgoPCVLgRyITN8OUyJDSrs4d/exec";
+  const ENDPOINT_LOG_MENSUAL = "https://script.google.com/macros/s/AKfycbxrmsylT0j-lHvkAf_g_HQQ2NrbN7LFjWsInGTB-MAHI9GIWr_tcSJ-ppZ2bFwUeRHh/exec";
 
   // ZAPIER WEBHOOKS
   const ZAPIER_ANALISIS = "https://hooks.zapier.com/hooks/catch/6030955/ukh9o60/";
@@ -911,6 +1190,28 @@
 
   const qs = s => document.querySelector(s);
   const qsa = s => Array.from(document.querySelectorAll(s));
+  function getToken(){
+    const k = "sm_token";
+    const params = new URLSearchParams(location.search);
+    const urlT = (params.get("t") || "").trim();
+    if (urlT){
+      try{ sessionStorage.setItem(k, urlT); }catch(_){}
+      return urlT;
+    }
+    try{
+      const st = sessionStorage.getItem(k);
+      if (st) return st.trim();
+    }catch(_){}
+    return "";
+  }
+  function authFetch(url, opts){
+    const token = getToken();
+    const o = opts ? { ...opts } : {};
+    const headers = new Headers(o.headers || {});
+    if (token) headers.set("Authorization", "Bearer " + token);
+    o.headers = headers;
+    return fetch(url, o);
+  }
 
   /* ===================== [F2] UI HELPERS ===================== */
   function toast(msg, ms=1600){
@@ -1280,10 +1581,11 @@ function presenceSend_(action, rid, prevRid){
       action: String(action || ""),
       sid: String(sid || ""),
       rid: String(rid || ""),
-      prevRid: prevRid ? String(prevRid) : ""
+      prevRid: prevRid ? String(prevRid) : "",
+      token: getToken() || ""
     };
 
-    fetch(ENDPOINT, {
+    authFetch(ENDPOINT, {
       method: "POST",
       mode: "no-cors",
       keepalive: true,
@@ -1382,8 +1684,9 @@ window.addEventListener("pagehide", ()=>{
   /* ===================== [F4] API ===================== */
   async function apiNext(idc, skipRids){
     const skip = Array.isArray(skipRids) ? skipRids.filter(Boolean).join(",") : "";
-    const url = `${ENDPOINT}?mode=next&idc=${encodeURIComponent(idc)}&debug=1${skip ? `&skip=${encodeURIComponent(skip)}` : ""}&_=${Date.now()}`;
-    const res = await fetch(url, { cache: "no-store" });
+    const token = getToken();
+    const url = `${ENDPOINT}?mode=next&idc=${encodeURIComponent(idc)}&debug=1${skip ? `&skip=${encodeURIComponent(skip)}` : ""}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const res = await authFetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`next ${res.status}`);
     return res.json();
   }
@@ -1395,9 +1698,10 @@ window.addEventListener("pagehide", ()=>{
     obs: obs || "",
     calls_text: calls_text || "",
     survey: survey || "",
-    recorrido: recorrido || ""   
+    recorrido: recorrido || "",
+    token: getToken() || ""
   });
-  const res = await fetch(ENDPOINT, { method:"POST", body });
+  const res = await authFetch(ENDPOINT, { method:"POST", body });
   if (!res.ok) throw new Error(`finalize ${res.status}`);
   return res.json();
 }
@@ -1411,11 +1715,12 @@ window.addEventListener("pagehide", ()=>{
     recorrido: recorrido || "",
     tiempo_total: tiempo_total || "",
     tiempo_total_sec: String(tiempo_total_sec ?? ""),
-    final_code: final_code || ""
+    final_code: final_code || "",
+    token: getToken() || ""
   });
 
   //  no preflight + no CORS issues (envío “fire and forget”)
-  await fetch(ENDPOINT_LOG_MENSUAL, {
+  await authFetch(ENDPOINT_LOG_MENSUAL, {
     method: "POST",
     mode: "no-cors",
     keepalive: true,
@@ -1432,46 +1737,52 @@ window.addEventListener("pagehide", ()=>{
     const body = new URLSearchParams({
       mode: "omit",
       rid: String(rid || ""),
-      motivo: motivo || ""
+      motivo: motivo || "",
+      token: getToken() || ""
     });
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await authFetch(ENDPOINT, { method:"POST", body });
     if (!res.ok) throw new Error(`omit ${res.status}`);
     return res.json();
   }
 
   async function apiDealByRid(rid){
-    const url = `${ENDPOINT}?mode=deal&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}`;
-    const res = await fetch(url, { cache:"no-store" });
+    const token = getToken();
+    const url = `${ENDPOINT}?mode=deal&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`deal ${res.status}`);
     return res.json();
   }
 
   async function apiSearch(q){
-    const url = `${ENDPOINT}?mode=search&q=${encodeURIComponent(String(q||""))}&_=${Date.now()}`;
-    const res = await fetch(url, { cache:"no-store" });
+    const token = getToken();
+    const url = `${ENDPOINT}?mode=search&q=${encodeURIComponent(String(q||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`search ${res.status}`);
     return res.json();
   }
 
   // ✅ ultra liviano: solo CH
   async function apiPayState(rid){
-    const url = `${ENDPOINT}?mode=paystate&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}`;
-    const res = await fetch(url, { cache:"no-store" });
+    const token = getToken();
+    const url = `${ENDPOINT}?mode=paystate&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`paystate ${res.status}`);
     return res.json();
   }
 
   async function apiPayStateVig(rid){
-    const url = `${ENDPOINT}?mode=paystate_vig&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}`;
-    const res = await fetch(url, { cache:"no-store" });
+    const token = getToken();
+    const url = `${ENDPOINT}?mode=paystate_vig&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`paystate_vig ${res.status}`);
     return res.json();
   }
 
   // ✅ ultra liviano: solo BP
   async function apiLog(rid){
-    const url = `${ENDPOINT}?mode=log&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}`;
-    const res = await fetch(url, { cache:"no-store" });
+    const token = getToken();
+    const url = `${ENDPOINT}?mode=log&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`log ${res.status}`);
     return res.json();
   }
@@ -2886,6 +3197,7 @@ if (url){
     const PAYOUT_SUFFIX = {
       "A.1.2": "+$390",
       "A.2.1": "+$390",
+      "A.2.6": "+$390",
       "A.2.3": "+$390",
       "A.2.4": "+$520",
       "A.2.2.3": "+$390",
@@ -2955,6 +3267,7 @@ if (url){
           text:"¿Qué pasó al inicio de la llamada?",
           options:[
             { id:"A.2.1", label:"Número equivocado", next:null, requires_text:false },
+            { id:"A.2.6", label:"No corresponde a ventas", next:null, requires_text:false },
             { id:"A.2.3", label:"Quiere el servicio, pero no quiere agendar (cliente dice se comunicará en el futuro)", next:null, requires_text:false },
             { id:"A.2.4", label:"Agendado (no podía hablar ahora)", next:null, requires_text:false },
             { id:"A.2.2", label:"Ya no quiere el Registro", next:"A|Q2_2", requires_text:false },

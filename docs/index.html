@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title></title>
+</head>
+<body>
+<div id="sm-login" style="max-width:420px;margin:0 auto;padding:18px;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+  <div style="background:#fff;border:1px solid rgba(0,0,0,.10);border-radius:16px;box-shadow:0 8px 22px rgba(0,0,0,.06);padding:18px;">
+    <div style="font-weight:800;font-size:18px;color:#111827;margin-bottom:12px;">Ingreso</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <label style="font-size:13px;color:#374151;font-weight:600;">Correo</label>
+      <input id="sm-email" type="email" autocomplete="username"
+        style="padding:12px 12px;border:1px solid rgba(0,0,0,.14);border-radius:12px;font-size:14px;outline:none;">
+      <label style="font-size:13px;color:#374151;font-weight:600;margin-top:6px;">Contraseña</label>
+      <input id="sm-pass" type="password" autocomplete="current-password"
+        style="padding:12px 12px;border:1px solid rgba(0,0,0,.14);border-radius:12px;font-size:14px;outline:none;">
+      <button id="sm-login-btn" type="button"
+        style="margin-top:10px;padding:12px 12px;border:0;border-radius:12px;background:#0069ec;color:#fff;font-weight:700;cursor:pointer;">
+        Entrar
+      </button>
+      <div id="sm-login-msg" style="display:none;margin-top:8px;font-size:13px;color:#B91C1C;"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  var AUTH_ENDPOINT = "https://script.google.com/macros/s/AKfycbyc2gMqY9zHPygk0HeHD7GchmzR1R2r680JIG-95B6DE1WKbzvbtyL6XGWFcWjQfu2oeg/exec";
+
+  function qs(id){ return document.getElementById(id); }
+
+  /* ===== Loader (mismo estilo: círculo azul Simple Marcas) ===== */
+  var LOADER_ID = "__sm_login_overlay__";
+
+  function ensureLoader(){
+    if (document.getElementById(LOADER_ID)) return;
+
+    var ov = document.createElement("div");
+    ov.id = LOADER_ID;
+    ov.style.cssText =
+      "position:fixed;inset:0;z-index:2147483647;background:#fff;" +
+      "display:none;align-items:center;justify-content:center;";
+
+    var ring = document.createElement("div");
+    ring.style.cssText =
+      "width:44px;height:44px;border-radius:999px;" +
+      "border:4px solid rgba(0,105,236,.20);" +
+      "border-top-color:#0069EC;";
+
+    ov.appendChild(ring);
+    document.documentElement.appendChild(ov);
+
+    try{
+      ring.animate(
+        [{ transform:"rotate(0deg)" }, { transform:"rotate(360deg)" }],
+        { duration: 900, iterations: Infinity }
+      );
+    }catch(_){}
+  }
+
+  function showLoader(){
+    ensureLoader();
+    var ov = document.getElementById(LOADER_ID);
+    if (ov) ov.style.display = "flex";
+  }
+
+  function hideLoader(){
+    var ov = document.getElementById(LOADER_ID);
+    if (ov) ov.style.display = "none";
+  }
+
+  function lockLoginBtn(on){
+    var btn = qs("sm-login-btn");
+    if(!btn) return;
+    btn.disabled = !!on;
+    btn.setAttribute("aria-disabled", on ? "true" : "false");
+    btn.style.opacity = on ? ".75" : "";
+    btn.style.pointerEvents = on ? "none" : "";
+  }
+
+  function showMsg(t){
+    var el = qs("sm-login-msg");
+    if(!el) return;
+    el.style.display = "block";
+    el.textContent = t;
+  }
+
+  function hideMsg(){
+    var el = qs("sm-login-msg");
+    if(!el) return;
+    el.style.display = "none";
+    el.textContent = "";
+  }
+
+  function parseCallbackText(text){
+    // Espera: callback({...});
+    var i = text.indexOf("{");
+    var j = text.lastIndexOf("}");
+    if (i === -1 || j === -1 || j <= i) return null;
+    try { return JSON.parse(text.slice(i, j+1)); } catch(e){ return null; }
+  }
+
+  async function fetchLogin(email, pass){
+    hideMsg();
+    showLoader();
+    lockLoginBtn(true);
+
+    var url =
+      AUTH_ENDPOINT +
+      (AUTH_ENDPOINT.indexOf("?") === -1 ? "?" : "&") +
+      "op=login" +
+      "&email=" + encodeURIComponent(email) +
+      "&pass=" + encodeURIComponent(pass) +
+      "&z=" + Date.now();
+
+    try{
+      var res = await fetch(url, { cache:"no-store", redirect:"follow" });
+      var text = await res.text();
+
+      var obj = parseCallbackText(text);
+      if (!obj){
+        hideLoader();
+        lockLoginBtn(false);
+        showMsg("Respuesta inválida del login.");
+        return;
+      }
+
+      if (obj.ok !== true){
+        hideLoader();
+        lockLoginBtn(false);
+        showMsg(obj.message || "Error de login.");
+        return;
+      }
+
+      // OK => dejamos loader puesto y navegamos
+      window.location.href = obj.target;
+
+    }catch(err){
+      hideLoader();
+      lockLoginBtn(false);
+      showMsg("No se pudo conectar al login.");
+    }
+  }
+
+  function onLogin(){
+    var email = (qs("sm-email").value || "").trim().toLowerCase();
+    var pass  = (qs("sm-pass").value || "");
+
+    if (!AUTH_ENDPOINT || AUTH_ENDPOINT.indexOf("script.google.com") === -1){
+      showMsg("Falta configurar AUTH_ENDPOINT (URL /exec).");
+      return;
+    }
+    if (!email) { showMsg("Ingresa tu correo."); return; }
+    if (!pass)  { showMsg("Ingresa tu contraseña."); return; }
+
+    fetchLogin(email, pass);
+  }
+
+  function bind(){
+    var btn = qs("sm-login-btn");
+    var pass = qs("sm-pass");
+    if (!btn || !pass) return false;
+
+    btn.addEventListener("click", onLogin);
+    pass.addEventListener("keydown", function(e){
+      if (e.key === "Enter") onLogin();
+    });
+    return true;
+  }
+
+  function init(){
+    ensureLoader();
+
+    if (bind()) return;
+    var tries = 0;
+    var t = setInterval(function(){
+      tries++;
+      if (bind() || tries > 40) clearInterval(t);
+    }, 100);
+  }
+
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>

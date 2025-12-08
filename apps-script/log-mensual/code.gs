@@ -16,6 +16,7 @@ const SCORE = {
   "A.1.1":[0,0],
   "A.1.2":[3,390],
   "A.2.1":[3,390],
+  "A.2.6":[3,390],
   "A.2.3":[3,390],
   "A.2.4":[4,520],
   "A.2.2.3":[3,390],
@@ -60,12 +61,61 @@ const SCORE = {
   "C.2.5.2":[11,1430]
 };
 
+function getSecret_(){
+  const s = PropertiesService.getScriptProperties().getProperty("TOKEN_SECRET");
+  if (!s) throw new Error("missing_token_secret");
+  return s;
+}
+function b64webEncode_(bytesOrString){
+  const bytes = (typeof bytesOrString === "string")
+    ? Utilities.newBlob(bytesOrString).getBytes()
+    : bytesOrString;
+  return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/,'');
+}
+function b64webDecodeToString_(b64){
+  const bytes = Utilities.base64DecodeWebSafe(b64);
+  return Utilities.newBlob(bytes).getDataAsString();
+}
+function verifyToken_(token){
+  if (!token || token.indexOf(".") === -1) return { ok:false, err:"TOKEN_INVALID" };
+  const parts = token.split(".");
+  if (parts.length !== 2) return { ok:false, err:"TOKEN_INVALID" };
+  const payload = parts[0];
+  const sig = parts[1];
+  if (!payload || !sig) return { ok:false, err:"TOKEN_INVALID" };
+  const mac = Utilities.computeHmacSha256Signature(payload, getSecret_());
+  const expected = b64webEncode_(mac);
+  if (sig !== expected) return { ok:false, err:"TOKEN_INVALID" };
+  let obj;
+  try { obj = JSON.parse(b64webDecodeToString_(payload)); } catch(e){ return { ok:false, err:"TOKEN_INVALID" }; }
+  const now = Math.floor(Date.now()/1000);
+  if (!obj || !obj.exp || now > Number(obj.exp)) return { ok:false, err:"TOKEN_EXPIRED" };
+  return { ok:true, data: obj };
+}
+function rateLimitOk_(key, limit, windowSec){
+  try{
+    const cache = CacheService.getScriptCache();
+    const k = `rl:${key}`;
+    const cur = Number(cache.get(k) || "0") || 0;
+    if (cur >= limit) return false;
+    cache.put(k, String(cur + 1), windowSec);
+    return true;
+  }catch(_){
+    return true;
+  }
+}
+
 /*************** [S2] ENTRY ***************/
 function doPost(e){
   try{
     const p = normalizePost_(e);
+    const tokenRaw = String(p.token || p.t || "").trim();
+    const vTok = verifyToken_(tokenRaw);
+    if (!vTok.ok) return json_({ ok:false, error:vTok.err });
+    const tokIDC = String(vTok.data?.idc || "").trim();
+    if (!rateLimitOk_(tokIDC || "anon", 120, 300)) return json_({ ok:false, error:"rate_limited" });
 
-    const idc           = String(p.idc || "").trim();
+    const idc           = tokIDC || String(p.idc || "").trim();
     const idpipe        = String(p.idpipe || "").trim();
     const fechaCompleta = String(p.fecha_completa || "").trim();
     const recorrido     = String(p.recorrido || "").trim();
@@ -144,6 +194,11 @@ function doGet(e){
     const p = (e && e.parameter) ? e.parameter : {};
     const action = String(p.action || "").trim();
     const cb = String(p.callback || "").trim(); // <-- JSONP
+    const tokenRaw = String(p.token || p.t || "").trim();
+    const vTok = verifyToken_(tokenRaw);
+    if (!vTok.ok) return out_({ ok:false, error:vTok.err }, cb);
+    const tokIDC = String(vTok.data?.idc || "").trim();
+    if (!rateLimitOk_(tokIDC || "anon", 60, 300)) return out_({ ok:false, error:"rate_limited" }, cb);
 
     if (action !== "report"){
       return out_({ ok:true, hint:'Use ?action=report&start_ts=...&end_ts=...'}, cb);
@@ -152,7 +207,8 @@ function doGet(e){
     const startTs = Number(p.start_ts || 0) || 0;
     const endTs   = Number(p.end_ts || 0) || Date.now();
 
-    const idcFilter = String(p.idc || "").trim(); // opcional
+    const idcFilterParam = String(p.idc || "").trim(); // opcional
+    const idcFilter = tokIDC || idcFilterParam;
     const limit = Math.min(Math.max(Number(p.limit || 500) || 500, 1), 5000);
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();

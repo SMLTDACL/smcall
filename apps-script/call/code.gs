@@ -36,6 +36,50 @@ const COL = {
 };
 const LAST_COL_TO_READ = 91;
 
+function getSecret_(){
+  const s = PropertiesService.getScriptProperties().getProperty("TOKEN_SECRET");
+  if (!s) throw new Error("missing_token_secret");
+  return s;
+}
+function b64webEncode_(bytesOrString){
+  const bytes = (typeof bytesOrString === "string")
+    ? Utilities.newBlob(bytesOrString).getBytes()
+    : bytesOrString;
+  return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/,'');
+}
+function b64webDecodeToString_(b64){
+  const bytes = Utilities.base64DecodeWebSafe(b64);
+  return Utilities.newBlob(bytes).getDataAsString();
+}
+function verifyToken_(token){
+  if (!token || token.indexOf(".") === -1) return { ok:false, err:"TOKEN_INVALID" };
+  const parts = token.split(".");
+  if (parts.length !== 2) return { ok:false, err:"TOKEN_INVALID" };
+  const payload = parts[0];
+  const sig = parts[1];
+  if (!payload || !sig) return { ok:false, err:"TOKEN_INVALID" };
+  const mac = Utilities.computeHmacSha256Signature(payload, getSecret_());
+  const expected = b64webEncode_(mac);
+  if (sig !== expected) return { ok:false, err:"TOKEN_INVALID" };
+  let obj;
+  try { obj = JSON.parse(b64webDecodeToString_(payload)); } catch(e){ return { ok:false, err:"TOKEN_INVALID" }; }
+  const now = Math.floor(Date.now()/1000);
+  if (!obj || !obj.exp || now > Number(obj.exp)) return { ok:false, err:"TOKEN_EXPIRED" };
+  return { ok:true, data: obj };
+}
+function rateLimitOk_(key, limit, windowSec){
+  try{
+    const cache = CacheService.getScriptCache();
+    const k = `rl:${key}`;
+    const cur = Number(cache.get(k) || "0") || 0;
+    if (cur >= limit) return false;
+    cache.put(k, String(cur + 1), windowSec);
+    return true;
+  }catch(_){
+    return true;
+  }
+}
+
 /*************** [G1.X] CACHE IDX POR IDC ***************/
 // Activa/Desactiva cache
 const IDX_CACHE_ENABLED = true;
@@ -727,6 +771,12 @@ function doGet(e){
     const mode = String(p.mode || "").toLowerCase();
     const idc  = String(p.idc || "").trim();
     const debugOn = String(p.debug || "") === "1";
+    const tokenRaw = String(p.token || p.t || "").trim();
+    const vTok = verifyToken_(tokenRaw);
+    if (!vTok.ok) return json_({ ok:false, error:vTok.err }, p.callback || "");
+    const tokIDC = String(vTok.data?.idc || "").trim();
+    if (idc && tokIDC && idc !== tokIDC) return json_({ ok:false, error:"forbidden_idc" }, p.callback || "");
+    if (!rateLimitOk_(tokIDC || "anon", 60, 300)) return json_({ ok:false, error:"rate_limited" }, p.callback || "");
 
     // ✅ JSONP callback (para debug sin CORS)
     const cb = String(p.callback || "").trim();
@@ -853,6 +903,9 @@ function estadoFromSurvey_(code, rid){
     case "C.2.1":
       return "ERROR NÚMERO";
 
+    case "A.2.6":
+      return "NO CORRESPONDE";
+
     // ===== PERDIDOS REGISTRO =====
     case "A.2.3":
     case "B.2.3":
@@ -860,8 +913,6 @@ function estadoFromSurvey_(code, rid){
 
     // ===== AGENDADO (NO PODÍA HABLAR) =====
     case "A.2.4":
-    case "B.2.4":
-    case "C.2.4":
       return fAGENDADO;
 
     // ===== MOTIVO / ANALISIS / PRESUPUESTO =====
@@ -888,6 +939,7 @@ function estadoFromSurvey_(code, rid){
     // ===== POST-PAGO REGISTRO (AGENDAR / TRANSFER) =====
     case "A.3.2.2":
     case "A.3.1.2":
+    case "B.2.4":
     case "B.2.5.2":
       return fREGISTRO;
 
@@ -908,6 +960,7 @@ function estadoFromSurvey_(code, rid){
     case "A.5.1.2": // (transfer, se agenda)
     case "B.4.2.2":
     case "B.4.1.2":
+    case "C.2.4":
     case "C.2.5.2":
       return fVIGILANCIA;
 
@@ -934,6 +987,11 @@ function doPost(e){
   try{
     const p = normalizePost_(e);
     const mode = String(p.mode || "").toLowerCase();
+    const tokenRaw = String(p.token || p.t || "").trim();
+    const vTok = verifyToken_(tokenRaw);
+    if (!vTok.ok) return json_({ ok:false, error:vTok.err });
+    const tokIDC = String(vTok.data?.idc || "").trim();
+    if (!rateLimitOk_(tokIDC || "anon", 100, 300)) return json_({ ok:false, error:"rate_limited" });
 
         // ✅ PRESENCE por POST (no-cors friendly)
     if (mode === "presence"){
@@ -1146,5 +1204,3 @@ function registrarTiempo(e) {
     }
   }
 }
-
-
