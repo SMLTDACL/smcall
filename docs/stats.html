@@ -403,12 +403,7 @@
     return "";
   }
   function authFetch(url, opts){
-    const token = getToken();
-    const o = opts ? { ...opts } : {};
-    const headers = new Headers(o.headers || {});
-    if (token) headers.set("Authorization", "Bearer " + token);
-    o.headers = headers;
-    return fetch(url, o);
+    return fetch(url, opts);
   }
 
   function whenReady(fn){
