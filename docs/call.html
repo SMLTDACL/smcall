@@ -4,6 +4,29 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="./files/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    :root{
+      font-family:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      text-rendering:optimizeLegibility;
+      --sm-topbar-h: 68px;
+    }
+    html, body{
+      font-family:inherit;
+      line-height:1.45;
+      color:#111827;
+      background:#F5F5F7;
+    }
+    button, input, textarea, select{
+      font-family:inherit;
+      line-height:1.2;
+    }
+  </style>
   <title>Portal</title>
 
   <script>
@@ -289,6 +312,47 @@
 
     <!-- ===================== [B1] APP ROOT ===================== -->
 <div id="sm-vendedores-app">
+  <!-- ===================== [B1.1] TOP BAR (visible siempre) ===================== -->
+  <div class="sm-topbar sm-sheet-head">
+    <div class="sm-sheet-left">
+      <div class="sm-sheet-brand" aria-hidden="true">
+        <img
+          src="https://www.simplemarcas.cl/hosted/images/48/b158d3fdac4a15bd946b594573c45e/logon.png"
+          alt="Simple Marcas"
+        />
+      </div>
+      <!-- Acciones junto al logo -->
+      <div class="sm-sheet-actions sm-sheet-actions-left">
+        <button id="sm-btn-stats" class="sm-icon-btn" type="button" aria-label="Abrir estadísticas">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round"
+      class="lucide lucide-chart-column-increasing-icon lucide-chart-column-increasing">
+      <path d="M13 17V9"/><path d="M18 17V5"/><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>
+    </svg>
+  </button>
+        <button id="sm-btn-calendar" class="sm-icon-btn" type="button" aria-label="Abrir calendario">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="lucide lucide-calendar-icon lucide-calendar">
+            <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <!-- Lupa a la derecha -->
+    <div class="sm-sheet-actions sm-sheet-actions-right">
+      <button id="sm-btn-search" class="sm-icon-btn" type="button" aria-label="Buscar trato">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-search-icon lucide-search">
+          <path d="m21 21-4.34-4.34"/>
+          <circle cx="11" cy="11" r="8"/>
+        </svg>
+      </button>
+    </div>
+  </div>
   <!-- ===================== [B2] BOTON COMENZAR ===================== -->
 <div class="sm-start-wrap">
   <div id="sm-start-title" class="sm-start-title"></div>
@@ -297,42 +361,6 @@
   <!-- ===================== [B3] OVERLAY + POPUP FULLSCREEN ===================== -->
   <div id="sm-overlay" class="sm-overlay" style="display:none;">
     <div id="sm-sheet" class="sm-sheet" role="dialog" aria-modal="true">
-      <!-- Header -->
-      <div class="sm-sheet-head">
-        <div class="sm-sheet-brand" aria-hidden="true">
-          <img
-            src="https://www.simplemarcas.cl/hosted/images/48/b158d3fdac4a15bd946b594573c45e/logon.png"
-            alt="Simple Marcas"
-          />
-        </div>
-        <!-- Acciones header (reemplaza nombre/idpipe) -->
-        <div class="sm-sheet-actions">
-          <button id="sm-btn-stats" class="sm-icon-btn" type="button" aria-label="Abrir estadísticas">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-      stroke-linecap="round" stroke-linejoin="round"
-      class="lucide lucide-chart-column-increasing-icon lucide-chart-column-increasing">
-      <path d="M13 17V9"/><path d="M18 17V5"/><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>
-    </svg>
-  </button>
-          <button id="sm-btn-calendar" class="sm-icon-btn" type="button" aria-label="Abrir calendario">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
-              class="lucide lucide-calendar-icon lucide-calendar">
-             <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
-            </svg>
-          </button>
-          <button id="sm-btn-search" class="sm-icon-btn" type="button" aria-label="Buscar trato">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round"
-              class="lucide lucide-search-icon lucide-search">
-              <path d="m21 21-4.34-4.34"/>
-              <circle cx="11" cy="11" r="8"/>
-            </svg>
-          </button>
-        </div>
-      </div>
       <!-- Body -->
       <div id="sm-body" class="sm-sheet-body">
         <!-- ===== [B3.1] VIEW: DETALLE TRATO ===== -->
@@ -343,12 +371,11 @@
               <!-- Tracking (solo algunos estados) -->
               <div id="sm-tracking" class="sm-tracking" style="display:none;"></div>
               <div class="sm-row"><div class="sm-k">Estado</div><div id="sm-ESTADO" class="sm-v">—</div></div>
-              <div class="sm-row"><div class="sm-k">Nombre</div><div id="sm-NOMBRE" class="sm-v">—</div></div>
               <div class="sm-row">
-                <div class="sm-k">IDPIPE</div>
+                <div class="sm-k">ID</div>
                 <div class="sm-v sm-v-copy">
                   <span id="sm-IDPIPE">—</span>
-                  <button class="sm-copy-mini" type="button" aria-label="Copiar IDPIPE" data-copy="#sm-IDPIPE">
+                  <button class="sm-copy-mini" type="button" aria-label="Copiar ID" data-copy="#sm-IDPIPE">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                       stroke-linecap="round" stroke-linejoin="round"
@@ -359,6 +386,7 @@
                   </button>
                 </div>
               </div>
+              <div class="sm-row"><div class="sm-k">Nombre</div><div id="sm-NOMBRE" class="sm-v">—</div></div>
               <div class="sm-row">
                 <div class="sm-k">Email</div>
                 <div class="sm-v sm-v-copy">
@@ -376,22 +404,13 @@
               </div>
               <div class="sm-row">
                 <div class="sm-k">Marca</div>
-                <div class="sm-v sm-v-copy">
+                <div class="sm-v">
                   <span id="sm-MARCA">—</span>
-                  <button class="sm-copy-mini" type="button" aria-label="Copiar Marca" data-copy="#sm-MARCA">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                      stroke-linecap="round" stroke-linejoin="round"
-                      class="lucide lucide-copy-icon lucide-copy">
-                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-                    </svg>
-                  </button>
                 </div>
               </div>
               <div class="sm-row"><div class="sm-k">Clases</div><div id="sm-CLASES" class="sm-v">—</div></div>
               <div class="sm-row"><div class="sm-k">Cant. Clases</div><div id="sm-CANT_CLASES" class="sm-v">—</div></div>
-              <div class="sm-row"><div class="sm-k">PDF</div><div id="sm-PDF" class="sm-v sm-link">—</div></div>
+              <div class="sm-row"><div class="sm-k">Detalle rubro</div><div id="sm-PDF" class="sm-v sm-link">—</div></div>
               <div class="sm-row"><div class="sm-k">Opción</div><div id="sm-OPCION" class="sm-v">—</div></div>
               <div class="sm-row"><div class="sm-k">Monto base</div><div id="sm-MONTO_BASE" class="sm-v">—</div></div>
               <div class="sm-row"><div class="sm-k">Descuento</div><div id="sm-DESCUENTO" class="sm-v">—</div></div>
@@ -515,13 +534,13 @@
         <div class="sm-modal-backdrop"></div>
         <div class="sm-modal-card">
           <div class="sm-modal-title">Buscar trato</div>
-          <div class="sm-modal-sub">Puedes ingresar un IDPIPE o un Email.</div>
+          <div class="sm-modal-sub">Puedes ingresar un ID o un Email.</div>
           <div class="sm-search-bar">
-            <input id="sm-search-q" class="sm-input sm-search-input" placeholder="IDPIPE o email..." />
+            <input id="sm-search-q" class="sm-input sm-search-input" placeholder="ID o email..." />
             <button id="sm-btn-search-run" class="sm-btn sm-btn-primary sm-btn-search" type="button">Buscar</button>
           </div>
           <div id="sm-search-results" class="sm-search-results">
-            <div class="sm-search-hint">Ingresa un <strong>IDPIPE</strong> o un <strong>Email</strong>.</div>
+            <div class="sm-search-hint">Ingresa un <strong>ID</strong> o un <strong>Email</strong>.</div>
           </div>
           <div class="sm-modal-actions">
             <button id="sm-btn-search-cancel" class="sm-btn sm-btn-secondary" type="button">Cerrar</button>
@@ -617,9 +636,16 @@
   .sm-btn-secondary{ background:#f5f5f7; color:#111; border-color:#ffffff; }
   .sm-btn-full{ width:100%; }
   .sm-link-action{ border:0; background:transparent; padding:0; cursor:pointer; color:#111; font-size:14px; text-decoration:underline; }
-  .sm-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:999999; display:flex; align-items:stretch; justify-content:stretch; }
+  .sm-overlay{
+    position:fixed; inset:0;
+    padding-top:var(--sm-topbar-h);
+    box-sizing:border-box;
+    background:transparent;
+    z-index:999999; display:flex; align-items:stretch; justify-content:stretch;
+  }
   .sm-sheet{
-    width:100vw; height:100vh; background:#F5F5F7; border-radius:0; box-shadow:none;
+    width:100vw; height:calc(100vh - var(--sm-topbar-h)); max-height:calc(100vh - var(--sm-topbar-h));
+    background:#F5F5F7; border-radius:0; box-shadow:none;
     transform:translateY(100%); animation:smUp .22s ease-out forwards;
     display:flex; flex-direction:column;
   }
@@ -630,12 +656,28 @@
     border-bottom:0px solid rgba(0,0,0,.08);
     background:#F5F5F7;
   }
+  .sm-topbar{
+    position:sticky;
+    top:0;
+    z-index:1000001;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .sm-sheet-left{
+    display:flex;
+    align-items:center;
+    gap:35px;
+    flex:1;
+    min-width:0;
+  }
   .sm-sheet-brand{ display:flex; align-items:center; justify-content:flex-start; flex:0 0 auto; }
   .sm-sheet-brand img{ max-width:100px; height:auto; display:block; }
-  .sm-sheet-actions{ display:flex; align-items:center; justify-content:flex-end; gap:10px; }
+  .sm-sheet-actions{ display:flex; align-items:center; gap:10px; }
+  .sm-sheet-actions-left{ gap:9px; }
+  .sm-sheet-actions-right{ margin-left:auto; }
   .sm-icon-btn{
     border:0; background:transparent; cursor:pointer; padding:8px;
-    border-radius:999px; color:#8a8a8b;
+    border-radius:999px; color:#3b3b3b;
   }
   .sm-icon-btn:hover{ background:rgba(0,0,0,.0); }
   .sm-sheet-body{
@@ -1400,7 +1442,7 @@
     const res = qs("#sm-search-results");
     if(!m) return;
     if (inp) inp.value = "";
-    if (res) res.innerHTML = `<div class="sm-search-hint">Ingresa un <strong>IDPIPE</strong> o un <strong>Email</strong>.</div>`;
+    if (res) res.innerHTML = `<div class="sm-search-hint">Ingresa un <strong>ID</strong> o un <strong>Email</strong>.</div>`;
     m.style.display = "flex";
     m.setAttribute("aria-hidden", "false");
     setTimeout(()=>{
@@ -1886,6 +1928,9 @@ window.addEventListener("pagehide", ()=>{
     second: "2-digit",
     hour12: false
   });
+  const __smCLCurrency = new Intl.NumberFormat("es-CL", {
+    maximumFractionDigits: 0
+  });
 
   function fmtChile(iso){
     try{
@@ -1903,6 +1948,13 @@ window.addEventListener("pagehide", ()=>{
     const m = Math.floor(s / 60);
     const r = s % 60;
     return `${m}:${String(r).padStart(2,"0")}`;
+  }
+
+  function formatPesos(val){
+    if (val === null || val === undefined) return "—";
+    const n = Number(String(val).replace(/[^\d.-]/g, ""));
+    if (!Number.isFinite(n)) return String(val || "—");
+    return "$" + __smCLCurrency.format(n);
   }
 
   function renderCalls(){
@@ -1995,9 +2047,16 @@ function escapeHtml(s){
       "ESTADO_PAGO","ESTADO_PAGO_VIGILANCIA"
     ].forEach(setText);
 
-    setLinkOrDash(qs("#sm-PDF"), d.PDF, "PDF");
+    const montoBaseEl = qs("#sm-MONTO_BASE");
+    if (montoBaseEl){
+      const rawMonto = d.MONTO_BASE;
+      montoBaseEl.textContent =
+        (rawMonto === undefined || rawMonto === null || rawMonto === "") ? "—" : formatPesos(rawMonto);
+    }
+
+    setLinkOrDash(qs("#sm-PDF"), d.PDF, "DETALLE RUBRO");
     setLinkOrDash(qs("#sm-URL_FICHA"), d.URL_FICHA, "FICHA REGISTRO");
-    setLinkOrDash(qs("#sm-URL_AGENDA"), d.URL_AGENDA, "AGENDA");
+    setLinkOrDash(qs("#sm-URL_AGENDA"), d.URL_AGENDA, "AGENDAR");
     setLinkOrDash(qs("#sm-URL_CONTACTO_FALLIDO"), d.URL_CONTACTO_FALLIDO, "CONTACTO FALLIDO");
     setLinkOrDash(qs("#sm-URL_FICHA_VIGILANCIA"), d.URL_FICHA_VIGILANCIA, "FICHA VIGILANCIA");
 
@@ -2858,7 +2917,7 @@ if (url){
     if(state.__searchBusy) return;
 
     const q = (qs("#sm-search-q")?.value || "").trim();
-    if(!q) return toast("Ingresa un IDPIPE o Email");
+    if(!q) return toast("Ingresa un ID o Email");
 
     const btn = qs("#sm-btn-search-run");
     const unlock = lockBtn(btn, "Buscando...");
@@ -2943,6 +3002,17 @@ if (url){
     }
   }
 
+  function updateStatsIcon(){
+    const qp = new URLSearchParams(location.search);
+    const codep = (qp.get("codep") || "").trim();
+    if (codep !== "917830109") return;
+
+    const btn = qs("#sm-btn-stats");
+    if (!btn) return;
+
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dollar-sign-icon lucide-circle-dollar-sign"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>';
+  }
+
   /* ===================== [F8] COPY HANDLERS ===================== */
   function wireCopy(){
     qs("#sm-btn-copy-phone")?.addEventListener("click", async ()=>{
@@ -2988,7 +3058,8 @@ if (url){
       const p = new URLSearchParams(location.search);
       const idc = getIDC();
       const codep = (p.get("codep") || "").trim();
-      const url = `https://www.simplemarcas.cl/stats4342755671134?idc=${encodeURIComponent(idc)}&codep=${encodeURIComponent(codep)}`;
+      const token = getToken();
+      const url = `https://portal.simplemarcas.cl/stats.html?idc=${encodeURIComponent(idc)}&codep=${encodeURIComponent(codep)}${token ? `&t=${encodeURIComponent(token)}` : ""}`;
       window.open(url, "_blank", "noopener,noreferrer");
       return;
     }
@@ -3175,6 +3246,7 @@ if (url){
     initZoom();
     wireCopy();
     wirePayAndLog();
+    updateStatsIcon();
   });
 })();
 

@@ -190,7 +190,6 @@ function setProps(){
   PropertiesService.getScriptProperties().setProperties({
     TOKEN_SECRET: "bF6pQmD8nK3vW2sH7tR9yX4aC1eZ0uJ5Lh8GqT2mV7wN9pS3dK6xR1cY4fH8jZ2Q",
     APP_URL: "https://portal.simplemarcas.cl/call.html",
-    TOKEN_TTL_SECONDS: "86400"
+    TOKEN_TTL_SECONDS: "43200" // 12 horas
   }, true);
 }
-

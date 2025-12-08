@@ -4,7 +4,30 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="./files/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    :root{
+      font-family:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      text-rendering:optimizeLegibility;
+    }
+    html, body{
+      font-family:inherit;
+      line-height:1.45;
+      color:#111827;
+      background:#f8f9fb;
+    }
+    button, input, textarea, select{
+      font-family:inherit;
+      line-height:1.2;
+    }
+  </style>
   <title></title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div id="sm-puntos-app" class="ga">
@@ -94,7 +117,7 @@
           <thead>
             <tr>
               <th>Fecha</th>
-              <th>IDPIPE</th>
+              <th>ID</th>
               <th>Recorrido</th>
               <th>Tiempo</th>
               <th class="ga-right">Puntos</th>
