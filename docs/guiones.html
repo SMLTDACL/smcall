@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="./files/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    :root{
+      font-family:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      text-rendering:optimizeLegibility;
+    }
+    html, body{
+      font-family:inherit;
+      line-height:1.45;
+      color:#111827;
+      background:#F5F5F7;
+    }
+    .sm-topbar{
+      position:sticky;
+      top:0;
+      z-index:1000001;
+      width:100%;
+      box-sizing:border-box;
+    }
+    .sm-sheet-head{
+      padding:14px 25px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:0px solid rgba(0,0,0,.08);
+      background:#F5F5F7;
+    }
+    .sm-sheet-left{
+      display:flex;
+      align-items:center;
+      gap:35px;
+      flex:1;
+      min-width:0;
+    }
+    .sm-sheet-brand{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      flex:0 0 auto;
+    }
+    .sm-sheet-brand img{
+      max-width:100px;
+      height:auto;
+      display:block;
+    }
+    button, input, textarea, select{
+      font-family:inherit;
+      line-height:1.2;
+    }
+  </style>
+  <title>Guiones</title>
+  <script>
+(function(){
+  const LOGIN_URL = "./index.html";
+  function decodeTokenPayload(token){
+    try{
+      const parts = String(token || "").split(".");
+      if (!parts[0]) return null;
+      const json = atob(parts[0].replace(/-/g,"+").replace(/_/g,"/"));
+      return JSON.parse(json);
+    }catch(_){ return null; }
+  }
+  function getToken(){
+    const k = "sm_token";
+    const params = new URLSearchParams(location.search);
+    const urlT = (params.get("t") || "").trim();
+    if (urlT){
+      try{ sessionStorage.setItem(k, urlT); }catch(_){}
+      return urlT;
+    }
+    try{
+      const st = sessionStorage.getItem(k);
+      if (st) return st.trim();
+    }catch(_){}
+    return "";
+  }
+  function ensureAuth(){
+    const params = new URLSearchParams(location.search);
+    const token = getToken();
+    const idc = (params.get("idc") || params.get("IDC") || "").trim();
+    const codep = (params.get("codep") || "").trim();
+    const payload = decodeTokenPayload(token);
+    if (!token || !idc || !codep || !payload){
+      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
+      location.replace(LOGIN_URL);
+      return;
+    }
+    const tokIdc = String(payload.idc || "").trim();
+    const tokCodep = String(payload.codep || "").trim();
+    if ((tokIdc && tokIdc !== idc) || (tokCodep && tokCodep !== codep)){
+      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
+      location.replace(LOGIN_URL);
+      return;
+    }
+  }
+  ensureAuth();
+})();
+</script>
+</head>
+<body>
+
+<div class="sm-topbar">
+  <div class="sm-sheet-head">
+    <div class="sm-sheet-left">
+      <div class="sm-sheet-brand" aria-hidden="true">
+        <img src="./files/logon.png" alt="Simple Marcas">
+      </div>
+    </div>
+  </div>
+</div>
+<div style="margin-top: 40px;">
+    <!-- ===================== BLOQUE 1 ===================== -->
+<div style="width:100%; max-width:1100px; margin:0 auto; padding:0 16px; box-sizing:border-box;">
+  <details class="sm-doc-wrap" id="doc-wrap-1" style="border:1px solid rgba(0,0,0,.08); border-radius:14px; background:#fff; overflow:hidden;">
+    <summary style="cursor:pointer; padding:14px 16px; font-weight:600; user-select:none; list-style:none;">
+      1 CLASE
+      <span class="sm-doc-chevron" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
+    </summary>
+    <div style="padding:0 0 12px 0;">
+      <iframe
+        class="sm-doc-iframe"
+        id="doc-iframe-1"
+        src="https://docs.google.com/document/d/e/2PACX-1vSxOP_OVtaPAxzkpYpVJ_ceuOoz6ZLGCi4uhhAy2kwIaBkM3RGc7LmS0GJ2tI0ZwUXAcGwSEo1PRgCG/pub?embedded=true"
+        style="width:100%; height:80vh; min-height:700px; border:0; display:block; background:#fff;"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    </div>
+  </details>
+</div>
+<!-- ===================== BLOQUE 2 ===================== -->
+<div style="width:100%; max-width:1100px; margin:16px auto 0; padding:0 16px; box-sizing:border-box;">
+  <details class="sm-doc-wrap" id="doc-wrap-2" style="border:1px solid rgba(0,0,0,.08); border-radius:14px; background:#fff; overflow:hidden;">
+    <summary style="cursor:pointer; padding:14px 16px; font-weight:600; user-select:none; list-style:none;">
+      2 O MÁS CLASES
+      <span class="sm-doc-chevron" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
+    </summary>
+    <div style="padding:0 0 12px 0;">
+      <iframe
+        class="sm-doc-iframe"
+        id="doc-iframe-2"
+        src="https://docs.google.com/document/d/e/2PACX-1vSwgXODJR7f7L5ZUCzG627Em7BTHacqHCqM3LIuhwSaKjCWPOIe65KdWWxfOjU2PQ4oaB9t5n0veD64/pub?embedded=true"
+        style="width:100%; height:80vh; min-height:700px; border:0; display:block; background:#fff;"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    </div>
+  </details>
+</div>
+<!-- ===================== BLOQUE 3 ===================== -->
+<div style="width:100%; max-width:1100px; margin:16px auto 0; padding:0 16px; box-sizing:border-box;">
+  <details class="sm-doc-wrap" id="doc-wrap-3" style="border:1px solid rgba(0,0,0,.08); border-radius:14px; background:#fff; overflow:hidden;">
+    <summary style="cursor:pointer; padding:14px 16px; font-weight:600; user-select:none; list-style:none;">
+      VIGILANCIA
+      <span class="sm-doc-chevron" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
+    </summary>
+    <div style="padding:0 0 12px 0;">
+      <iframe
+        class="sm-doc-iframe"
+        id="doc-iframe-3"
+        src="https://docs.google.com/document/d/e/2PACX-1vTpUZuGNm9aiLzgjdyKgidZd8fGT8b7SqjDEUdH8lFZlJh9gO9zqjrh30xa4H-xia4-YIuAE1gbuih0/pub?embedded=true"
+        style="width:100%; height:80vh; min-height:700px; border:0; display:block; background:#fff;"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    </div>
+  </details>
+</div>
+<!-- ===================== BLOQUE 4 ===================== -->
+<div style="width:100%; max-width:1100px; margin:16px auto 0; padding:0 16px; box-sizing:border-box;">
+  <details class="sm-doc-wrap" id="doc-wrap-4" style="border:1px solid rgba(0,0,0,.08); border-radius:14px; background:#fff; overflow:hidden;">
+    <summary style="cursor:pointer; padding:14px 16px; font-weight:600; user-select:none; list-style:none;">
+      PENDIENTE DE PAGO REGISTRO
+      <span class="sm-doc-chevron" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
+    </summary>
+    <div style="padding:0 0 12px 0;">
+      <iframe
+        class="sm-doc-iframe"
+        id="doc-iframe-4"
+        src="https://docs.google.com/document/d/e/2PACX-1vS2pZ5nS_2ii4gCTyRDzBGarohpLy6P_RxXceyTwD2CEhG3H9y1F6-LUh4TgSvVCbcrMdQLLDAuGjhe/pub?embedded=true"
+        style="width:100%; height:80vh; min-height:700px; border:0; display:block; background:#fff;"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    </div>
+  </details>
+</div>
+<!-- ===================== BLOQUE 5 ===================== -->
+<div style="width:100%; max-width:1100px; margin:16px auto 0; padding:0 16px; box-sizing:border-box;">
+  <details class="sm-doc-wrap" id="doc-wrap-5" style="border:1px solid rgba(0,0,0,.08); border-radius:14px; background:#fff; overflow:hidden;">
+    <summary style="cursor:pointer; padding:14px 16px; font-weight:600; user-select:none; list-style:none;">
+      PENDIENTE DE PAGO VIGILANCIA
+      <span class="sm-doc-chevron" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
+    </summary>
+    <div style="padding:0 0 12px 0;">
+      <iframe
+        class="sm-doc-iframe"
+        id="doc-iframe-5"
+        src="https://docs.google.com/document/d/e/2PACX-1vTiPFPSTON-vUbpWkGD0uW4y5Y1GoQ9AGjhKHYPqKOLxPtg3IaaiRv7H0Eg1oRrLXejs7ccoFMhRBEG/pub?embedded=true"
+        style="width:100%; height:80vh; min-height:700px; border:0; display:block; background:#fff;"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    </div>
+  </details>
+</div>
+</div>
+<!-- ===================== SCRIPT (1 sola vez) ===================== -->
+<script>
+(function(){
+  var blocks = Array.prototype.slice.call(document.querySelectorAll('details.sm-doc-wrap'));
+  if (!blocks.length) return;
+  blocks.forEach(function(d){
+    d.addEventListener('toggle', function(){
+      if(!d.open) return;
+      requestAnimationFrame(function(){
+        d.scrollIntoView({ behavior:'smooth', block:'start' });
+      });
+    });
+  });
+})();
+</script>
+<!-- ===================== ESTILO (1 sola vez) ===================== -->
+<style>
+  summary::-webkit-details-marker { display:none; }
+  details.sm-doc-wrap > summary{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .sm-doc-chevron{
+    opacity:.65;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    transition:transform .2s ease, opacity .2s ease;
+  }
+  details.sm-doc-wrap[open] .sm-doc-chevron{
+    transform:rotate(180deg);
+    opacity:.85;
+  }
+</style>
+
+
+</body>
+</html>

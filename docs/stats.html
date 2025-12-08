@@ -25,11 +25,54 @@
       font-family:inherit;
       line-height:1.2;
     }
+    .sm-topbar{
+      position:sticky;
+      top:0;
+      z-index:1000001;
+      width:100%;
+      box-sizing:border-box;
+    }
+    .sm-sheet-head{
+      padding:14px 25px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:0px solid rgba(0,0,0,.08);
+      background:#F5F5F7;
+    }
+    .sm-sheet-left{
+      display:flex;
+      align-items:center;
+      gap:35px;
+      flex:1;
+      min-width:0;
+    }
+    .sm-sheet-brand{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      flex:0 0 auto;
+    }
+    .sm-sheet-brand img{
+      max-width:100px;
+      height:auto;
+      display:block;
+    }
   </style>
   <title></title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
+<div class="sm-topbar">
+  <div class="sm-sheet-head">
+    <div class="sm-sheet-left">
+      <div class="sm-sheet-brand" aria-hidden="true">
+        <img src="./files/logon.png" alt="Simple Marcas">
+      </div>
+    </div>
+  </div>
+</div>
 <div id="sm-puntos-app" class="ga">
   <div class="ga-wrap">
     <!-- Top bar -->
@@ -411,6 +454,17 @@
 (function(){
   const ENDPOINT_LOG_MENSUAL = "https://script.google.com/macros/s/AKfycbz2GJsbih171ZzArTkhjCCR57P9kJMAguP-iDNKRPeiyp4SGo4Uz5ahFrxbiLP5GTM9/exec";
   const TZ = "America/Santiago";
+  const LOGIN_URL = "./index.html";
+  function decodeTokenPayload(token){
+    try{
+      const parts = String(token || "").split(".");
+      if (!parts[0]) return null;
+      const json = atob(parts[0].replace(/-/g,"+").replace(/_/g,"/"));
+      return JSON.parse(json);
+    }catch(_){
+      return null;
+    }
+  }
   function getToken(){
     const k = "sm_token";
     const params = new URLSearchParams(location.search);
@@ -427,6 +481,31 @@
   }
   function authFetch(url, opts){
     return fetch(url, opts);
+  }
+  function ensureAuth(){
+    const params = new URLSearchParams(location.search);
+    const token = getToken();
+    const idc = (params.get("idc") || params.get("IDC") || "").trim();
+    const codep = (params.get("codep") || "").trim();
+    const payload = decodeTokenPayload(token);
+    if (!token || !idc || !codep || !payload){
+      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
+      window.location.href = LOGIN_URL;
+      return null;
+    }
+    const tokIdc = String(payload.idc || "").trim();
+    const tokCodep = String(payload.codep || "").trim();
+    if (tokIdc && idc && tokIdc !== idc){
+      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
+      window.location.href = LOGIN_URL;
+      return null;
+    }
+    if (tokCodep && codep && tokCodep !== codep){
+      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
+      window.location.href = LOGIN_URL;
+      return null;
+    }
+    return { token, idc, codep };
   }
 
   function whenReady(fn){
@@ -452,6 +531,8 @@
   });
 
   function boot(root){
+    const auth = ensureAuth();
+    if (!auth) return;
     const qs  = (s)=> root.querySelector(s);
     const qsa = (s)=> Array.from(root.querySelectorAll(s));
 
@@ -460,10 +541,7 @@
     if (rangeLbl) rangeLbl.textContent = "";
 
     // ========= PESOS: SOLO si codep=917830109 =========
-    const showPesos = (function(){
-      const p = new URLSearchParams(location.search);
-      return String(p.get("codep") || "").trim() === "917830109";
-    })();
+    const showPesos = (auth.codep === "917830109");
 
     if (showPesos){
       root.classList.add("ga-show-pesos");
@@ -475,10 +553,7 @@
       if (pesosTh) pesosTh.remove();
     }
 
-    function getIDCFilter(){
-      const p = new URLSearchParams(location.search);
-      return String(p.get("IDC") || p.get("idc") || "").trim();
-    }
+    function getIDCFilter(){ return auth.idc; }
 
     function sameIDC(rowIDC, urlIDC){
       const a = String(rowIDC ?? "").trim();
