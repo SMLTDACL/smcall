@@ -62,6 +62,68 @@
   </style>
   <title></title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<!-- OpenReplay Tracking Code -->
+<script>
+  // ===== 1) Obtener idc desde la URL =====
+  function smGetIDCFromURL() {
+    var search = window.location.search || "";
+    if (!search) return "";
+    try {
+      // Navegadores modernos
+      var params = new URLSearchParams(search);
+      return params.get("idc") || "";
+    } catch (e) {
+      // Fallback simple por si acaso
+      var m = search.match(/[?&]idc=([^&]+)/i);
+      return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+    }
+  }
+
+  // Guardamos el idc para usarlo como userID
+  var smIDC = smGetIDCFromURL();
+  window.__smIDC = smIDC; // por si lo quieres usar en otras partes de tu app
+
+  // ===== 2) Configuración OpenReplay =====
+  var initOpts = {
+    projectKey: "QonwVB9oKHTLvpz3EkMc",
+    // 0 - plain, 1 - obscured, 2 - ignored
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: false
+  };
+
+  // Aquí conectamos el idc al userID
+  var startOpts = { userID: smIDC || "" };
+
+  (function(A,s,a,y,e,r){
+    r = window.OpenReplay = [e, r, y, [s - 1, e]];
+    s = document.createElement('script');
+    s.src = A;
+    s.async = !a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+
+    r.start = function(v){ r.push([0]); };
+    r.stop = function(v){ r.push([1]); };
+    r.setUserID = function(id){ r.push([2, id]); };
+    r.setUserAnonymousID = function(id){ r.push([3, id]); };
+    r.setMetadata = function(k, v){ r.push([4, k, v]); };
+    r.event = function(k, p, i){ r.push([5, k, p, i]); };
+    r.issue = function(k, p){ r.push([6, k, p]); };
+    r.isActive = function(){ return false; };
+    r.getSessionToken = function(){};
+  })("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+
+  // (Opcional) Si quieres forzar el setUserID explícito cuando exista idc:
+  (function(){
+    if (!smIDC) return;
+    try {
+      if (window.OpenReplay && typeof OpenReplay.setUserID === "function") {
+        OpenReplay.setUserID(smIDC);
+      }
+    } catch (e) {}
+  })();
+</script>
 </head>
 <body>
 <div class="sm-topbar">

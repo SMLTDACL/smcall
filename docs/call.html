@@ -591,7 +591,7 @@
   <div id="sm-idle-modal" class="sm-idle-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="sm-idle-backdrop"></div>
     <div class="sm-idle-card">
-      <div class="sm-idle-sub">Han pasado 2 minutos sin actividad.</div>
+      <div class="sm-idle-sub">Han pasado 10 minutos sin actividad.</div>
       <div class="sm-idle-count">Se cerrará en <span id="sm-idle-count">60</span>s</div>
     </div>
   </div>
@@ -764,7 +764,7 @@
   .sm-textarea{
     width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(0,0,0,.15);
     outline:none; font-size:14px; resize:vertical; background:#f5f5f7;
-    box-sizing:border-box;
+    box-sizing:border-box; line-height: inherit;
   }
   .sm-tracking-block{
     display:flex;
@@ -1342,7 +1342,7 @@
   // ZAPIER WEBHOOKS
   const ZAPIER_ANALISIS = "https://hooks.zapier.com/hooks/catch/6030955/ukh9o60/";
   const ZAPIER_ASISTIDO = "https://hooks.zapier.com/hooks/catch/6030955/ukh9mx9/";
-  const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
+  const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
   const IDLE_WARNING_SECONDS = 60;
 
   const qs = s => document.querySelector(s);
@@ -1439,6 +1439,7 @@
     const o = qs("#sm-overlay");
     if(!o) return;
     o.style.display = "flex";
+    scrollObsToBottom();
     startIdleWatch();
   }
 
@@ -2197,11 +2198,19 @@ window.addEventListener("pagehide", ()=>{
     `).join("");
   }
 
-    function smScrollHistoryBottom(){
+  function smScrollHistoryBottom(){
     const el = qs("#sm-history");
     if(!el) return;
     requestAnimationFrame(() => {
       if (el.scrollHeight > el.clientHeight) el.scrollTop = el.scrollHeight;
+    });
+  }
+
+  function scrollObsToBottom(){
+    const obs = qs("#sm-obs");
+    if(!obs) return;
+    requestAnimationFrame(() => {
+      obs.scrollTop = obs.scrollHeight;
     });
   }
 
@@ -2298,7 +2307,10 @@ function escapeHtml(s){
     const phone = qs("#sm-phone");
     const obs = qs("#sm-obs");
     if(phone) phone.value = d.TELEFONO || "";
-    if(obs) obs.value = d.OBS || "";
+    if(obs){
+      obs.value = d.OBS || "";
+      scrollObsToBottom();
+    }
 
     qsa('input[name="sm-survey"]').forEach(r => r.checked = false);
 
@@ -3317,7 +3329,9 @@ if (url){
       if (calBtn){
       ev.preventDefault();
       const idc = getIDC();
-      const url = `https://www.simplemarcas.cl/agendamiento-calendario1764009390297?idc=${encodeURIComponent(idc)}`;
+      const url = idc
+        ? `https://agenda.simplemarcas.cl/consultor?idc=${encodeURIComponent(idc)}`
+        : "https://agenda.simplemarcas.cl/consultor";
       window.open(url, "_blank", "noopener,noreferrer");
       return;
       }
