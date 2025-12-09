@@ -639,6 +639,24 @@
     </div>
   </div>
 </div>
+<!-- ===================== [B5.2] TOUR VIDEO MODAL ===================== -->
+<div id="sm-tour-modal" class="sm-tour-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="sm-tour-dialog">
+    <button type="button" id="sm-tour-close" class="sm-tour-close" aria-label="Cerrar video">✕</button>
+    <div class="sm-tour-frame">
+      <iframe
+        id="sm-tour-iframe"
+        data-src="https://player.vimeo.com/video/1144897565"
+        title="Tour"
+        frameborder="0"
+        allow="autoplay; fullscreen; picture-in-picture"
+        allowfullscreen
+      ></iframe>
+    </div>
+  </div>
+</div>
+<!-- Tour trigger floating -->
+<button id="sm-btn-tour" class="sm-tour-tab" type="button" aria-label="Ver tour">Tour</button>
 <!-- ===================== [B6] STYLES ===================== -->
 <style>
   #sm-vendedores-app { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
@@ -847,6 +865,22 @@
     padding:12px 16px; display:flex; gap:10px; justify-content:flex-end;
     border-top:1px solid rgba(0,0,0,.08); background:#ffffff;
   }
+  .sm-tour-tab{
+    position:fixed;
+    left:0;
+    bottom:46px;
+    padding:9px 9px;
+    border:1px solid rgba(0,0,0,.12);
+    border-radius:0 7px 7px 0;
+    background:#ffffff;
+    font-size:12px;
+    font-weight:700;
+    color:#111;
+    cursor:pointer;
+    box-shadow:0 0px 15px rgba(0,0,0,.1);
+    z-index:2147483644;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
   .sm-toast{
     position:fixed; left:50%; top:18px; transform:translateX(-50%);
     background:rgba(17,17,17,.92); color:#fff; font-size:13px;
@@ -880,6 +914,72 @@
   .sm-modal-title{ font-size:16px; font-weight:700; color:#111827; margin-bottom:6px; }
   .sm-modal-sub{ font-size:13px; color:#6b7280; margin-bottom:12px; }
   .sm-modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
+  /* Tour modal */
+  .sm-tour-modal{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    background:rgba(0,0,0,.72);
+    z-index:2147483644;
+    opacity:0;
+    transition:opacity .18s ease;
+  }
+  .sm-tour-modal.is-open{ opacity:1; }
+  .sm-tour-dialog{
+    position:relative;
+    width:min(920px, calc(100vw - 48px));
+    max-height:calc(100vh - 110px);
+    aspect-ratio:16 / 9;
+    background:#000;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 18px 60px rgba(0,0,0,.35);
+    transform:translateY(10px);
+    transition:transform .18s ease;
+  }
+  .sm-tour-modal.is-open .sm-tour-dialog{ transform:translateY(0); }
+  .sm-tour-close{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:32px;
+    height:32px;
+    border:0;
+    border-radius:50%;
+    background:rgba(0,0,0,.68);
+    color:#fff;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1;
+  }
+  .sm-tour-close:hover{ background:rgba(0,0,0,.82); }
+  .sm-tour-frame{
+    width:100%;
+    height:100%;
+  }
+  .sm-tour-frame iframe{
+    width:100%;
+    height:100%;
+    border:0;
+    display:block;
+  }
+  @media (max-width:640px){
+    .sm-tour-tab{
+      bottom:26px;
+      padding:8px 12px;
+      font-size:11px;
+    }
+    .sm-tour-dialog{
+      width:100%;
+      max-height:calc(100vh - 80px);
+      border-radius:12px;
+    }
+  }
   /* Modal inactividad */
   .sm-idle-modal{
     position:fixed; inset:0; z-index:2147483646; display:none; align-items:center; justify-content:center; padding:18px;
@@ -3626,6 +3726,54 @@ const nextPromise =
   });
 })();
 
+
+
+(function(){
+  function initTourModal(){
+    const btn = document.getElementById("sm-btn-tour");
+    const modal = document.getElementById("sm-tour-modal");
+    const closeBtn = document.getElementById("sm-tour-close");
+    const frame = document.getElementById("sm-tour-iframe");
+
+    if (!btn || !modal) return;
+
+    const openModal = ()=>{
+      if (frame){
+        const src = frame.dataset.src || frame.getAttribute("data-src") || "";
+        if (src && frame.src !== src) frame.src = src;
+      }
+      modal.style.display = "flex";
+      modal.setAttribute("aria-hidden", "false");
+      requestAnimationFrame(()=> modal.classList.add("is-open"));
+    };
+
+    const closeModal = ()=>{
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      if (frame) frame.src = "";
+      setTimeout(()=>{
+        if (modal.classList.contains("is-open")) return;
+        modal.style.display = "none";
+      }, 160);
+    };
+
+    btn.addEventListener("click", openModal);
+    closeBtn?.addEventListener("click", closeModal);
+    modal.addEventListener("click", (ev)=>{
+      if (ev.target === modal) closeModal();
+    });
+    document.addEventListener("keydown", (ev)=>{
+      if (ev.key === "Escape") closeModal();
+    });
+  }
+
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", initTourModal);
+  }else{
+    initTourModal();
+  }
+})();
 
 
 (function(){
