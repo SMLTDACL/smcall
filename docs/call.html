@@ -47,14 +47,6 @@
       watchdog = null;
     }
   }
-  .sm-card-col{
-    display:flex;
-    flex-direction:column;
-    gap: 12px;
-  }
-  .sm-card-status .sm-row{
-    margin:0;
-  }
 
   function ensureLoader(){
     if (document.getElementById(LOADER_ID)) return;
@@ -745,6 +737,14 @@
 }
   .sm-grid{ display:grid; grid-template-columns:1.2fr .8fr; gap:12px; }
   @media (max-width:860px){ .sm-grid{ grid-template-columns:1fr; } }
+  .sm-card-col{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .sm-card-status .sm-row{
+    margin:0;
+  }
   .sm-card{ background:#fff; border:0px solid rgba(0,0,0,.08); border-radius:25px; padding:25px; }
   .sm-row{
     display:flex; justify-content:space-between; gap:10px; padding:9px 0;
@@ -1462,12 +1462,25 @@
     }
   }
 
+  function clearIdleCheckInterval(){
+    if(state.__idleCheckInterval){
+      clearInterval(state.__idleCheckInterval);
+      state.__idleCheckInterval = null;
+    }
+  }
+
+  function markIdleActivity(){
+    state.__idleLastActivity = Date.now();
+    state.__idleDeadline = state.__idleLastActivity + IDLE_TIMEOUT_MS;
+  }
+
   function clearIdleCountdown(){
     if(state.__idleCountdownInterval){
       clearInterval(state.__idleCountdownInterval);
       state.__idleCountdownInterval = null;
     }
     state.__idleCountdown = null;
+    state.__idleModalShownAt = 0;
   }
 
   function hideIdleModal(){
@@ -1487,27 +1500,60 @@
     clearIdleTimer();
     clearIdleCountdown();
 
+    state.__idleDeadline = 0;
     state.__idleCountdown = IDLE_WARNING_SECONDS;
+    state.__idleModalShownAt = Date.now();
     if (c) c.textContent = state.__idleCountdown;
     m.style.display = "flex";
     m.setAttribute("aria-hidden", "false");
 
     state.__idleCountdownInterval = setInterval(()=>{
-      state.__idleCountdown = (state.__idleCountdown == null ? IDLE_WARNING_SECONDS : state.__idleCountdown) - 1;
-      if (state.__idleCountdown < 0) state.__idleCountdown = 0;
-      if (c) c.textContent = state.__idleCountdown;
-      if (state.__idleCountdown <= 0){
+      const elapsed = state.__idleModalShownAt ? Math.floor((Date.now() - state.__idleModalShownAt) / 1000) : 0;
+      const remaining = Math.max(0, IDLE_WARNING_SECONDS - elapsed);
+      state.__idleCountdown = remaining;
+      if (c) c.textContent = remaining;
+      if (remaining <= 0){
         hideIdleModal();
         closePopup();
       }
-    }, 1000);
+    }, 500);
+  }
+
+  function syncIdleTimer(){
+    if(!isPopupOpen()) return;
+    if(!state.__idleDeadline) return;
+    const remaining = state.__idleDeadline - Date.now();
+    if (remaining <= 0){
+      showIdleModal();
+      return;
+    }
+    clearIdleTimer();
+    state.__idleTimer = setTimeout(showIdleModal, remaining);
+  }
+
+  function checkIdleElapsed(){
+    if(!isPopupOpen()) return;
+    if (state.__idleCountdownInterval) return;
+    const elapsed = state.__idleLastActivity ? (Date.now() - state.__idleLastActivity) : 0;
+    if (!elapsed) return;
+    if (elapsed >= IDLE_TIMEOUT_MS){
+      showIdleModal();
+      return;
+    }
+    state.__idleDeadline = state.__idleLastActivity + IDLE_TIMEOUT_MS;
+    syncIdleTimer();
   }
 
   function resetIdleTimer(){
     if(!isPopupOpen()) return;
-    clearIdleTimer();
     clearIdleCountdown();
-    state.__idleTimer = setTimeout(showIdleModal, IDLE_TIMEOUT_MS);
+    markIdleActivity();
+    syncIdleTimer();
+  }
+
+  function ensureIdleFallbackCheck(){
+    if(state.__idleCheckInterval) return;
+    state.__idleCheckInterval = setInterval(checkIdleElapsed, 15000);
   }
 
   function bindIdleListeners(){
@@ -1517,21 +1563,36 @@
       if(state.__idleCountdownInterval) hideIdleModal();
       resetIdleTimer();
     };
+    const visibilityHandler = ()=>{
+      if(document.visibilityState !== "visible") return;
+      checkIdleElapsed();
+    };
     document.addEventListener("mousemove", handler);
     document.addEventListener("click", handler);
+    document.addEventListener("visibilitychange", visibilityHandler);
+    window.addEventListener("focus", visibilityHandler);
     state.__idleActivityHandler = handler;
+    state.__idleVisibilityHandler = visibilityHandler;
     state.__idleListenersAttached = true;
+    ensureIdleFallbackCheck();
   }
 
   function unbindIdleListeners(){
     if(!state.__idleListenersAttached) return;
     const h = state.__idleActivityHandler;
+    const vh = state.__idleVisibilityHandler;
     if(h){
       document.removeEventListener("mousemove", h);
       document.removeEventListener("click", h);
     }
+    if(vh){
+      document.removeEventListener("visibilitychange", vh);
+      window.removeEventListener("focus", vh);
+    }
     state.__idleActivityHandler = null;
+    state.__idleVisibilityHandler = null;
     state.__idleListenersAttached = false;
+    clearIdleCheckInterval();
   }
 
   function startIdleWatch(){
@@ -1543,6 +1604,10 @@
     clearIdleTimer();
     clearIdleCountdown();
     hideIdleModal();
+    clearIdleCheckInterval();
+    state.__idleDeadline = 0;
+    state.__idleLastActivity = 0;
+    state.__idleModalShownAt = 0;
     unbindIdleListeners();
   }
 
@@ -2066,7 +2131,12 @@ window.addEventListener("pagehide", ()=>{
     __idleCountdownInterval: null,
     __idleCountdown: null,
     __idleActivityHandler: null,
-    __idleListenersAttached: false
+    __idleListenersAttached: false,
+    __idleCheckInterval: null,
+    __idleVisibilityHandler: null,
+    __idleLastActivity: 0,
+    __idleDeadline: 0,
+    __idleModalShownAt: 0
 
 
   };
