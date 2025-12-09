@@ -602,7 +602,8 @@
   <!-- ===================== [B4] ZOOM IFRAME OCULTO (motor) ===================== -->
   <iframe
     id="sm-zoomphone-iframe"
-    allow="microphone; clipboard-read; clipboard-write https://applications.zoom.us"
+    allow="microphone; camera; autoplay; clipboard-read; clipboard-write"
+    referrerpolicy="strict-origin-when-cross-origin"
     style="position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;border:0;">
   </iframe>
   <!-- Panel inline para login de Zoom cuando falta sesión -->
@@ -613,6 +614,17 @@
     </div>
     <div class="sm-zoom-login-msg">Inicia sesión aquí sin salir de la página y luego vuelve a llamar.</div>
     <div id="sm-zoom-login-frame"></div>
+    <div id="sm-zoom-login-help" class="sm-zoom-login-help" style="display:none;">
+      <div class="sm-zoom-login-help-title">¿No aparece el login?</div>
+      <div class="sm-zoom-login-help-text">
+        Algunos navegadores bloquean Zoom cuando las cookies de terceros están desactivadas (Safari, Brave, modo estricto).
+        Activa las cookies para applications.zoom.us o abre el login en una pestaña nueva.
+      </div>
+      <div class="sm-zoom-login-help-actions">
+        <button id="sm-zoom-open-tab" class="sm-btn sm-btn-primary sm-btn-xs" type="button">Abrir Zoom en pestaña nueva</button>
+        <a class="sm-zoom-help-link" href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noreferrer noopener">Cómo permitir cookies</a>
+      </div>
+    </div>
   </div>
   <!-- ===================== [B5] POST TARGET (anti-CORS) ===================== -->
   <iframe name="sm-post-target" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;border:0;"></iframe>
@@ -1304,6 +1316,36 @@
     height:420px;
     border:1px solid rgba(0,0,0,.08);
     border-radius:10px;
+  }
+  .sm-zoom-login-help{
+    margin-top:10px;
+    padding:10px;
+    background:#f9fafb;
+    border:1px dashed rgba(0,0,0,.14);
+    border-radius:10px;
+    color:#4b5563;
+  }
+  .sm-zoom-login-help-title{
+    font-weight:700;
+    color:#111827;
+    font-size:12px;
+    margin-bottom:4px;
+  }
+  .sm-zoom-login-help-text{
+    font-size:12px;
+    line-height:1.45;
+  }
+  .sm-zoom-login-help-actions{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:8px;
+  }
+  .sm-zoom-help-link{
+    font-size:12px;
+    color:#0069ec;
+    text-decoration:underline;
   }
 
 </style>
@@ -2595,6 +2637,37 @@ const nextPromise =
     const iframe = qs("#sm-zoomphone-iframe");
     if(!iframe) return;
     const iframeHome = iframe.parentElement;
+    let zoomLoginHelpTimer = null;
+    let zoomLastLoadTs = 0;
+
+    function hideZoomHelp_(){
+      if (zoomLoginHelpTimer){
+        clearTimeout(zoomLoginHelpTimer);
+        zoomLoginHelpTimer = null;
+      }
+      const help = qs("#sm-zoom-login-help");
+      if (help) help.style.display = "none";
+    }
+
+    function showZoomHelp_(){
+      const help = qs("#sm-zoom-login-help");
+      if (help) help.style.display = "block";
+    }
+
+    function scheduleZoomHelp_(){
+      if (zoomLoginHelpTimer) clearTimeout(zoomLoginHelpTimer);
+      zoomLoginHelpTimer = setTimeout(()=>{
+        if (state.zpReady) return;
+        if (!zoomLastLoadTs || Date.now() - zoomLastLoadTs > 4500){
+          showZoomHelp_();
+        }
+      }, 5000);
+    }
+
+    iframe.addEventListener("load", ()=>{
+      zoomLastLoadTs = Date.now();
+      hideZoomHelp_();
+    });
 
     function ensureZoomLogin_(){
       const wrap = qs("#sm-zoom-login");
@@ -2603,10 +2676,24 @@ const nextPromise =
         close.__smHandler = true;
         close.addEventListener("click", hideZoomLogin_);
       }
+      const openTab = qs("#sm-zoom-open-tab");
+      if (openTab && !openTab.__smHandler){
+        openTab.__smHandler = true;
+        openTab.addEventListener("click", ()=>{
+          let url = ZOOM_ORIGIN;
+          try{
+            const originDomain = encodeURIComponent(window.location.origin);
+            url = `${ZOOM_ORIGIN}/integration/phone/embeddablephone/home?originDomain=${originDomain}`;
+          }catch(_){}
+          try{ window.open(url, "_blank", "noopener,noreferrer"); }
+          catch(_){ window.open(url, "_blank"); }
+        });
+      }
       return wrap;
     }
 
     function hideZoomLogin_(){
+      hideZoomHelp_();
       const wrap = qs("#sm-zoom-login");
       if (wrap) wrap.style.display = "none";
       // vuelve a ocultar el iframe motor
@@ -2654,8 +2741,10 @@ const nextPromise =
         iframe.style.border = "1px solid rgba(0,0,0,.08)";
       }
 
+      zoomLastLoadTs = 0;
       if (url) iframe.src = url;
       wrap.style.display = "block";
+      scheduleZoomHelp_();
     }
 
     function setZoomSrc_(){
@@ -2695,53 +2784,53 @@ const nextPromise =
       }
     }
 
-function rebuildZoom_(reason){
-  // “reinicia” el embeddable sin recargar navegador
-  state.zpReady = false;
-  window.__smConnTs = null;
-  window.__smRingTs = null;
+    function rebuildZoom_(reason){
+      // “reinicia” el embeddable sin recargar navegador
+      state.zpReady = false;
+      window.__smConnTs = null;
+      window.__smRingTs = null;
+      zoomLastLoadTs = 0;
+      hideZoomHelp_();
 
-  // corta cualquier watchdog anterior
-  clearWatchdog_();
+      // corta cualquier watchdog anterior
+      clearWatchdog_();
 
-  try{ setCallBtnBusy_(true, "Conectando..."); }catch(_){}
+      try{ setCallBtnBusy_(true, "Conectando..."); }catch(_){}
 
-  // vuelve a cargar el iframe (por si acaso)
-  try{ setZoomSrc_(); }catch(_){}
+      // vuelve a cargar el iframe (por si acaso)
+      try{ setZoomSrc_(); }catch(_){}
 
-  // watchdog: si NO llega zp-ready en 6.5s, libera y abre pestaña de login
-  state.__callWatchdog = setTimeout(()=>{
-    if (state.zpReady) return;
+      // watchdog: si NO llega zp-ready en 6.5s, libera y abre pestaña de login
+      state.__callWatchdog = setTimeout(()=>{
+        if (state.zpReady) return;
 
-    // limpia estado de llamada
-    state.__queuedCall = null;
-    state.__callBusy = false;
-    state.__callInProgress = false;
-    state.__callTry = 0;
+        // limpia estado de llamada
+        state.__queuedCall = null;
+        state.__callBusy = false;
+        state.__callInProgress = false;
+        state.__callTry = 0;
 
-    setCallBtnBusy_(false);
+        setCallBtnBusy_(false);
 
-    // construye la misma URL que usa el iframe
-    var iframe = document.querySelector("#sm-zoomphone-iframe");
-    var url = iframe && iframe.src;
+        // construye la misma URL que usa el iframe
+        var iframe = document.querySelector("#sm-zoomphone-iframe");
+        var url = iframe && iframe.src;
 
-    if (!url){
-      try{
-        var originDomain = encodeURIComponent(window.location.origin);
-        url = ZOOM_ORIGIN + "/integration/phone/embeddablephone/home?originDomain=" + originDomain + "&_=" + Date.now();
-      }catch(_){}
+        if (!url){
+          try{
+            var originDomain = encodeURIComponent(window.location.origin);
+            url = ZOOM_ORIGIN + "/integration/phone/embeddablephone/home?originDomain=" + originDomain + "&_=" + Date.now();
+          }catch(_){}
+        }
+
+        if (url){
+          showZoomLogin_(url);
+          toast("Inicia sesión en el panel lateral de Zoom y vuelve a llamar.", 7000);
+        }else{
+          toast("Zoom no conectó. Intenta de nuevo o recarga.");
+        }
+      }, 6500);
     }
-
-if (url){
-  showZoomLogin_(url);
-  toast("Inicia sesión en el panel lateral de Zoom y vuelve a llamar.", 7000);
-}else{
-  toast("Zoom no conectó. Intenta de nuevo o recarga.");
-}
-
-
-  }, 6500);
-}
 
 
 
