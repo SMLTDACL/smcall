@@ -65,6 +65,11 @@
 
 <!-- OpenReplay Tracking Code -->
 <script>
+(function(){
+  // Evita inicializar más de una vez en la misma página
+  if (window.__smORLoaded) return;
+  window.__smORLoaded = true;
+
   // ===== 1) Obtener idc desde la URL =====
   function smGetIDCFromURL() {
     var search = window.location.search || "";
@@ -90,7 +95,8 @@
     // 0 - plain, 1 - obscured, 2 - ignored
     defaultInputMode: 0,
     obscureTextNumbers: false,
-    obscureTextEmails: false
+    obscureTextEmails: false,
+    ingestURL: "https://api.openreplay.com"
   };
 
   // Aquí conectamos el idc al userID
@@ -112,7 +118,7 @@
     r.issue = function(k, p){ r.push([6, k, p]); };
     r.isActive = function(){ return false; };
     r.getSessionToken = function(){};
-  })("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+  })("https://static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
 
   // (Opcional) Si quieres forzar el setUserID explícito cuando exista idc:
   (function(){
@@ -123,6 +129,7 @@
       }
     } catch (e) {}
   })();
+})();
 </script>
 </head>
 <body>
