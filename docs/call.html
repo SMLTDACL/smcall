@@ -262,40 +262,30 @@
 <!-- OpenReplay Tracking Code -->
 <script>
 (function(){
-  // Evita inicializar más de una vez en la misma página
   if (window.__smORLoaded) return;
   window.__smORLoaded = true;
 
-  // ===== 1) Obtener idc desde la URL =====
   function smGetIDCFromURL() {
     var search = window.location.search || "";
     if (!search) return "";
     try {
-      // Navegadores modernos
       var params = new URLSearchParams(search);
       return params.get("idc") || "";
     } catch (e) {
-      // Fallback simple por si acaso
       var m = search.match(/[?&]idc=([^&]+)/i);
       return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
     }
   }
 
-  // Guardamos el idc para usarlo como userID
   var smIDC = smGetIDCFromURL();
-  window.__smIDC = smIDC; // por si lo quieres usar en otras partes de tu app
+  window.__smIDC = smIDC;
 
-  // ===== 2) Configuración OpenReplay =====
   var initOpts = {
     projectKey: "QonwVB9oKHTLvpz3EkMc",
-    // 0 - plain, 1 - obscured, 2 - ignored
     defaultInputMode: 0,
     obscureTextNumbers: false,
-    obscureTextEmails: false,
-    ingestURL: "https://api.openreplay.com"
+    obscureTextEmails: false
   };
-
-  // Aquí conectamos el idc al userID
   var startOpts = { userID: smIDC || "" };
 
   (function(A,s,a,y,e,r){
@@ -304,7 +294,6 @@
     s.src = A;
     s.async = !a;
     document.getElementsByTagName('head')[0].appendChild(s);
-
     r.start = function(v){ r.push([0]); };
     r.stop = function(v){ r.push([1]); };
     r.setUserID = function(id){ r.push([2, id]); };
@@ -314,17 +303,7 @@
     r.issue = function(k, p){ r.push([6, k, p]); };
     r.isActive = function(){ return false; };
     r.getSessionToken = function(){};
-  })("https://static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
-
-  // (Opcional) Si quieres forzar el setUserID explícito cuando exista idc:
-  (function(){
-    if (!smIDC) return;
-    try {
-      if (window.OpenReplay && typeof OpenReplay.setUserID === "function") {
-        OpenReplay.setUserID(smIDC);
-      }
-    } catch (e) {}
-  })();
+  })("https://static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
 })();
 </script>
 </head>
