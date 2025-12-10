@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="files/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Agenda</title>
+  <!-- OpenReplay Tracking Code -->
+<script>
+  // ===== 1) Obtener idc desde la URL =====
+  function smGetIDCFromURL() {
+    var search = window.location.search || "";
+    if (!search) return "";
+    try {
+      // Navegadores modernos
+      var params = new URLSearchParams(search);
+      return params.get("idc") || "";
+    } catch (e) {
+      // Fallback simple por si acaso
+      var m = search.match(/[?&]idc=([^&]+)/i);
+      return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+    }
+  }
+
+  // Guardamos el idc para usarlo como userID
+  var smIDC = smGetIDCFromURL();
+  window.__smIDC = smIDC; // por si lo quieres usar en otras partes de tu app
+
+  // ===== 2) Configuración OpenReplay =====
+  var initOpts = {
+    projectKey: "QonwVB9oKHTLvpz3EkMc",
+    // 0 - plain, 1 - obscured, 2 - ignored
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: false
+  };
+
+  // Aquí conectamos el idc al userID
+  var startOpts = { userID: smIDC || "" };
+
+  (function(A,s,a,y,e,r){
+    r = window.OpenReplay = [e, r, y, [s - 1, e]];
+    s = document.createElement('script');
+    s.src = A;
+    s.async = !a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+
+    r.start = function(v){ r.push([0]); };
+    r.stop = function(v){ r.push([1]); };
+    r.setUserID = function(id){ r.push([2, id]); };
+    r.setUserAnonymousID = function(id){ r.push([3, id]); };
+    r.setMetadata = function(k, v){ r.push([4, k, v]); };
+    r.event = function(k, p, i){ r.push([5, k, p, i]); };
+    r.issue = function(k, p){ r.push([6, k, p]); };
+    r.isActive = function(){ return false; };
+    r.getSessionToken = function(){};
+  })("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+
+  // (Opcional) Si quieres forzar el setUserID explícito cuando exista idc:
+  (function(){
+    if (!smIDC) return;
+    try {
+      if (window.OpenReplay && typeof OpenReplay.setUserID === "function") {
+        OpenReplay.setUserID(smIDC);
+      }
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<div class="sm-logo-wrap">
+  <img class="sm-logo" src="files/logon.png" alt="Logo">
+</div>
+<div class="sm-sched-wrap">
+  <div class="sm-sched-card">
+    <h2 class="sm-title">Agenda tu reunión</h2>
+    <div class="sm-row">
+      <label class="sm-label">
+        Consultor
+        <select id="sm-consultor-select" class="sm-select">
+          <!-- Se llena por JS: "Todos" + consultores -->
+        </select>
+      </label>
+    </div>
+    <div class="sm-grid">
+      <div class="sm-col sm-col-left">
+        <div class="sm-subtitle">Fecha</div>
+        <div id="sm-calendar" class="sm-cal"></div>
+      </div>
+      <div class="sm-col sm-col-right">
+        <div class="sm-subtitle" id="sm-selected-date-label">Selecciona una fecha</div>
+        <div id="sm-slots" class="sm-slots"></div>
+      </div>
+    </div>
+    <form id="sm-booking-form" class="sm-form" style="display:none;">
+      <input type="hidden" id="sm-date-input">
+      <input type="hidden" id="sm-time-input">
+      <div class="sm-row">
+        <label class="sm-label">Nombre
+          <input id="sm-nombre" type="text" class="sm-input">
+        </label>
+      </div>
+      <div class="sm-row">
+        <label class="sm-label">Email
+          <input id="sm-email" type="email" class="sm-input">
+        </label>
+      </div>
+      <div class="sm-row">
+        <label class="sm-label">Teléfono
+          <input id="sm-telefono" type="text" class="sm-input">
+        </label>
+      </div>
+      <div class="sm-row">
+        <label class="sm-label">Marca (opcional)
+          <input id="sm-marca" type="text" class="sm-input">
+        </label>
+      </div>
+      <input id="sm-tipo" type="hidden">
+      <input id="sm-idpipe" type="hidden">
+      <button id="sm-booking-submit" class="sm-btn-primary" type="submit">
+        Confirmar reunión
+      </button>
+    </form>
+    <div id="sm-toast" class="sm-toast"></div>
+  </div>
+  <div id="sm-loader" class="sm-loader" style="display:none;">
+    <div class="sm-spinner"></div>
+  </div>
+  <!-- Popup de éxito a pantalla completa (sin botón) -->
+  <div id="sm-success-overlay" class="sm-success-overlay" style="display:none;">
+    <div class="sm-success-card">
+      <h2 class="sm-success-title">¡Listo!</h2>
+      <p id="sm-success-text" class="sm-success-text">
+        Has agendado la reunión.
+      </p>
+      <div id="sm-booking-code" class="sm-booking-code">
+        <div class="sm-booking-code-label">Código de agendamiento</div>
+        <div class="sm-booking-code-row">
+          <div id="sm-booking-code-value" class="sm-booking-code-value"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+<style>
+:root{
+  font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.sm-logo-wrap{
+  display:none;
+}
+.sm-logo{
+  max-width:120px;
+  width:100%;
+  height:auto;
+}
+body{
+  margin:0;
+  font-family:inherit;
+  -webkit-font-smoothing:antialiased;
+  background:#FFFFFF;
+}
+.sm-sched-wrap,
+.sm-sched-wrap *{
+  font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
+  -webkit-font-smoothing:antialiased;
+}
+  .sm-sched-wrap{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:24px 0;}
+  .sm-sched-card{max-width:960px;margin:0 auto;background:#fff;border-radius:18px;padding:24px 20px;box-shadow:none;}
+  .sm-title{margin:0 0 16px;font-size:24px;font-weight:700;color:#111827;}
+  .sm-subtitle{font-size:14px;color:#6b7280;margin-bottom:6px;}
+  .sm-row{margin-bottom:12px;}
+  .sm-label{display:block;font-size:13px;color:#374151;margin-bottom:2px;}
+  .sm-input,.sm-select{width:100%;padding:8px 10px;border-radius:10px;border:1px solid #d1d5db;font-size:14px;box-sizing:border-box;margin-top: 6px;}
+  .sm-input:focus,.sm-select:focus{outline:none;border-color:#1f6feb;box-shadow:0 0 0 1px rgba(31,111,235,0.1);}
+  .sm-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;margin-top:25px;align-items:start;}
+  .sm-col{display:flex;flex-direction:column;gap:8px;min-height:100%;}
+  .sm-col-right{min-height:100%;}
+  @media(max-width:768px){
+    .sm-grid{grid-template-columns:1fr;}
+    .sm-col{min-height:auto;}
+  }
+  .sm-cal{background:#f9fafb;border-radius:14px;border:1px solid #e5e7eb;padding:10px;}
+  .sm-cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .sm-cal-month{font-size:14px;font-weight:600;color:#111827;}
+  .sm-cal-nav button{border:none;background:transparent;cursor:pointer;font-size:16px;padding:2px 6px;color:#6b7280;}
+  .sm-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:11px;}
+  .sm-cal-dow{text-align:center;font-weight:600;color:#9ca3af;padding:4px 0;}
+  .sm-cal-day{height:50px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:12px;cursor:pointer;border:1px solid transparent;}
+  .sm-cal-day.disabled{cursor:not-allowed;color:#d1d5db;background: #f9fafb;}
+  .sm-cal-day.available{color:#111827;background:#efeff0}
+  .sm-cal-day.selected{background:#1f6feb;color:#fff;border-color:#1f6feb;}
+  .sm-slots{
+    min-height:80px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    overflow-y:auto;
+    padding: 0 24px 0 0;
+  }
+  .sm-slot-btn{
+    width:100%;
+    border-radius:7px;
+    border:1px solid #d1d5db91;
+    padding:11px 12px;
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+    background:#fff;
+    color:#111827;
+    text-align:center;
+    box-sizing:border-box;
+    transition:box-shadow .15s ease,border-color .15s ease,transform .12s ease;
+  }
+  .sm-slot-btn:hover{border-color:#a3a4a5;}
+  .sm-slot-btn.selected{border-color:#1f6feb;border: 2px solid #1f6feb;}
+  .sm-slot-btn.disabled{opacity:0.5;cursor:not-allowed;}
+  .sm-form{margin-top:14px;border-top:1px solid #e5e7eb;padding-top:25px;}
+  .sm-btn-primary{margin-top:4px;width:100%;border:none;border-radius:999px;background:#1f6feb;color:#fff;font-size:14px;font-weight:600;padding:15px 12px;cursor:pointer;}
+  .sm-btn-primary:disabled{opacity:0.6;cursor:not-allowed;}
+  .sm-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:11001;}
+  .sm-toast.is-show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+  .sm-loader{position:fixed;inset:0;background:rgba(255,255,255,0.75);display:flex;align-items:center;justify-content:center;z-index:9999;}
+  .sm-spinner{width:32px;height:32px;border-radius:50%;border:3px solid rgba(31,111,235,0.2);border-top-color:#1f6feb;animation:sm-spin .8s linear infinite;}
+  @keyframes sm-spin{to{transform:rotate(360deg);}}
+  /* === Overlay de éxito === */
+  .sm-success-overlay{
+    position:fixed;
+    inset:0;
+    background:#ffffff;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:10000;
+  }
+  .sm-success-card{
+    max-width:420px;
+    width:90%;
+    margin:0 auto;
+    background:#ffffff;
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(15,23,42,0.12);
+    padding:24px 20px 18px;
+    text-align:center;
+  }
+  .sm-success-title{
+    margin:0 0 8px;
+    font-size:22px;
+    font-weight:700;
+    color:#111827;
+  }
+  .sm-success-text{
+    margin:0 0 16px;
+    font-size:14px;
+    color:#4b5563;
+  }
+  .sm-booking-code{
+    display:none;
+    margin-top:30px;
+    padding:12px;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    background:#f9fafb;
+    text-align:left;
+  }
+  .sm-booking-code-label{
+    font-size:13px;
+    color:#374151;
+    margin:0 0 8px;
+    line-height:1.4;
+    text-align: center;
+    font-weight: 500;
+  }
+  .sm-booking-code-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    justify-content:center;
+  }
+  .sm-booking-code-value{
+    font-weight:600;
+    font-size:14px;
+    color:#111827;
+    word-break:break-all;
+    background: #fff;
+    padding: 13px;
+    border-radius: 11px;
+    border: 1px dashed #cccccc;
+    margin-top: 5px;
+  }
+  .sm-booking-actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:14px;
+  }
+  /* (3) Shimmer tipo "pensando" para el texto de carga */
+.sm-shimmer-text{
+  position: relative;
+  display: inline-block;
+  font-weight: 400;
+  letter-spacing: .2px;
+  color: #6b7280; /* texto base */
+}
+.sm-shimmer-text::after{
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  /* El overlay solo "ilumina", no pinta el texto base */
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  /* ===== PATRÓN REPETIBLE (SEAMLESS) =====
+     Período: 180px (tiene que calzar con el keyframe)
+     Brillo: intermedio, NO blanco sólido, con degradé en costados
+  */
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,0.00) 0px,
+    rgba(255,255,255,0.00) 56px,
+    rgba(255,255,255,0.10) 64px,
+    rgba(255,255,255,0.62) 74px,
+    rgba(255,255,255,0.90) 86px,  /* peak (subido, pero no sólido) */
+    rgba(255,255,255,0.62) 98px,
+    rgba(255,255,255,0.10) 108px,
+    rgba(255,255,255,0.00) 116px,
+    rgba(255,255,255,0.00) 180px
+  );
+  background-size: 180px 100%;
+  background-position: 0 0;
+  mix-blend-mode: screen;
+  opacity: 1; /* sube la presencia del brillo */
+  animation: sm-text-shimmer 1.05s linear infinite;
+  will-change: background-position;
+}
+@keyframes sm-text-shimmer{
+  from { background-position: 0px 0; }
+  to   { background-position: 180px 0; } /* MISMO que background-size */
+}
+</style>
+<script>
+(function(){
+  // ==== CONFIG ====
+  // ENDPOINT (principal):
+  // - Web App de Google Apps Script (URL /exec).
+  // - Este es el backend principal que recibe los datos del front.
+  // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
+  // - Código fuente (copia local para editar/analizar con Codex): /apps-script/code.gs
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyJvUfgU2-i3RxZ3vHDfi2HKRf8YtIeA3_HJpqt88I_b8yj03pbUMH4dMPR9Z2eVQ91/exec";
+
+  // ==== PERF / DEBUG (mantén como lo tienes) ====
+  const DEBUG_PERF = true; // si lo tienes ya, déjalo como está
+
+  function nowMs(){ return (performance && performance.now) ? performance.now() : Date.now(); }
+  function perfObj(){ return { start: nowMs() }; }
+  function perfMark(p, key){ p[key] = Math.round(nowMs() - p.start); }
+  function perfLog(label, obj){ try{ console.log(label, obj); }catch(e){} }
+
+  // ==== Helpers DOM ====
+  const qs  = s => document.querySelector(s);
+  const qsa = s => Array.from(document.querySelectorAll(s));
+
+  function toast(msg, ms=1800){
+    const t = qs("#sm-toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add("is-show");
+    setTimeout(()=> t.classList.remove("is-show"), ms);
+  }
+
+  function copyTextToClipboard(text){
+    if (!text) return Promise.reject(new Error("missing_text"));
+    const fallbackCopy = ()=>{
+      return new Promise((resolve, reject)=>{
+        try{
+          const input = document.createElement("input");
+          input.value = text;
+          input.setAttribute("readonly", "");
+          input.style.position = "fixed";
+          input.style.left = "-1000px";
+          input.style.top = "0";
+          input.style.opacity = "0";
+          document.body.appendChild(input);
+          input.select();
+          input.setSelectionRange(0, input.value.length);
+          const ok = document.execCommand("copy");
+          document.body.removeChild(input);
+          if (!ok) return reject(new Error("copy_failed_execCommand"));
+          resolve();
+        }catch(err){
+          reject(new Error("copy_failed_fallback: "+(err && err.message ? err.message : String(err))));
+        }
+      });
+    };
+
+    if (window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).catch(()=> fallbackCopy());
+    }
+    return fallbackCopy();
+  }
+
+  function renderBookingCode(bookingId){
+    lastBookingId = bookingId || "";
+    const box = qs("#sm-booking-code");
+    const val = qs("#sm-booking-code-value");
+    if (box) box.style.display = lastBookingId ? "block" : "none";
+    if (val) val.textContent = lastBookingId;
+    try{
+      if (window.parent && window.parent !== window){
+        window.parent.postMessage({ type:"sm_booking_id", bookingId: lastBookingId }, "*");
+      }
+    }catch(_){}
+  }
+
+  function handleCopyButtonClick(ev){
+    ev.preventDefault();
+    ev.stopPropagation();
+    const val = qs("#sm-booking-code-value");
+    const text = (val?.textContent || lastBookingId || "").trim();
+    if (!text){
+      toast("No hay código para copiar");
+      return false;
+    }
+    copyTextToClipboard(text)
+      .then(()=>{
+        toast("Código copiado");
+      })
+      .catch(err=>{
+        toast("No se pudo copiar: "+(err && err.message ? err.message : "error"));
+      });
+    return false;
+  }
+
+  function handleCopyButtonClickDelegated(ev){
+    const btn = ev.target?.closest ? ev.target.closest("#sm-booking-code-copy") : null;
+    if (!btn) return;
+    handleCopyButtonClick(ev);
+  }
+
+  function bindBookingCopy(){
+    if (bindBookingCopy._bound) return;
+    bindBookingCopy._bound = true;
+    // copy button removido: se mantiene por compatibilidad con llamadas externas
+    window.smCopyBookingCode = handleCopyButtonClick;
+  }
+
+  function showLoader(show){
+    const l = qs("#sm-loader");
+    if (!l) return;
+    l.style.display = show ? "flex" : "none";
+  }
+
+  function getParams(){
+    return new URLSearchParams(location.search);
+  }
+
+  function pad2(n){ return n<10 ? "0"+n : ""+n; }
+
+  function ymdFromDate(d){
+    return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+  }
+
+  function addMonths(d, n){
+    const d2 = new Date(d.getTime());
+    d2.setMonth(d2.getMonth()+n);
+    return d2;
+  }
+
+  function syncSlotsHeight(){
+    const cal = qs("#sm-calendar");
+    const slots = qs("#sm-slots");
+    if (!cal || !slots) return;
+
+    // En mobile dejamos altura automática
+    if (window.innerWidth <= 768){
+      slots.style.maxHeight = "";
+      slots.style.minHeight = "";
+      slots.style.height = "";
+      return;
+    }
+
+    const h = cal.offsetHeight || 0;
+    if (!h) return;
+    slots.style.height = h+"px";
+    slots.style.maxHeight = h+"px";
+    slots.style.minHeight = h+"px";
+  }
+
+  // ==== Reload seguro ante errores de red/CORS ====
+  function hardReload(){
+    try{
+      const key = "sm_sched_reload_count";
+      const current = Number(sessionStorage.getItem(key) || "0");
+      if (current >= 1){
+        return;
+      }
+      sessionStorage.setItem(key, String(current + 1));
+    }catch(e){}
+    location.reload();
+  }
+
+  // ==== Estado ====
+  let state = {
+    today: null,
+    days_ahead_max: 90,
+    global_days_ahead_max: 90,
+    consultorLimits: {},
+    selectedConsultor: "todos",
+    consultores: [],
+    availableDays: {}, // { "YYYY-MM": [ "YYYY-MM-DD", ... ] }
+    currentMonth: null, // Date (primer día del mes que se muestra)
+    selectedDate: null, // "YYYY-MM-DD"
+    selectedTime: null, // "HH:mm"
+    bookingLocked: false
+  };
+  let lastBookingId = "";
+
+  function buildConsultorLimitsMap(consultores){
+    const map = {};
+    (consultores || []).forEach(c=>{
+      const cid = String(c.consultor_id || "").trim();
+      if (!cid) return;
+      const raw = c.days_ahead_limit;
+      if (raw === "" || raw === null || raw === undefined) return;
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 1) return;
+      map[cid] = Math.floor(n);
+    });
+    return map;
+  }
+
+  function effectiveDaysAheadMax(){
+    const base = state.global_days_ahead_max || state.days_ahead_max || 90;
+    if (state.selectedConsultor === "todos"){
+      const activos = (state.consultores || []).filter(c => c.activo);
+      const limits = activos
+        .map(c => state.consultorLimits[c.consultor_id])
+        .filter(v => Number.isFinite(Number(v)) && Number(v) > 0)
+        .map(v => Math.floor(Number(v)));
+      if (limits.length && limits.length === activos.length){
+        const maxLim = Math.max(...limits);
+        return Math.min(base, maxLim);
+      }
+      return base;
+    }
+    if (state.selectedConsultor && state.selectedConsultor !== "todos"){
+      const lim = state.consultorLimits[state.selectedConsultor];
+      if (lim != null){
+        const n = Number(lim);
+        if (Number.isFinite(n) && n > 0){
+          return Math.min(base, Math.floor(n));
+        }
+      }
+    }
+    return base;
+  }
+
+  // ==== Estilos skeleton (shimmer) solo una vez ====
+  function ensureSkeletonStyles(){
+    if (document.getElementById("sm-skel-style")) return;
+    const style = document.createElement("style");
+    style.id = "sm-skel-style";
+    style.textContent = `
+      .sm-cal-skel-block {
+        width: 100%;
+        min-height: 230px;
+        border-radius: 18px;
+        background: linear-gradient(90deg,#e5e7eb,#f3f4f6,#e5e7eb);
+        background-size: 200% 100%;
+        animation: sm-cal-shimmer 1.2s ease-in-out infinite;
+      }
+      @keyframes sm-cal-shimmer {
+        0% { background-position:-200% 0; }
+        100% { background-position:200% 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function showCalendarSkeleton(){
+    const calWrap = qs("#sm-calendar");
+    if (!calWrap) return;
+    ensureSkeletonStyles();
+    calWrap.innerHTML = `<div class="sm-cal-skel-block"></div>`;
+  }
+
+  // ==== API ====
+
+  async function apiInit(){
+    const url = ENDPOINT+"?mode=init_booking&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("init "+res.status);
+    return res.json();
+  }
+
+  async function apiGetConsultores(){
+    const url = ENDPOINT+"?mode=consultores&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("consultores "+res.status);
+    return res.json();
+  }
+
+  async function apiAvailableDays(consultor, from, to){
+    const url = ENDPOINT+"?mode=availableDays"
+      +"&consultor="+encodeURIComponent(consultor)
+      +"&from="+encodeURIComponent(from)
+      +"&to="+encodeURIComponent(to)
+      +"&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("availableDays "+res.status);
+    return res.json();
+  }
+
+  async function apiSlots(consultor, dateStr){
+    const url = ENDPOINT+"?mode=slots"
+      +"&consultor="+encodeURIComponent(consultor)
+      +"&date="+encodeURIComponent(dateStr)
+      +"&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("slots "+res.status);
+    return res.json();
+  }
+
+  async function apiBook(payload){
+    const body = new URLSearchParams();
+    body.append("mode","book");
+    Object.entries(payload).forEach(([k,v])=>{
+      if (v !== undefined && v !== null) body.append(k, v);
+    });
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("book "+res.status);
+    return res.json();
+  }
+
+  // ===== NUEVO: BOOT (1 sola llamada) =====
+  async function apiBoot(){
+    const url = ENDPOINT+"?mode=boot&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("boot "+res.status);
+    return res.json();
+  }
+
+  // ==== Calendario ====
+
+  function buildMonthKey(d){
+    return d.getFullYear()+"-"+pad2(d.getMonth()+1);
+  }
+
+  function ensureAvailableDaysForMonth(monthDate){
+    const mk = buildMonthKey(monthDate);
+    if (state.availableDays[mk]) return Promise.resolve();
+
+    const y = monthDate.getFullYear();
+    const m = monthDate.getMonth();
+    const first = new Date(y, m, 1);
+    const last  = new Date(y, m+1, 0);
+    const from = ymdFromDate(first);
+    const to   = ymdFromDate(last);
+
+    return apiAvailableDays(state.selectedConsultor, from, to).then(data=>{
+      if (!data.ok) throw new Error(data.error || "availableDays_error");
+      state.availableDays[mk] = data.dates || [];
+
+      // === LOGS (mantener los actuales) ===
+      if (DEBUG_PERF && data._perf){
+        console.log("APPSCRIPT availableDays _perf", data._perf); // <- se mantiene
+        console.log("APPSCRIPT availableDays _range", { month: mk, from, to }); // <- agregado
+      }
+    });
+  }
+
+  function ensureAvailableDaysForCurrentMonth(){
+    return ensureAvailableDaysForMonth(state.currentMonth);
+  }
+
+  // SOLO FUTURO, EN PARALELO, Y NO BLOQUEA LOADER
+  function prefetchFutureMonths(count=2){
+    if (!state.currentMonth || !state.today) return;
+
+    const today = new Date(state.today);
+    const maxDate = new Date(today.getTime());
+    const cap = effectiveDaysAheadMax();
+    maxDate.setDate(maxDate.getDate()+Math.max(cap-1, 0));
+    const maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+
+    for (let i=1; i<=count; i++){
+      const nextMonth = addMonths(state.currentMonth, i);
+      if (nextMonth <= maxMonth){
+        // fire & forget (paralelo)
+        ensureAvailableDaysForMonth(nextMonth).catch(()=>{});
+      }
+    }
+  }
+
+  // Mantengo el nombre para no tocar más, pero ahora es SOLO FUTURO
+  function prefetchAdjacentMonths(){
+    prefetchFutureMonths(2);
+  }
+
+  function renderCalendar(){
+    const wrap = qs("#sm-calendar");
+    if (!wrap || !state.currentMonth) return;
+    wrap.innerHTML = "";
+
+    const d = state.currentMonth;
+    const year = d.getFullYear();
+    const month = d.getMonth();
+
+    const header = document.createElement("div");
+    header.className = "sm-cal-header";
+    const monthLabel = document.createElement("div");
+    monthLabel.className = "sm-cal-month";
+    const monthNames = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    monthLabel.textContent = monthNames[month]+" "+year;
+    const nav = document.createElement("div");
+    nav.className = "sm-cal-nav";
+    const btnPrev = document.createElement("button");
+    btnPrev.textContent = "‹";
+    const btnNext = document.createElement("button");
+    btnNext.textContent = "›";
+    nav.append(btnPrev, btnNext);
+    header.append(monthLabel, nav);
+    wrap.appendChild(header);
+
+    const grid = document.createElement("div");
+    grid.className = "sm-cal-grid";
+    const dows = ["L","M","M","J","V","S","D"];
+    dows.forEach(dn=>{
+      const el = document.createElement("div");
+      el.className = "sm-cal-dow";
+      el.textContent = dn;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(year, month, 1);
+    let dow = firstDay.getDay();
+    dow = (dow === 0 ? 7 : dow);
+    const blanks = dow - 1;
+    for (let i=0;i<blanks;i++){
+      const b = document.createElement("div");
+      grid.appendChild(b);
+    }
+
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const monthKey = buildMonthKey(state.currentMonth);
+    const availForMonth = new Set((state.availableDays[monthKey] || []));
+
+    for (let day=1; day<=daysInMonth; day++){
+      const dateObj = new Date(year, month, day);
+      const ymd = ymdFromDate(dateObj);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "sm-cal-day";
+      btn.textContent = String(day);
+
+      const isAvailable = availForMonth.has(ymd);
+      if (isAvailable) btn.classList.add("available");
+      else btn.classList.add("disabled");
+
+      if (state.selectedDate === ymd) btn.classList.add("selected");
+
+      if (!isAvailable){
+        btn.disabled = true;
+      } else {
+        btn.addEventListener("click", ()=>{
+          if (state.bookingLocked) return;
+          state.selectedDate = ymd;
+          state.selectedTime = null;
+          renderCalendar();
+          loadSlotsForSelectedDate();
+        });
+      }
+
+      grid.appendChild(btn);
+    }
+
+    wrap.appendChild(grid);
+
+    // ==== Navegación de meses optimizada ====
+    btnPrev.addEventListener("click", ()=>{
+      // seguimos bloqueando ir a meses pasados:
+      const today = new Date(state.today);
+      const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const prev = addMonths(state.currentMonth, -1);
+      if (prev < minMonth) return;
+
+      state.currentMonth = prev;
+      showCalendarSkeleton();
+      ensureAvailableDaysForCurrentMonth()
+        .then(()=>{
+          renderCalendar();
+          prefetchAdjacentMonths(); // ahora solo futuro
+        })
+        .catch(err=>{
+          console.error(err);
+          hardReload();
+        });
+    });
+
+    btnNext.addEventListener("click", ()=>{
+      const today = new Date(state.today);
+      const maxDate = new Date(today.getTime());
+      const cap = effectiveDaysAheadMax();
+      maxDate.setDate(maxDate.getDate()+Math.max(cap-1, 0));
+      const maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+      const next = addMonths(state.currentMonth, 1);
+      if (next > maxMonth) return;
+
+      state.currentMonth = next;
+      showCalendarSkeleton();
+      ensureAvailableDaysForCurrentMonth()
+        .then(()=>{
+          renderCalendar();
+          prefetchAdjacentMonths(); // ahora solo futuro
+        })
+        .catch(err=>{
+          console.error(err);
+          hardReload();
+        });
+    });
+
+    syncSlotsHeight();
+  }
+
+  // ==== Slots y formulario ====
+
+  async function loadSlotsForSelectedDate(){
+    const label = qs("#sm-selected-date-label");
+    const slotsWrap = qs("#sm-slots");
+    const form = qs("#sm-booking-form");
+    if (!slotsWrap || !state.selectedDate) return;
+
+    // (2) Asegura que el form se esconda al recargar horarios
+    if (form) form.style.display = "none";
+
+    // (3) "Cargando horarios..." con shimmer
+    slotsWrap.innerHTML = `<span class="sm-shimmer-text" data-text="Cargando horarios...">Cargando horarios...</span>`;
+
+
+    const p = perfObj();
+    try{
+      const tFetch0 = nowMs();
+      const data = await apiSlots(state.selectedConsultor, state.selectedDate);
+      const fetchMs = Math.round(nowMs() - tFetch0);
+
+      if (DEBUG_PERF && data && data._perf){
+        console.log("APPSCRIPT slots _perf", data._perf); // (se mantiene)
+      }
+
+      if (!data.ok) throw new Error(data.error || "slots_error");
+      const slots = data.slots || [];
+
+      const tRender0 = nowMs();
+
+      if (!slots.length){
+        slotsWrap.textContent = "No hay horarios disponibles en esta fecha.";
+        if (label) label.textContent = "Horarios para "+state.selectedDate;
+        syncSlotsHeight();
+        const renderMs = Math.round(nowMs() - tRender0);
+        if (DEBUG_PERF){
+          perfLog("SLOTS PERF", {
+            date: state.selectedDate,
+            consultor: state.selectedConsultor,
+            fetch_ms: fetchMs,
+            render_ms: renderMs,
+            total_ms: fetchMs + renderMs,
+            appscript_perf: data._perf || {}
+          });
+        }
+        return;
+      }
+
+      if (label) label.textContent = "Horarios para "+state.selectedDate;
+
+      slotsWrap.innerHTML = "";
+      slots.forEach(t =>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "sm-slot-btn";
+        btn.textContent = t;
+        if (state.selectedTime === t) btn.classList.add("selected");
+        btn.addEventListener("click", ()=>{
+          if (state.bookingLocked) return;
+          state.selectedTime = t;
+          qsa(".sm-slot-btn").forEach(b => b.classList.toggle("selected", b === btn));
+          showFormIfReady();
+        });
+        slotsWrap.appendChild(btn);
+      });
+
+      syncSlotsHeight();
+
+      const renderMs = Math.round(nowMs() - tRender0);
+      if (DEBUG_PERF){
+        perfLog("SLOTS PERF", {
+          date: state.selectedDate,
+          consultor: state.selectedConsultor,
+          fetch_ms: fetchMs,
+          render_ms: renderMs,
+          total_ms: fetchMs + renderMs,
+          appscript_perf: data._perf || {}
+        });
+      }
+
+    }catch(err){
+      console.error(err);
+      slotsWrap.textContent = "Error al cargar horarios.";
+      hardReload();
+    }
+  }
+
+  function showFormIfReady(){
+    const form = qs("#sm-booking-form");
+    const fDate = qs("#sm-date-input");
+    const fTime = qs("#sm-time-input");
+    if (!form || !fDate || !fTime) return;
+    if (state.selectedDate && state.selectedTime){
+      fDate.value = state.selectedDate;
+      fTime.value = state.selectedTime;
+      form.style.display = "block";
+    } else {
+      form.style.display = "none";
+    }
+  }
+
+  // NUEVO helper: resetea form + inputs ocultos (para cambio de consultor)
+  function hardHideFormAndClearTime(){
+    const form = qs("#sm-booking-form");
+    const fTime = qs("#sm-time-input");
+    const fDate = qs("#sm-date-input");
+    if (fTime) fTime.value = "";
+    // Ojo: la fecha la mantenemos si corresponde; no la limpiamos acá
+    if (form) form.style.display = "none";
+  }
+
+  function prefillFromURL(){
+    const p = getParams();
+    const nombre = p.get("nombre") || "";
+    const email = p.get("email") || "";
+    const telefono = p.get("telefono") || "";
+    const marca = p.get("marca") || "";
+    const tipo = p.get("tipo") || "";
+    const idpipe = p.get("idpipe") || "";
+
+    if (qs("#sm-nombre")) qs("#sm-nombre").value = nombre;
+    if (qs("#sm-email")) qs("#sm-email").value = email;
+    if (qs("#sm-telefono")) qs("#sm-telefono").value = telefono;
+    if (qs("#sm-marca")) qs("#sm-marca").value = marca;
+    if (qs("#sm-tipo")) qs("#sm-tipo").value = tipo;
+    if (qs("#sm-idpipe")) qs("#sm-idpipe").value = idpipe;
+  }
+
+  function buildConsultorSelect(consultores, preferredCid){
+    const sel = qs("#sm-consultor-select");
+    if (!sel) return;
+    sel.innerHTML = "";
+
+    const prefCid = String(preferredCid || "").trim();
+    const activos = (consultores || []).filter(c=>c.activo);
+    const prefConsultor = prefCid
+      ? activos.find(c => String(c.consultor_id || "").trim() === prefCid)
+      : null;
+    let prefValue = "";
+
+    if (prefConsultor){
+      prefValue = String(prefConsultor.consultor_id || "").trim();
+      const o = document.createElement("option");
+      o.value = prefValue;
+      o.textContent = prefValue;
+      sel.appendChild(o);
+    }
+
+    const optAll = document.createElement("option");
+    optAll.value = "todos";
+    optAll.textContent = "Todos";
+    sel.appendChild(optAll);
+
+    sel.value = (prefConsultor ? prefValue : "todos");
+    state.selectedConsultor = sel.value;
+
+
+    sel.addEventListener("change", ()=>{
+      if (state.bookingLocked) { sel.value = state.selectedConsultor; return; }
+
+      // (1) Guardamos fecha actual para mantenerla clickeada si aplica
+      const prevDate = state.selectedDate;
+
+      state.selectedConsultor = sel.value;
+
+      // (1) No borramos selectedDate aquí; solo descliqueamos la hora
+      state.selectedTime = null;
+
+      // (2) Al cambiar consultor, el formulario NO debe quedar abierto
+      hardHideFormAndClearTime();
+
+      // Si había fecha, mostramos el mes de esa fecha (para que siga "cliqueada" visualmente)
+      if (prevDate){
+        const parts = prevDate.split("-");
+        if (parts.length === 3){
+          const yy = Number(parts[0]);
+          const mm = Number(parts[1]);
+          if (!isNaN(yy) && !isNaN(mm)){
+            state.currentMonth = new Date(yy, mm-1, 1);
+          }
+        }
+      }
+
+      // Reset de cache del calendario porque cambia consultor
+      state.availableDays = {};
+
+      const slotsWrap = qs("#sm-slots");
+      const label = qs("#sm-selected-date-label");
+      const calWrap = qs("#sm-calendar");
+
+      if (slotsWrap) slotsWrap.innerHTML = "";
+      if (label) label.textContent = prevDate ? ("Horarios para " + prevDate) : "Selecciona una fecha";
+
+      if (calWrap) showCalendarSkeleton();
+
+      ensureAvailableDaysForCurrentMonth()
+        .then(()=>{
+          // (1) Validamos si la fecha previa sigue disponible con este consultor
+          if (prevDate){
+            const mk = buildMonthKey(state.currentMonth);
+            const availSet = new Set(state.availableDays[mk] || []);
+            if (availSet.has(prevDate)){
+              state.selectedDate = prevDate;  // se mantiene cliqueada
+            } else {
+              state.selectedDate = null;      // si no está disponible, se deselecciona
+            }
+          }
+
+          renderCalendar();
+
+          // (1) Si la fecha se mantuvo, recargamos slots (y el form seguirá oculto)
+          if (state.selectedDate){
+            loadSlotsForSelectedDate();
+          } else {
+            // si no hay fecha válida, etiqueta por defecto
+            if (label) label.textContent = "Selecciona una fecha";
+          }
+
+          // prefetch futuro (no bloquea)
+          setTimeout(()=> prefetchAdjacentMonths(), 0);
+        })
+        .catch(err=>{
+          console.error(err);
+          hardReload();
+        });
+
+    });
+  }
+
+  function lockBookingUI(){
+    state.bookingLocked = true;
+    const form = qs("#sm-booking-form");
+    const btnsSlots = qsa(".sm-slot-btn");
+    if (form) {
+      qsa("input,button,select", form).forEach(el => el.disabled = true);
+    }
+    btnsSlots.forEach(b=> b.classList.add("disabled"));
+  }
+
+  // ==== Init ====
+
+  async function init(){
+    const boot = perfObj();
+    showLoader(true);
+
+    let bootOk = false;
+
+    try{
+      perfMark(boot, "boot_before_consultores");
+
+      // ===== CAMBIO: 1 sola llamada (boot) =====
+      const bootData = await apiBoot();
+      if (!bootData.ok) throw new Error(bootData.error || "boot_error");
+
+      state.today = bootData.init?.today || null;
+      state.global_days_ahead_max = bootData.init?.days_ahead_max || 90;
+      state.days_ahead_max = state.global_days_ahead_max;
+      state.consultorLimits = buildConsultorLimitsMap(bootData.consultores || []);
+      state.consultores = bootData.consultores || [];
+
+            const urlIdc = String(getParams().get("idc") || "").trim();
+      buildConsultorSelect(bootData.consultores || [], urlIdc);
+
+      perfMark(boot, "boot_after_consultores");
+
+      const todayDate = new Date(state.today);
+      state.currentMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+
+      // Guardar availableDays del mes actual que ya viene en boot
+      const mk = buildMonthKey(state.currentMonth);
+      const y = state.currentMonth.getFullYear();
+      const m = state.currentMonth.getMonth();
+      const first = new Date(y, m, 1);
+      const last  = new Date(y, m+1, 0);
+      const from = ymdFromDate(first);
+      const to   = ymdFromDate(last);
+
+      perfMark(boot, "boot_before_availableDays");
+      state.availableDays[mk] = (bootData.availableDays?.dates || []);
+            if (state.selectedConsultor !== "todos"){
+        state.availableDays = {};
+        await ensureAvailableDaysForCurrentMonth();
+      }
+
+      perfMark(boot, "boot_after_availableDays");
+
+      // === LOGS (mantener los actuales) ===
+      if (DEBUG_PERF && bootData.availableDays && bootData.availableDays._perf){
+        console.log("APPSCRIPT availableDays _perf", bootData.availableDays._perf); // <- se mantiene
+        console.log("APPSCRIPT availableDays _range", { month: mk, from, to }); // <- agregado
+      }
+
+      renderCalendar();
+      prefillFromURL();
+
+      bootOk = true;
+
+      try{ sessionStorage.removeItem("sm_sched_reload_count"); }catch(e){}
+
+    }catch(err){
+      console.error(err);
+      toast("Error al cargar agenda");
+      hardReload();
+    }finally{
+      showLoader(false);
+      perfMark(boot, "total_ms");
+      if (DEBUG_PERF) perfLog("BOOT PERF", boot);
+
+      // Prefetch FUTURO en paralelo y SIN bloquear loader
+      if (bootOk){
+        setTimeout(()=> {
+          // si existe requestIdleCallback, mejor
+          if ("requestIdleCallback" in window){
+            requestIdleCallback(()=> prefetchFutureMonths(2), { timeout: 1500 });
+          } else {
+            prefetchFutureMonths(2);
+          }
+        }, 0);
+      }
+    }
+  }
+
+  // ==== Envío de reserva ====
+
+  async function onSubmitBooking(ev){
+    ev.preventDefault();
+    if (state.bookingLocked) return;
+    const fecha = qs("#sm-date-input")?.value || "";
+    const hora  = qs("#sm-time-input")?.value || "";
+    const nombre= qs("#sm-nombre")?.value.trim() || "";
+    const email = qs("#sm-email")?.value.trim() || "";
+    const tel   = qs("#sm-telefono")?.value.trim() || "";
+    const marca = qs("#sm-marca")?.value.trim() || "";
+    const tipo  = qs("#sm-tipo")?.value.trim() || "";
+    const idpipe = qs("#sm-idpipe")?.value.trim() || "";
+
+    if (!fecha || !hora){
+      toast("Selecciona fecha y hora");
+      return;
+    }
+    if (!email){
+      toast("Ingresa un email");
+      return;
+    }
+    if (!tel){
+      toast("Ingresa un teléfono");
+      return;
+    }
+
+    showLoader(true);
+    try{
+      const data = await apiBook({
+        fecha,
+        hora,
+        consultor: state.selectedConsultor,
+        nombre,
+        email,
+        telefono: tel,
+        marca,
+        tipo,
+        idpipe
+      });
+      if (!data.ok){
+        const msg = data.error === "too_soon"
+          ? "Debe ser con 10 min de anticipación"
+          : data.error === "slot_not_available"
+          ? "Ese horario ya no está disponible"
+          : data.error === "too_far_consultor"
+          ? "La fecha está fuera del rango permitido para ese consultor"
+          : data.error === "no_consultor_for_date"
+          ? "No hay consultores disponibles para esa fecha"
+          : "No se pudo agendar";
+        toast(msg);
+        return;
+      }
+
+      const successOverlay = qs("#sm-success-overlay");
+      const successText = qs("#sm-success-text");
+      const bookingId = data.booking_id || "";
+      renderBookingCode(bookingId);
+
+      if (successText){
+        const [y,m,d] = fecha.split("-");
+        const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+        const fechaStr = `${d} de ${meses[Number(m)-1]} de ${y}`;
+        successText.innerHTML = `Has agendado la reunión el <strong>${fechaStr}</strong> a las <strong>${hora} hrs</strong>.`;
+      }
+      if (successOverlay){
+        successOverlay.style.display = "flex";
+      }
+
+      lockBookingUI();
+    }catch(err){
+      console.error(err);
+      toast("Error al agendar");
+    }finally{
+      showLoader(false);
+    }
+  }
+
+  window.addEventListener("resize", syncSlotsHeight);
+
+  document.addEventListener("DOMContentLoaded", ()=>{
+    const form = qs("#sm-booking-form");
+    if (form) form.addEventListener("submit", onSubmitBooking);
+    bindBookingCopy();
+    init();
+  });
+
+})();
+
+</script>
+</body>
+</html>

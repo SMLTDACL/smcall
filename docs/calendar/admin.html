@@ -1,0 +1,2571 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="files/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Admin</title>
+  <!-- OpenReplay Tracking Code -->
+<script>
+  // ===== 1) Obtener idc desde la URL =====
+  function smGetIDCFromURL() {
+    var search = window.location.search || "";
+    if (!search) return "";
+    try {
+      // Navegadores modernos
+      var params = new URLSearchParams(search);
+      return params.get("idc") || "";
+    } catch (e) {
+      // Fallback simple por si acaso
+      var m = search.match(/[?&]idc=([^&]+)/i);
+      return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+    }
+  }
+
+  // Guardamos el idc para usarlo como userID
+  var smIDC = smGetIDCFromURL();
+  window.__smIDC = smIDC; // por si lo quieres usar en otras partes de tu app
+
+  // ===== 2) Configuración OpenReplay =====
+  var initOpts = {
+    projectKey: "QonwVB9oKHTLvpz3EkMc",
+    // 0 - plain, 1 - obscured, 2 - ignored
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: false
+  };
+
+  // Aquí conectamos el idc al userID
+  var startOpts = { userID: smIDC || "" };
+
+  (function(A,s,a,y,e,r){
+    r = window.OpenReplay = [e, r, y, [s - 1, e]];
+    s = document.createElement('script');
+    s.src = A;
+    s.async = !a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+
+    r.start = function(v){ r.push([0]); };
+    r.stop = function(v){ r.push([1]); };
+    r.setUserID = function(id){ r.push([2, id]); };
+    r.setUserAnonymousID = function(id){ r.push([3, id]); };
+    r.setMetadata = function(k, v){ r.push([4, k, v]); };
+    r.event = function(k, p, i){ r.push([5, k, p, i]); };
+    r.issue = function(k, p){ r.push([6, k, p]); };
+    r.isActive = function(){ return false; };
+    r.getSessionToken = function(){};
+  })("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+
+  // (Opcional) Si quieres forzar el setUserID explícito cuando exista idc:
+  (function(){
+    if (!smIDC) return;
+    try {
+      if (window.OpenReplay && typeof OpenReplay.setUserID === "function") {
+        OpenReplay.setUserID(smIDC);
+      }
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+
+<div class="sm-logo-wrap">
+  <img class="sm-logo" src="files/logon.png" alt="Logo">
+</div>
+<div class="sm-admin-wrap">
+  <!-- Login -->
+  <div id="sm-admin-login" class="sm-admin-card">
+    <h2 class="sm-title">Login administración</h2>
+    <div class="sm-row">
+      <label class="sm-label">Usuario
+        <input id="sm-admin-user" class="sm-input" type="text">
+      </label>
+    </div>
+    <div class="sm-row">
+      <label class="sm-label">Clave
+        <input id="sm-admin-pass" class="sm-input" type="password">
+      </label>
+    </div>
+    <button id="sm-admin-login-btn" class="sm-btn-primary" type="button">Entrar</button>
+  </div>
+  <!-- Panel Administración (agenda del día) -->
+  <div id="sm-admin-panel" class="sm-admin-card" style="display:none;">
+    <h2 class="sm-title">Administración de agenda</h2>
+    <!-- Filtros -->
+    <div class="sm-admin-bar">
+      <div>
+        <label class="sm-label">Fecha
+          <input id="sm-admin-date" class="sm-input" type="date">
+        </label>
+      </div>
+      <div>
+        <label class="sm-label">Consultor
+          <select id="sm-admin-consultor" class="sm-select"></select>
+        </label>
+      </div>
+      <div class="sm-admin-info" id="sm-admin-refresh-info">
+        Actualiza cada 15 min
+      </div>
+    </div>
+    <!-- Listado de agendamientos -->
+    <div class="sm-subtitle" style="margin-top:10px;">Agendamientos del día</div>
+    <div id="sm-admin-list" class="sm-admin-list"></div>
+  </div>
+  <!-- Panel Configuración (card separado) -->
+  <div id="sm-admin-config-card" class="sm-admin-card" style="display:none;margin-top: 40px;">
+    <details class="sm-config" id="sm-config">
+      <summary class="sm-config-summary">
+        <span>Configuración</span>
+        <span class="sm-config-chevron" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg"
+               width="20" height="20"
+               viewBox="0 0 24 24"
+               fill="none"
+               stroke="currentColor"
+               stroke-width="2"
+               stroke-linecap="round"
+               stroke-linejoin="round"
+               class="lucide lucide-chevron-down-icon lucide-chevron-down">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </span>
+      </summary>
+      <div class="sm-config-body">
+        <!-- Bloqueo de fechas -->
+        <hr style="margin:18px 0; border:none;border-top:1px solid #e5e7eb;">
+        <h3 class="sm-subtitle">Bloqueo de fechas</h3>
+        <div class="sm-admin-bar">
+          <div>
+            <label class="sm-label">Fecha a bloquear
+              <input id="sm-block-date" class="sm-input" type="date">
+            </label>
+          </div>
+          <div>
+            <label class="sm-label">Consultor
+              <select id="sm-block-consultor" class="sm-select"></select>
+            </label>
+          </div>
+          <div>
+            <label class="sm-label">Motivo (opcional)
+              <input id="sm-block-motivo" class="sm-input" type="text">
+            </label>
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-end;">
+            <button id="sm-btn-block" class="sm-btn-secondary" type="button">Bloquear</button>
+            <button id="sm-btn-unblock" class="sm-btn-secondary" type="button">Desbloquear</button>
+          </div>
+        </div>
+        <div class="sm-subtitle sm-block-title">Fechas bloqueadas</div>
+        <div id="sm-block-list" class="sm-block-list"></div>
+        <!-- Edición horario de cada consultor -->
+        <hr style="margin:18px 0; border:none;border-top:1px solid #e5e7eb;">
+        <h3 class="sm-subtitle">Horarios de consultor</h3>
+        <div class="sm-admin-bar">
+          <div>
+            <label class="sm-label">Consultor
+              <select id="sm-hor-consultor" class="sm-select"></select>
+            </label>
+          </div>
+          <div class="sm-admin-info">
+            Edita qué días atiende y en qué tramos.
+          </div>
+        </div>
+        <div id="sm-hor-grid" class="sm-hor-grid"></div>
+        <div class="sm-hor-meta">
+          <label class="sm-label" for="sm-hor-days-ahead">Máximo de días a futuro</label>
+          <div class="sm-hor-meta-row">
+            <input id="sm-hor-days-ahead" class="sm-input sm-input-inline" type="number" min="1" placeholder="Sin restricción">
+            <div class="sm-hor-meta-hint">
+              Deja en blanco para sin restricción. Se calcula por medianoche (1 = solo hoy, 2 = hoy y mañana, etc.).
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;justify-content:flex-start;">
+          <button id="sm-hor-save" class="sm-btn-secondary" type="button">Guardar horarios</button>
+        </div>
+        <!-- Gestión simple de consultores (crear) -->
+        <hr style="margin:18px 0; border:none;border-top:1px solid #e5e7eb;">
+        <h3 class="sm-subtitle">Consultores</h3>
+        <div class="sm-admin-bar">
+          <div>
+            <label class="sm-label">Nuevo ID (ej: 003)
+              <input id="sm-new-consultor-id" class="sm-input" type="text">
+            </label>
+          </div>
+          <div>
+            <label class="sm-label">Nombre
+              <input id="sm-new-consultor-name" class="sm-input" type="text">
+            </label>
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button id="sm-btn-add-consultor" class="sm-btn-secondary" type="button">Agregar consultor</button>
+          </div>
+        </div>
+                <!-- Listado de consultores activos (para eliminar) -->
+        <div id="sm-consultor-list" class="sm-cons-list"></div>
+      </div>
+    </details>
+  </div>
+  <!-- Modal Reasignar -->
+  <div id="sm-rea-modal" class="sm-rea-modal">
+    <div class="sm-rea-backdrop"></div>
+    <div class="sm-rea-dialog">
+      <div class="sm-rea-title">Reasignar reunión</div>
+      <div class="sm-rea-body" id="sm-rea-body">
+        Buscando consultores disponibles…
+      </div>
+      <div class="sm-rea-row" id="sm-rea-select-row" style="display:none;">
+        <label for="sm-rea-select">Nuevo consultor</label>
+        <select id="sm-rea-select"></select>
+      </div>
+      <div class="sm-rea-footer">
+        <button type="button" class="sm-rea-btn" id="sm-rea-cancel">Cerrar</button>
+        <button type="button" class="sm-rea-btn sm-rea-btn-primary" id="sm-rea-confirm" disabled>Reasignar</button>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Reprogramar -->
+  <div id="sm-rp-modal" class="sm-rp-modal">
+    <div class="sm-rp-backdrop"></div>
+    <div class="sm-rp-dialog">
+      <div class="sm-rp-title">Reprogramar reunión</div>
+      <div class="sm-rp-body" id="sm-rp-body">
+        Selecciona una nueva fecha y horario.
+      </div>
+      <div class="sm-rp-grid">
+        <div class="sm-rp-cal-wrap">
+          <div id="sm-rp-cal" class="sm-rp-cal">Cargando calendario…</div>
+        </div>
+        <div class="sm-rp-slots-wrap">
+          <div class="sm-rp-date-label" id="sm-rp-date-label">Selecciona una fecha</div>
+          <div id="sm-rp-slots" class="sm-rp-slots"></div>
+        </div>
+      </div>
+      <div class="sm-rp-footer">
+        <button type="button" class="sm-rp-btn" id="sm-rp-cancel">Cerrar</button>
+        <button type="button" class="sm-rp-btn sm-rp-btn-primary" id="sm-rp-confirm" disabled>Reprogramar</button>
+      </div>
+    </div>
+  </div>
+  <!-- Toast + Loader -->
+  <div id="sm-admin-toast" class="sm-toast"></div>
+  <div id="sm-admin-loader" class="sm-loader" style="display:none;">
+    <div class="sm-spinner"></div>
+  </div>
+</div>
+<style>
+:root{
+  font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.sm-logo-wrap{
+  text-align:center;
+  margin:16px 0;
+}
+.sm-logo{
+  max-width:120px;
+  width:100%;
+  height:auto;
+}
+body{
+  margin:0;
+  font-family:inherit;
+  -webkit-font-smoothing:antialiased;
+  background:#F5F5F7;
+}
+    /* ===== Base Admin ===== */
+.sm-admin-wrap{
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  padding:24px 0;
+}
+.sm-admin-card{
+  max-width:1000px;
+  margin:0 auto 18px;
+  background:#fff;
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 10px 30px rgba(15,23,42,0.08);
+}
+.sm-admin-bar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:flex-end;
+  margin-top:8px;
+}
+.sm-admin-list{
+  margin-top:8px;
+  border-radius:14px;
+  border:1px solid #e5e7eb;
+  background:#f9fafb;
+  padding:10px;
+  max-height:420px;
+  overflow:auto;
+}
+.sm-admin-item{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  justify-content:space-between;
+  padding:6px 8px;
+  border-radius:10px;
+  margin-bottom:4px;
+  font-size:13px;
+}
+.sm-admin-item.is-past{opacity:0.45;}
+.sm-admin-item.is-now{
+  background:#ecfdf3;
+  border:1px solid #bbf7d0;
+}
+.sm-admin-item.is-cancelled{
+  text-decoration:line-through;
+  opacity:0.55;
+}
+.sm-admin-item-main{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+}
+.sm-admin-badge{
+  border-radius:999px;
+  padding:2px 8px;
+  font-size:11px;
+  background:#e5e7eb;
+  color:#111827;
+}
+.sm-admin-badge-consultor{
+  background:#eff6ff;
+  color:#1d4ed8;
+}
+.sm-admin-badge-hora{
+  background:#f3f4f6;
+  color:#111827;
+}
+.sm-admin-badge-cancel{
+  background:#fee2e2;
+  color:#b91c1c;
+}
+.sm-admin-actions{
+  display:flex;
+  gap:6px;
+}
+.sm-admin-actions button{
+  border:none;
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:11px;
+  cursor:pointer;
+  background:#fee2e2;
+  color:#b91c1c;
+}
+
+.sm-admin-info{
+  font-size:12px;
+  color:#6b7280;
+}
+.sm-label{
+  display:block;
+  font-size:13px;
+  color:#374151;
+  margin-bottom:2px;
+  font-weight:500;
+}
+.sm-input,.sm-select{
+  width:100%;
+  padding:7px 9px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  font-size:13px;
+  box-sizing:border-box;
+}
+#sm-admin-date{
+  line-height: 15px;
+}
+
+#sm-block-date{
+  line-height: 15px;
+}
+
+.sm-input:focus,.sm-select:focus{
+  outline:none;
+  border-color:#1f6feb;
+  box-shadow:0 0 0 1px rgba(31,111,235,0.07);
+}
+.sm-row{margin-bottom:10px;}
+.sm-title{
+  margin:0 0 8px;
+  font-size:22px;
+  font-weight:700;
+  color:#111827;
+}
+.sm-subtitle{
+  margin:0 0 6px;
+  font-size:15px;
+  font-weight:600;
+  color:#111827;
+}
+.sm-btn-primary,.sm-btn-secondary{
+  border:none;
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+}
+.sm-btn-primary{
+  background:#1f6feb;
+  color:#fff;
+  width:100%;
+}
+.sm-btn-secondary{
+  background:#e5e7eb;
+  color:#111827;
+}
+
+/* Toast + Loader */
+.sm-toast{
+  position:fixed;
+  left:50%;
+  bottom:20px;
+  transform:translateX(-50%);
+  background:#111827;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:999px;
+  font-size:13px;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s,transform .2s;
+  z-index:99999;
+}
+.sm-toast.is-show{
+  opacity:1;
+  transform:translateX(-50%) translateY(-4px);
+}
+.sm-loader{
+  position:fixed;
+  inset:0;
+  background:rgba(255,255,255,0.75);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+.sm-spinner{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  border:3px solid rgba(31,111,235,0.2);
+  border-top-color:#1f6feb;
+  animation:sm-spin .8s linear infinite;
+}
+@keyframes sm-spin{
+  to{transform:rotate(360deg);}
+}
+
+/* Botón naranja para Reprogramar / Reasignar */
+.sm-admin-actions .sm-admin-btn-orange{
+  background:#ffeadc !important;
+  color:#ea580c !important;
+}
+
+
+
+/* ===== Modal Reasignar ===== */
+.sm-rea-modal{
+  position:fixed;
+  inset:0;
+  z-index:99990;
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.sm-rea-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(15,23,42,0.45);
+}
+.sm-rea-dialog{
+  position:relative;
+  background:#ffffff;
+  border-radius:18px;
+  max-width:420px;
+  width:90%;
+  padding:18px 18px 14px;
+  box-shadow:0 18px 45px rgba(15,23,42,0.22);
+  font-family:inherit;
+  z-index:1;
+}
+.sm-rea-title{
+  font-size:15px;
+  font-weight:600;
+  margin-bottom:4px;
+  color:#111827;
+}
+.sm-rea-body{
+  font-size:14px;
+  color:#4b5563;
+  margin-bottom:10px;
+}
+.sm-rea-row{
+  margin-bottom:10px;
+}
+.sm-rea-row label{
+  display:block;
+  font-size:12px;
+  color:#6b7280;
+  margin-bottom:4px;
+}
+.sm-rea-row select{
+  width:100%;
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  padding:6px 10px;
+  font-size:13px;
+  background:#f9fafb;
+  outline:none;
+}
+.sm-rea-footer{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:8px;
+}
+.sm-rea-btn{
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  padding:6px 14px;
+  font-size:13px;
+  background:#f9fafb;
+  cursor:pointer;
+}
+.sm-rea-btn-primary{
+  background:#1f6feb;
+  color:#ffffff;
+  border-color:#1f6feb;
+}
+
+/* ===== Modal Reprogramar ===== */
+.sm-rp-modal{
+  position:fixed;
+  inset:0;
+  z-index:99989;
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.sm-rp-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(15,23,42,0.45);
+}
+.sm-rp-dialog{
+  position:relative;
+  background:#ffffff;
+  border-radius:18px;
+  max-width:480px;
+  width:95%;
+  padding:16px 16px 14px;
+  box-shadow:0 18px 45px rgba(15,23,42,0.22);
+  font-family:inherit;
+  z-index:1;
+}
+.sm-rp-title{
+  font-size:15px;
+  font-weight:600;
+  margin-bottom:4px;
+  color:#111827;
+}
+.sm-rp-body{
+  font-size:14px;
+  color:#4b5563;
+  margin-bottom:10px;
+}
+.sm-rp-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);
+  gap:12px;
+  align-items:flex-start;
+}
+.sm-rp-cal-wrap{
+  border-radius:14px;
+  border:1px solid #e5e7eb;
+  padding:10px;
+  background:#f9fafb;
+}
+.sm-rp-slots-wrap{
+  border-radius:14px;
+  border:1px solid #e5e7eb;
+  padding:10px;
+  background:#ffffff;
+  min-height:150px;
+  font-size:13px;
+}
+.sm-rp-date-label{
+  font-size:13px;
+  font-weight:500;
+  margin-bottom:6px;
+  color:#111827;
+}
+.sm-rp-slots{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.sm-rp-slot-btn{
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  padding:4px 10px;
+  font-size:12px;
+  background:#f9fafb;
+  cursor:pointer;
+}
+.sm-rp-slot-btn.selected{
+  background:#1f6feb;
+  color:#ffffff;
+  border-color:#1f6feb;
+}
+.sm-rp-footer{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:10px;
+}
+.sm-rp-btn{
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  padding:6px 14px;
+  font-size:13px;
+  background:#f9fafb;
+  cursor:pointer;
+}
+.sm-rp-btn-primary{
+  background:#1f6feb;
+  color:#ffffff;
+  border-color:#1f6feb;
+}
+.sm-rp-cal{
+  font-size:12px;
+}
+.sm-rp-cal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+}
+.sm-rp-cal-month{
+  font-weight:600;
+  font-size:13px;
+  color:#111827;
+}
+.sm-rp-cal-nav button{
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  width:24px;
+  height:24px;
+  font-size:13px;
+  background:#ffffff;
+  cursor:pointer;
+}
+.sm-rp-cal-grid{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:2px;
+}
+.sm-rp-dow{
+  text-align:center;
+  font-size:11px;
+  color:#9ca3af;
+  padding:2px 0;
+}
+.sm-rp-day-btn{
+  border-radius:999px;
+  border:none;
+  padding:3px 0;
+  font-size:11px;
+  cursor:pointer;
+  background:transparent;
+}
+.sm-rp-day-btn.disabled{
+  cursor:default;
+  color:#d1d5db;
+}
+.sm-rp-day-btn.available{
+  color:#111827;
+}
+.sm-rp-day-btn.available:hover{
+  background:#e5e7eb;
+}
+.sm-rp-day-btn.selected{
+  background:#1f6feb;
+  color:#ffffff;
+}
+@media (max-width:640px){
+  .sm-rp-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+
+
+/* ===== Editor de horarios por consultor ===== */
+.sm-hor-grid{
+  margin-top:10px;
+  border-radius:14px;
+  border:1px solid #e5e7eb;
+  background:#f9fafb;
+  padding:10px;
+}
+
+.sm-hor-meta{
+  margin-top:12px;
+}
+.sm-hor-meta-row{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+}
+.sm-input-inline{
+  max-width:180px;
+}
+.sm-hor-meta-hint{
+  font-size:12px;
+  color:#6b7280;
+  line-height:1.4;
+}
+
+.sm-hor-row{
+  display:grid;
+  grid-template-columns:90px minmax(0,1fr);
+  gap:6px 10px;
+  align-items:flex-start;
+  padding:6px 8px;
+  border-radius:10px;
+}
+.sm-hor-row:nth-child(odd){
+  background:#ffffff;
+}
+
+.sm-hor-day-label{
+  font-size:13px;
+  font-weight:500;
+  color:#111827;
+}
+
+.sm-hor-day-label input{
+  margin-right:6px;
+}
+
+.sm-hor-fields{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+}
+
+.sm-hor-range{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  align-items:center;
+  font-size:12px;
+}
+.sm-hor-range-label{
+  font-size:11px;
+  color:#6b7280;
+  margin-right:4px;
+}
+
+.sm-hor-select{
+  min-width:90px;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  font-size:12px;
+  background:#ffffff;
+  box-sizing:border-box;
+}
+.sm-hor-select:disabled{
+  background:#e5e7eb;
+  color:#9ca3af;
+}
+
+
+
+
+/* ===== Configuración colapsable ===== */
+.sm-config{
+  margin-top:5px;
+}
+
+.sm-config-summary{
+    list-style: none;
+    display: flex;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    align-items: center;
+}
+
+/* Oculta el triángulo por defecto del summary */
+.sm-config-summary::-webkit-details-marker{
+  display:none;
+}
+
+.sm-config-chevron{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform .18s ease;
+}
+
+/* Tamaño del SVG */
+.sm-config-chevron svg{
+  width:20px;
+  height:20px;
+}
+
+/* Rota la flecha cuando está abierto */
+.sm-config[open] .sm-config-chevron{
+  transform:rotate(180deg);
+}
+
+.sm-config-body{
+  margin-top:10px;
+}
+
+
+
+
+/* ===== Bloqueo de fechas (listado) ===== */
+.sm-block-title{
+  margin-top:10px;
+}
+
+.sm-block-list{
+  border-radius:14px;
+  border:1px solid #e5e7eb;
+  background:#f9fafb;
+  padding:8px;
+  font-size:13px;
+  margin-top:10px;
+}
+
+.sm-block-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start;
+  padding:6px 8px;
+  border-radius:10px;
+}
+
+.sm-block-row:nth-child(odd){
+  background:#ffffff;
+}
+
+.sm-block-info{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+}
+
+.sm-block-date{
+  font-weight:600;
+  color:#111827;
+}
+
+.sm-block-consultor{
+  font-size:12px;
+  color:#374151;
+}
+
+.sm-block-motivo{
+  font-size:12px;
+  color:#6b7280;
+  word-break:break-word;
+}
+
+.sm-block-delete-btn{
+  border:none;
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:11px;
+  cursor:pointer;
+  background:#fee2e2;
+  color:#b91c1c;
+}
+
+/* ===== Listado de consultores (eliminar) ===== */
+.sm-cons-list{
+  margin-top:10px;
+  border-radius:14px;
+  border:1px solid #e5e7eb;
+  background:#f9fafb;
+  padding:8px;
+  font-size:13px;
+}
+
+.sm-cons-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:5px 6px;
+  border-radius:8px;
+}
+
+.sm-cons-row:nth-child(odd){
+  background:#ffffff;
+}
+
+.sm-cons-info{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+
+.sm-cons-id{
+  font-weight:600;
+  font-size:12px;
+  padding:2px 6px;
+  border-radius:999px;
+  background:#eff6ff;
+  color:#1d4ed8;
+}
+
+.sm-cons-delete-btn{
+  border:none;
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:11px;
+  cursor:pointer;
+  background:#fee2e2;
+  color:#b91c1c;
+}
+
+
+
+
+/* ===== Admin: Filas tipo 'consultores' (IDPipe/Teléfono copiar + nombre + tipo) ===== */
+
+/* Más parecido a consultores (separación mayor entre “piezas”) */
+.sm-admin-item-main{
+  gap:20px; /* antes 8px */
+}
+
+/* Row compacto que NO ocupa el ancho completo (para que quede al lado, no apilado) */
+.smad-info-row{
+  display:inline-flex; /* clave: inline-flex, no block */
+  align-items:center;
+  gap:2px;
+  font-size:13px;
+}
+
+/* Valor */
+.smad-info-value{
+  color:#111827;
+}
+
+/* Botón copiar (igual que consultores) */
+.smad-copy-btn{
+  border:none;
+  background:transparent;
+  padding:0;
+  margin-left:2px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.smad-copy-btn svg{
+  width:13px;
+  height:13px;
+  stroke:#6b7280;
+}
+
+.smad-copy-btn:hover svg{
+  stroke:#111827;
+}
+
+/* Badge tipo (igual estilo consultores) */
+.smad-badge-tipo{
+  font-size:11px;
+  padding:2px 6px;
+  border-radius:999px;
+  background:#e5e7eb;
+  color:#374151;
+}
+
+.smad-info-row-motivo{
+  margin-top: 4px;
+}
+
+.smad-info-value-motivo{
+  max-width: 150px;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+</style>
+<script>
+(function(){
+  // ENDPOINT (principal):
+  // - Web App de Google Apps Script (URL /exec).
+  // - Este es el backend principal que recibe los datos del front.
+  // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
+  // - Código fuente (copia local para editar/analizar con Codex): /apps-script/code.gs
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyJvUfgU2-i3RxZ3vHDfi2HKRf8YtIeA3_HJpqt88I_b8yj03pbUMH4dMPR9Z2eVQ91/exec";
+
+  const ADMIN_USER = "admin";
+  const ADMIN_PASS = "consultores#5";
+
+  const qs  = s => document.querySelector(s);
+  const qsa = s => Array.from(document.querySelectorAll(s));
+
+  let gConsultores = [];
+  let currentReassignBooking = null;
+  let currentReprogBooking   = null;
+
+  // Estado del popup de reprogramación
+  let rpState = {
+    inited: false,
+    today: null,
+    days_ahead_max: 90,
+    global_days_ahead_max: 90,
+    consultorId: null,
+    currentMonth: null,
+    availableDays: {},
+    selectedDate: null,
+    selectedTime: null
+  };
+
+  function consultorCapDays(cid){
+    const base = rpState.global_days_ahead_max || 90;
+    const c = getConsultorById(cid);
+    const raw = c && c.days_ahead_limit != null ? Number(c.days_ahead_limit) : null;
+    if (raw == null || !Number.isFinite(raw) || raw < 1) return base;
+    return Math.min(base, Math.floor(raw));
+  }
+
+  // ===== Helpers básicos =====
+  function toast(msg, ms=1800){
+    const t = qs("#sm-admin-toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add("is-show");
+    setTimeout(()=> t.classList.remove("is-show"), ms);
+  }
+
+  function showLoader(show){
+    const l = qs("#sm-admin-loader");
+    if (!l) return;
+    l.style.display = show ? "flex" : "none";
+  }
+
+  // ====== copiar al portapapeles (igual a consultores) ======
+  function copyToClipboard(text){
+    if (!text) return;
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text)
+        .then(()=> toast("Copiado"))
+        .catch(err=>{
+          console.error(err);
+          toast("No se pudo copiar");
+        });
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      try{
+        document.execCommand("copy");
+        toast("Copiado");
+      }catch(err){
+        console.error(err);
+        toast("No se pudo copiar");
+      }
+      document.body.removeChild(ta);
+    }
+  }
+
+  // acepta displayValue para mostrar truncado pero copiar el valor completo
+  function makeCopyRow(value, displayValue){
+    if (!value) return null;
+
+    const shown = displayValue || value;
+
+    const row = document.createElement("div");
+    row.className = "smad-info-row";
+
+    const spanValue = document.createElement("span");
+    spanValue.className = "smad-info-value";
+    spanValue.textContent = shown;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "smad-copy-btn";
+    btn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" ' +
+      'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy">' +
+      '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>' +
+      '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>' +
+      '</svg>';
+
+    btn.addEventListener("click", ()=> copyToClipboard(value));
+
+    row.append(spanValue, btn);
+    return row;
+  }
+  // ====== FIN copiar ======
+
+  function pad2(n){ return n<10 ? "0"+n : ""+n; }
+
+  function ymdToday(){
+    const d = new Date();
+    return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+  }
+
+  function formatDateDDMMYYYY(ymd){
+    const p = String(ymd || "").split("-");
+    if (p.length === 3 && p[0].length === 4) return [p[2], p[1], p[0]].join("-");
+    return ymd || "";
+  }
+
+  function normTime(hhmm){
+    if (!hhmm) return "";
+    const p = String(hhmm).split(":");
+    const h = Number(p[0]) || 0;
+    const m = Number(p[1]) || 0;
+    return pad2(h)+":"+pad2(m);
+  }
+
+  function parseMinutes(hhmm){
+    if (!hhmm) return null;
+    const p = String(hhmm).split(":");
+    if (p.length < 2) return null;
+    const h = Number(p[0]), m = Number(p[1]);
+    if (isNaN(h) || isNaN(m)) return null;
+    return h*60 + m;
+  }
+
+  // ===== API GETs =====
+  async function apiGetConsultores(){
+    const url = ENDPOINT+"?mode=consultores&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("consultores "+res.status);
+    return res.json();
+  }
+
+  async function apiListBookings(dateStr, consultor){
+    const url = ENDPOINT+"?mode=listBookings"
+      +"&date="+encodeURIComponent(dateStr)
+      +"&consultor="+encodeURIComponent(consultor)
+      +"&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("listBookings "+res.status);
+    return res.json();
+  }
+
+  async function apiSlots(consultor_id, fecha){
+    const url = ENDPOINT+"?mode=slots"
+      +"&consultor="+encodeURIComponent(consultor_id)
+      +"&date="+encodeURIComponent(fecha)
+      +"&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("slots "+res.status);
+    return res.json();
+  }
+
+  async function apiAvailableDays(consultor, from, to){
+    const url = ENDPOINT+"?mode=availableDays"
+      +"&consultor="+encodeURIComponent(consultor)
+      +"&from="+encodeURIComponent(from)
+      +"&to="+encodeURIComponent(to)
+      +"&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("availableDays "+res.status);
+    return res.json();
+  }
+
+  async function apiInitBooking(){
+    const url = ENDPOINT+"?mode=init_booking&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("init_booking "+res.status);
+    return res.json();
+  }
+
+  async function apiListBlocks(consultor_id){
+    const cid = consultor_id || "ALL";
+    const url = ENDPOINT+"?mode=blocks"
+      +"&consultor="+encodeURIComponent(cid)
+      +"&_="+Date.now();
+    const res = await fetch(url, { cache:"no-store" });
+    if (!res.ok) throw new Error("blocks "+res.status);
+    return res.json();
+  }
+
+  // ===== API POSTs =====
+  async function apiBook(payload){
+    const body = new URLSearchParams();
+    body.append("mode","book");
+    Object.entries(payload).forEach(([k,v])=>{
+      if (v !== undefined && v !== null) body.append(k, v);
+    });
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("book "+res.status);
+    return res.json();
+  }
+
+  async function apiCancel(booking_id, motivo){
+    const body = new URLSearchParams();
+    body.append("mode","cancel");
+    body.append("booking_id", booking_id);
+    body.append("motivo", motivo || "");
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("cancel "+res.status);
+    return res.json();
+  }
+
+  async function apiBlockDate(fecha, consultor_id, motivo){
+    const body = new URLSearchParams();
+    body.append("mode","blockDate");
+    body.append("fecha", fecha);
+    body.append("consultor_id", consultor_id);
+    body.append("motivo", motivo || "");
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("blockDate "+res.status);
+    return res.json();
+  }
+
+  async function apiUnblockDate(fecha, consultor_id){
+    const body = new URLSearchParams();
+    body.append("mode","unblockDate");
+    body.append("fecha", fecha);
+    body.append("consultor_id", consultor_id);
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("unblockDate "+res.status);
+    return res.json();
+  }
+
+  async function apiAddConsultor(id, nombre){
+    const body = new URLSearchParams();
+    body.append("mode","addConsultor");
+    body.append("consultor_id", id);
+    body.append("nombre", nombre || "");
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("addConsultor "+res.status);
+    return res.json();
+  }
+
+  async function apiDeleteConsultor(id){
+    const body = new URLSearchParams();
+    body.append("mode","deleteConsultor");
+    body.append("consultor_id", id);
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("deleteConsultor "+res.status);
+    return res.json();
+  }
+
+  // ====== HORARIOS POR CONSULTOR (Admin) ======
+  const SM_HOR_TIMES = (function(){
+    const arr = [""];
+    for (let h=0; h<24; h++){
+      for (let m of [0,30]){
+        arr.push(pad2(h)+":"+pad2(m));
+      }
+    }
+    return arr;
+  })();
+
+  async function apiGetSchedule(consultor_id){
+    const url = ENDPOINT+"?mode=schedule"
+      +"&consultor="+encodeURIComponent(consultor_id)
+      +"&_="+Date.now();
+    const res = await fetch(url, { cache:"no-store" });
+    if (!res.ok) throw new Error("schedule "+res.status);
+    return res.json();
+  }
+
+  async function apiSaveSchedule(consultor_id, schedule, daysAheadLimit){
+    const body = new URLSearchParams();
+    body.append("mode","saveSchedule");
+    body.append("consultor_id", consultor_id);
+    body.append("days", JSON.stringify(schedule));
+    body.append("days_ahead_limit", daysAheadLimit == null ? "" : daysAheadLimit);
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("saveSchedule "+res.status);
+    return res.json();
+  }
+
+  function smHorDayName(dow){
+    const names = { 1:"Lunes",2:"Martes",3:"Miércoles",4:"Jueves",5:"Viernes",6:"Sábado",7:"Domingo" };
+    return names[dow] || ("Día "+dow);
+  }
+
+  function renderScheduleEditor(schedule){
+    const grid = qs("#sm-hor-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    const byDow = {};
+    for (let d=1; d<=7; d++){
+      byDow[d] = { dow:d, enabled:false, start1:"", end1:"", start2:"", end2:"" };
+    }
+
+    (schedule || []).forEach(row=>{
+      const d = Number(row.dow || row.dia || row.dia_semana || 0);
+      if (d>=1 && d<=7){
+        byDow[d] = {
+          dow: d,
+          enabled: !!row.enabled,
+          start1: row.start1 || "",
+          end1: row.end1 || "",
+          start2: row.start2 || "",
+          end2: row.end2 || ""
+        };
+      }
+    });
+
+    for (let d=1; d<=7; d++){
+      const cfg = byDow[d];
+
+      const rowEl = document.createElement("div");
+      rowEl.className = "sm-hor-row";
+      rowEl.dataset.dow = String(d);
+
+      const dayCol = document.createElement("div");
+      dayCol.className = "sm-hor-day-label";
+      const dayLabel = document.createElement("label");
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.className = "sm-hor-enabled";
+      chk.dataset.dow = String(d);
+      chk.checked = !!cfg.enabled;
+      dayLabel.append(chk, document.createTextNode(smHorDayName(d)));
+      dayCol.appendChild(dayLabel);
+
+      const fieldsCol = document.createElement("div");
+      fieldsCol.className = "sm-hor-fields";
+
+      const r1 = document.createElement("div");
+      r1.className = "sm-hor-range";
+      const r1Label = document.createElement("span");
+      r1Label.className = "sm-hor-range-label";
+      r1Label.textContent = "Tramo 1:";
+      const s1 = document.createElement("select");
+      s1.className = "sm-hor-select sm-hor-start1";
+      s1.dataset.dow = String(d);
+      const e1 = document.createElement("select");
+      e1.className = "sm-hor-select sm-hor-end1";
+      e1.dataset.dow = String(d);
+
+      SM_HOR_TIMES.forEach(v=>{
+        const o1 = document.createElement("option");
+        o1.value = v;
+        o1.textContent = v || "—";
+        if (v === cfg.start1) o1.selected = true;
+        s1.appendChild(o1);
+
+        const o2 = document.createElement("option");
+        o2.value = v;
+        o2.textContent = v || "—";
+        if (v === cfg.end1) o2.selected = true;
+        e1.appendChild(o2);
+      });
+      r1.append(r1Label, s1, document.createTextNode(" a "), e1);
+
+      const r2 = document.createElement("div");
+      r2.className = "sm-hor-range";
+      const r2Label = document.createElement("span");
+      r2Label.className = "sm-hor-range-label";
+      r2Label.textContent = "Tramo 2 (opcional):";
+      const s2 = document.createElement("select");
+      s2.className = "sm-hor-select sm-hor-start2";
+      s2.dataset.dow = String(d);
+      const e2 = document.createElement("select");
+      e2.className = "sm-hor-select sm-hor-end2";
+      e2.dataset.dow = String(d);
+
+      SM_HOR_TIMES.forEach(v=>{
+        const o1 = document.createElement("option");
+        o1.value = v;
+        o1.textContent = v || "—";
+        if (v === cfg.start2) o1.selected = true;
+        s2.appendChild(o1);
+
+        const o2 = document.createElement("option");
+        o2.value = v;
+        o2.textContent = v || "—";
+        if (v === cfg.end2) o2.selected = true;
+        e2.appendChild(o2);
+      });
+      r2.append(r2Label, s2, document.createTextNode(" a "), e2);
+
+      fieldsCol.append(r1, r2);
+      rowEl.append(dayCol, fieldsCol);
+      grid.appendChild(rowEl);
+
+      const updateDisabled = ()=>{
+        const enabled = chk.checked;
+        s1.disabled = e1.disabled = s2.disabled = e2.disabled = !enabled;
+      };
+      updateDisabled();
+      chk.addEventListener("change", updateDisabled);
+    }
+  }
+
+  function getConsultorById(cid){
+    return (gConsultores || []).find(c => String(c.consultor_id || "").trim() === String(cid || "").trim());
+  }
+
+  function formatConsultorLabel(cid){
+    if (!cid) return "";
+    if (cid === "ALL") return "Todos";
+    const c = getConsultorById(cid);
+    const nombre = c && c.nombre ? " – "+c.nombre : "";
+    return cid + nombre;
+  }
+
+  function syncDaysAheadInput(cid){
+    const input = qs("#sm-hor-days-ahead");
+    if (!input) return;
+    const c = getConsultorById(cid);
+    const val = (c && c.days_ahead_limit != null) ? c.days_ahead_limit : "";
+    input.value = val === null ? "" : val;
+  }
+
+  async function loadScheduleForSelectedConsultor(){
+    const sel = qs("#sm-hor-consultor");
+    const grid = qs("#sm-hor-grid");
+    if (!sel || !grid) return;
+
+    const cid = sel.value;
+    syncDaysAheadInput(cid);
+    if (!cid){
+      grid.innerHTML = "Selecciona un consultor.";
+      return;
+    }
+
+    showLoader(true);
+    try{
+      const data = await apiGetSchedule(cid);
+      if (!data.ok) throw new Error(data.error || "schedule_error");
+      const schedule = data.days || data.schedule || [];
+      renderScheduleEditor(schedule);
+    }catch(err){
+      console.error(err);
+      grid.innerHTML = "Error al cargar horarios.";
+      toast("Error al cargar horarios");
+    }finally{
+      showLoader(false);
+    }
+  }
+
+  async function saveScheduleForSelectedConsultor(){
+    const sel = qs("#sm-hor-consultor");
+    const grid = qs("#sm-hor-grid");
+    if (!sel || !grid) return;
+
+    const cid = sel.value;
+    if (!cid){
+      toast("Selecciona un consultor");
+      return;
+    }
+
+    const inputDays = qs("#sm-hor-days-ahead");
+    let daysLimit = null;
+    if (inputDays){
+      const raw = (inputDays.value || "").trim();
+      if (raw){
+        const n = Number(raw);
+        if (!Number.isFinite(n) || n < 1){
+          toast("Días máximos debe ser un número mayor a 0");
+          return;
+        }
+        daysLimit = Math.floor(n);
+      }
+    }
+
+    const rows = [];
+    for (let d=1; d<=7; d++){
+      const enabledEl = grid.querySelector('.sm-hor-enabled[data-dow="'+d+'"]');
+      const s1 = grid.querySelector('.sm-hor-start1[data-dow="'+d+'"]');
+      const e1 = grid.querySelector('.sm-hor-end1[data-dow="'+d+'"]');
+      const s2 = grid.querySelector('.sm-hor-start2[data-dow="'+d+'"]');
+      const e2 = grid.querySelector('.sm-hor-end2[data-dow="'+d+'"]');
+      if (!enabledEl || !s1 || !e1 || !s2 || !e2) continue;
+
+      const enabled = enabledEl.checked;
+      let start1 = s1.value || "";
+      let end1   = e1.value || "";
+      let start2 = s2.value || "";
+      let end2   = e2.value || "";
+
+      if (!enabled){
+        start1 = end1 = start2 = end2 = "";
+      }
+
+      const mStart1 = start1 ? parseMinutes(start1) : null;
+      const mEnd1   = end1   ? parseMinutes(end1)   : null;
+      const mStart2 = start2 ? parseMinutes(start2) : null;
+      const mEnd2   = end2   ? parseMinutes(end2)   : null;
+
+      if (enabled){
+        if (mStart1 == null || mEnd1 == null || mStart1 >= mEnd1){
+          toast("Revisa el tramo 1 de "+smHorDayName(d));
+          return;
+        }
+        if (start2 || end2){
+          if (mStart2 == null || mEnd2 == null || mStart2 >= mEnd2){
+            toast("Revisa el tramo 2 de "+smHorDayName(d));
+            return;
+          }
+        }
+      }
+
+      rows.push({ dow: d, enabled, start1, end1, start2, end2 });
+    }
+
+    showLoader(true);
+    try{
+      const res = await apiSaveSchedule(cid, rows, daysLimit);
+      if (!res.ok) throw new Error(res.error || "saveSchedule_error");
+      const c = getConsultorById(cid);
+      if (c){
+        c.days_ahead_limit = daysLimit;
+      }
+      toast("Horarios guardados");
+    }catch(err){
+      console.error(err);
+      toast("Error al guardar horarios");
+    }finally{
+      showLoader(false);
+    }
+  }
+
+  // ===== REASIGNAR =====
+  function showReassignModal(){
+    const modal = qs("#sm-rea-modal");
+    if (modal) modal.style.display = "flex";
+  }
+  function hideReassignModal(){
+    const modal = qs("#sm-rea-modal");
+    if (modal) modal.style.display = "none";
+  }
+
+  async function fetchReassignOptions(booking){
+    if (!gConsultores || !gConsultores.length){
+      const consData = await apiGetConsultores();
+      if (!consData.ok) throw new Error(consData.error || "consultores_error");
+      gConsultores = consData.consultores || [];
+    }
+
+    const targetTime = normTime(booking.hora);
+    const result = [];
+    for (const c of gConsultores){
+      if (!c.activo) continue;
+      const cid = String(c.consultor_id);
+      if (cid === String(booking.consultor_id)) continue;
+
+      try{
+        const data = await apiSlots(cid, booking.fecha);
+        if (!data.ok) continue;
+        const slots = (data.slots || []).map(normTime);
+        if (slots.includes(targetTime)){
+          result.push({ consultor_id: cid, nombre: c.nombre || "" });
+        }
+      }catch(_){}
+    }
+    return result;
+  }
+
+  async function openReassignModal(booking){
+    currentReassignBooking = booking;
+    showReassignModal();
+
+    const bodyEl = qs("#sm-rea-body");
+    const rowSel = qs("#sm-rea-select-row");
+    const sel    = qs("#sm-rea-select");
+    const btnConf = qs("#sm-rea-confirm");
+
+    if (bodyEl) bodyEl.textContent = "Buscando consultores disponibles para "+normTime(booking.hora)+"…";
+    if (rowSel) rowSel.style.display = "none";
+    if (sel) sel.innerHTML = "";
+    if (btnConf) btnConf.disabled = true;
+
+    try{
+      const opts = await fetchReassignOptions(booking);
+      if (!opts.length){
+        if (bodyEl) bodyEl.textContent = "No hay ningún consultor con este horario disponible.";
+        return;
+      }
+
+      if (bodyEl) bodyEl.textContent = "Selecciona el consultor al que quieres reasignar esta reunión:";
+      if (rowSel) rowSel.style.display = "block";
+      if (sel){
+        sel.innerHTML = "";
+        opts.forEach(o=>{
+          const opt = document.createElement("option");
+          opt.value = o.consultor_id;
+          opt.textContent = o.consultor_id+" – "+(o.nombre || "Consultor");
+          sel.appendChild(opt);
+        });
+      }
+      if (btnConf) btnConf.disabled = false;
+    }catch(err){
+      console.error(err);
+      if (bodyEl) bodyEl.textContent = "Ocurrió un error al buscar opciones de reasignación.";
+    }
+  }
+
+  async function onConfirmReassign(){
+    if (!currentReassignBooking) return;
+    const sel = qs("#sm-rea-select");
+    const newId = sel?.value || "";
+    if (!newId){
+      toast("Selecciona un consultor");
+      return;
+    }
+
+    const b = currentReassignBooking;
+    showLoader(true);
+    try{
+      const data = await apiBook({
+        fecha: b.fecha,
+        hora: normTime(b.hora),
+        consultor: newId,
+        nombre: b.nombre || "",
+        email: b.email || "",
+        telefono: b.telefono || "",
+        marca: b.marca || "",
+        tipo: b.tipo || "",
+        idpipe: b.idpipe || ""
+      });
+      if (!data.ok){
+        const msg = data.error === "slot_not_available"
+          ? "Ese horario se ocupó justo ahora con ese consultor."
+          : data.error === "too_soon"
+          ? "La hora no cumple la regla de anticipación."
+          : data.error === "too_far_consultor"
+          ? "Esa fecha está fuera del rango permitido para ese consultor."
+          : data.error === "no_consultor_for_date"
+          ? "No hay consultores disponibles para esa fecha."
+          : "No se pudo reasignar.";
+        toast(msg);
+        return;
+      }
+
+      await apiCancel(b.booking_id, "Reasignado a consultor "+newId);
+      toast("Reunión reasignada");
+      hideReassignModal();
+      reloadBookings();
+    }catch(err){
+      console.error(err);
+      toast("Error al reasignar");
+    }finally{
+      showLoader(false);
+    }
+  }
+
+  // ===== REPROGRAMAR =====
+  function showReprogModal(){
+    const modal = qs("#sm-rp-modal");
+    if (modal) modal.style.display = "flex";
+  }
+  function hideReprogModal(){
+    const modal = qs("#sm-rp-modal");
+    if (modal) modal.style.display = "none";
+  }
+
+  function rpBuildMonthKey(d){
+    return d.getFullYear()+"-"+pad2(d.getMonth()+1);
+  }
+
+  async function rpEnsureAvailableDaysForCurrentMonth(){
+    const mk = rpBuildMonthKey(rpState.currentMonth);
+    if (rpState.availableDays[mk]) return;
+
+    const y = rpState.currentMonth.getFullYear();
+    const m = rpState.currentMonth.getMonth();
+    const first = new Date(y, m, 1);
+    const last  = new Date(y, m+1, 0);
+
+    const from = first.getFullYear()+"-"+pad2(first.getMonth()+1)+"-"+pad2(first.getDate());
+    const to   = last.getFullYear()+"-"+pad2(last.getMonth()+1)+"-"+pad2(last.getDate());
+
+    const data = await apiAvailableDays(rpState.consultorId, from, to);
+    if (!data.ok) throw new Error(data.error || "availableDays_error");
+    rpState.availableDays[mk] = data.dates || [];
+  }
+
+  function rpRenderCalendar(){
+    const wrap = qs("#sm-rp-cal");
+    if (!wrap || !rpState.currentMonth) return;
+    wrap.innerHTML = "";
+
+    const d = rpState.currentMonth;
+    const year  = d.getFullYear();
+    const month = d.getMonth();
+
+    const header = document.createElement("div");
+    header.className = "sm-rp-cal-header";
+
+    const monthLabel = document.createElement("div");
+    monthLabel.className = "sm-rp-cal-month";
+    const monthNames = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    monthLabel.textContent = monthNames[month]+" "+year;
+
+    const nav = document.createElement("div");
+    nav.className = "sm-rp-cal-nav";
+    const btnPrev = document.createElement("button");
+    btnPrev.type = "button";
+    btnPrev.textContent = "‹";
+    const btnNext = document.createElement("button");
+    btnNext.type = "button";
+    btnNext.textContent = "›";
+    nav.append(btnPrev, btnNext);
+
+    header.append(monthLabel, nav);
+    wrap.appendChild(header);
+
+    const grid = document.createElement("div");
+    grid.className = "sm-rp-cal-grid";
+
+    const dows = ["L","M","M","J","V","S","D"];
+    dows.forEach(dn=>{
+      const el = document.createElement("div");
+      el.className = "sm-rp-dow";
+      el.textContent = dn;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(year, month, 1);
+    let dow = firstDay.getDay();
+    dow = (dow === 0 ? 7 : dow);
+    const blanks = dow - 1;
+    for (let i=0;i<blanks;i++){
+      grid.appendChild(document.createElement("div"));
+    }
+
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const mk = rpBuildMonthKey(rpState.currentMonth);
+    const availForMonth = new Set(rpState.availableDays[mk] || []);
+
+    for (let day=1; day<=daysInMonth; day++){
+      const dateObj = new Date(year, month, day);
+      const ymd = dateObj.getFullYear()+"-"+pad2(dateObj.getMonth()+1)+"-"+pad2(dateObj.getDate());
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "sm-rp-day-btn";
+      btn.textContent = String(day);
+
+      const isAvailable = availForMonth.has(ymd);
+      if (isAvailable) btn.classList.add("available");
+      else btn.classList.add("disabled");
+
+      if (rpState.selectedDate === ymd) btn.classList.add("selected");
+
+      if (!isAvailable){
+        btn.disabled = true;
+      } else {
+        btn.addEventListener("click", ()=>{
+          rpState.selectedDate = ymd;
+          rpState.selectedTime = null;
+          qsa(".sm-rp-day-btn").forEach(b=> b.classList.toggle("selected", b === btn));
+          rpLoadSlotsForSelectedDate();
+        });
+      }
+
+      grid.appendChild(btn);
+    }
+
+    wrap.appendChild(grid);
+
+    btnPrev.addEventListener("click", ()=>{
+      const today = new Date(rpState.today);
+      const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const prev = new Date(rpState.currentMonth.getFullYear(), rpState.currentMonth.getMonth()-1, 1);
+      if (prev < minMonth) return;
+      rpState.currentMonth = prev;
+      rpEnsureAvailableDaysForCurrentMonth().then(rpRenderCalendar).catch(console.error);
+    });
+
+    btnNext.addEventListener("click", ()=>{
+      const today = new Date(rpState.today);
+      const maxDate = new Date(today.getTime());
+      maxDate.setDate(maxDate.getDate() + Math.max(rpState.days_ahead_max - 1, 0));
+      const maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+      const next = new Date(rpState.currentMonth.getFullYear(), rpState.currentMonth.getMonth()+1, 1);
+      if (next > maxMonth) return;
+      rpState.currentMonth = next;
+      rpEnsureAvailableDaysForCurrentMonth().then(rpRenderCalendar).catch(console.error);
+    });
+  }
+
+  async function rpLoadSlotsForSelectedDate(){
+    const slotsWrap = qs("#sm-rp-slots");
+    const label = qs("#sm-rp-date-label");
+    const btnConfirm = qs("#sm-rp-confirm");
+    if (!slotsWrap || !rpState.selectedDate) return;
+
+    if (btnConfirm) btnConfirm.disabled = true;
+    slotsWrap.textContent = "Cargando horarios…";
+
+    try{
+      const data = await apiSlots(rpState.consultorId, rpState.selectedDate);
+      if (!data.ok) throw new Error(data.error || "slots_error");
+
+      const slots = data.slots || [];
+      if (label) label.textContent = "Horarios para "+rpState.selectedDate;
+
+      if (!slots.length){
+        slotsWrap.textContent = "No hay horarios disponibles en esta fecha.";
+        return;
+      }
+
+      slotsWrap.innerHTML = "";
+      slots.forEach(t=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "sm-rp-slot-btn";
+        btn.textContent = t;
+        if (rpState.selectedTime === t) btn.classList.add("selected");
+        btn.addEventListener("click", ()=>{
+          rpState.selectedTime = t;
+          qsa(".sm-rp-slot-btn").forEach(b=> b.classList.toggle("selected", b === btn));
+          if (btnConfirm) btnConfirm.disabled = !rpState.selectedTime;
+        });
+        slotsWrap.appendChild(btn);
+      });
+    }catch(err){
+      console.error(err);
+      slotsWrap.textContent = "Error al cargar horarios.";
+    }
+  }
+
+  async function openReprogModal(booking){
+    currentReprogBooking = booking;
+    showReprogModal();
+
+    const body = qs("#sm-rp-body");
+    const slotsWrap = qs("#sm-rp-slots");
+    const label = qs("#sm-rp-date-label");
+    const cal = qs("#sm-rp-cal");
+    const btnConfirm = qs("#sm-rp-confirm");
+
+    if (body) body.textContent = "Selecciona una nueva fecha y horario para el consultor "+String(booking.consultor_id)+".";
+    if (slotsWrap) slotsWrap.innerHTML = "";
+    if (label) label.textContent = "Selecciona una fecha";
+    if (cal) cal.textContent = "Cargando calendario…";
+    if (btnConfirm) btnConfirm.disabled = true;
+
+    rpState.consultorId = String(booking.consultor_id);
+    rpState.availableDays= {};
+    rpState.selectedDate = null;
+    rpState.selectedTime = null;
+
+    try{
+      if (!rpState.inited){
+        const init = await apiInitBooking();
+        if (!init.ok) throw new Error(init.error || "init_booking_error");
+        rpState.today = init.today;
+        rpState.global_days_ahead_max = init.days_ahead_max || 90;
+        rpState.days_ahead_max = init.days_ahead_max || 90;
+        rpState.inited = true;
+      }
+
+      rpState.days_ahead_max = consultorCapDays(rpState.consultorId);
+
+      const todayDate = new Date(rpState.today);
+      rpState.currentMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+      await rpEnsureAvailableDaysForCurrentMonth();
+      rpRenderCalendar();
+    }catch(err){
+      console.error(err);
+      if (cal) cal.textContent = "Error al cargar calendario.";
+    }
+  }
+
+  async function onConfirmReprog(){
+    if (!currentReprogBooking) return;
+    if (!rpState.selectedDate || !rpState.selectedTime){
+      toast("Selecciona fecha y hora");
+      return;
+    }
+
+    const b = currentReprogBooking;
+    showLoader(true);
+    try{
+      const data = await apiBook({
+        fecha: rpState.selectedDate,
+        hora: rpState.selectedTime,
+        consultor: rpState.consultorId,
+        nombre: b.nombre || "",
+        email: b.email || "",
+        telefono: b.telefono || "",
+        marca: b.marca || "",
+        tipo: b.tipo || "",
+        idpipe: b.idpipe || ""
+      });
+      if (!data.ok){
+        const msg = data.error === "slot_not_available"
+          ? "Ese horario se ocupó justo ahora."
+          : data.error === "too_soon"
+          ? "La hora no cumple la regla de anticipación."
+          : data.error === "too_far_consultor"
+          ? "Esa fecha está fuera del rango permitido para el consultor."
+          : data.error === "no_consultor_for_date"
+          ? "No hay consultores disponibles para esa fecha."
+          : "No se pudo reprogramar.";
+        toast(msg);
+        return;
+      }
+
+      const motivo = "Reprogramado a "+rpState.selectedDate+" "+rpState.selectedTime;
+      await apiCancel(b.booking_id, motivo);
+      toast("Reunión reprogramada");
+      hideReprogModal();
+      reloadBookings();
+    }catch(err){
+      console.error(err);
+      toast("Error al reprogramar");
+    }finally{
+      showLoader(false);
+    }
+  }
+
+    // ===== RENDER LISTADO (AHORA IGUAL AL LAYOUT DE CONSULTORES) =====
+  function renderBookings(dateStr, bookings){
+    const wrap = qs("#sm-admin-list");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+
+    if (!bookings || !bookings.length){
+      wrap.textContent = "No hay agendamientos para esta fecha.";
+      return;
+    }
+
+    const now = new Date();
+    const todayStr = ymdToday();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+
+    bookings.forEach(b=>{
+      const item = document.createElement("div");
+      item.className = "sm-admin-item";
+
+      let isPast=false, isNow=false;
+      if (b.fecha === todayStr){
+        const startM = parseMinutes(b.hora);
+        const endM = startM!=null ? startM+30 : null;
+        if (startM != null){
+          if (endM <= nowMin) isPast = true;
+          else if (startM <= nowMin && nowMin < endM) isNow = true;
+        }
+      } else if (b.fecha < todayStr){
+        isPast = true;
+      }
+
+      if (isPast) item.classList.add("is-past");
+      if (isNow) item.classList.add("is-now");
+      if (b.cancelado) item.classList.add("is-cancelled");
+
+      const main = document.createElement("div");
+      main.className = "sm-admin-item-main";
+
+      // Fila superior: Hora + Consultor (al lado)
+      const topRow = document.createElement("div");
+      topRow.className = "smad-info-row";
+
+      const bHora = document.createElement("span");
+      bHora.className = "sm-admin-badge sm-admin-badge-hora";
+      bHora.textContent = b.hora;
+
+      const bCons = document.createElement("span");
+      bCons.className = "sm-admin-badge sm-admin-badge-consultor";
+      bCons.textContent = String(b.consultor_id || "").trim();
+
+      topRow.append(bHora, bCons);
+      main.appendChild(topRow);
+
+      // ID Pipe copiable (5 + "...")
+      const idValue = b.idpipe || "";
+      const idDisplay = idValue ? (idValue.length > 5 ? idValue.slice(0,5) + "..." : idValue) : "";
+      const idRow = makeCopyRow(idValue, idDisplay);
+      if (idRow) main.appendChild(idRow);
+
+      // Teléfono copiable
+      const telRow = makeCopyRow(b.telefono || "");
+      if (telRow) main.appendChild(telRow);
+
+      // Nombre (solo dato)
+      const nombreRow = document.createElement("div");
+      nombreRow.className = "smad-info-row";
+      const nombreValue = document.createElement("span");
+      nombreValue.className = "smad-info-value";
+      nombreValue.textContent = (b.nombre || "(sin nombre)");
+      nombreRow.appendChild(nombreValue);
+      main.appendChild(nombreRow);
+
+      // Tipo al final (badge), solo si existe
+      if (b.tipo){
+        const tipoRow = document.createElement("div");
+        tipoRow.className = "smad-info-row";
+        const tipoSpan = document.createElement("span");
+        tipoSpan.className = "smad-badge-tipo";
+        tipoSpan.textContent = b.tipo;
+        tipoRow.appendChild(tipoSpan);
+        main.appendChild(tipoRow);
+      }
+
+      // Cancelado badge (si aplica)
+      if (b.cancelado){
+        const bc = document.createElement("span");
+        bc.className = "sm-admin-badge sm-admin-badge-cancel";
+        bc.textContent = "Cancelado";
+        main.appendChild(bc);
+
+        // Motivo de cancelación con truncado + tooltip nativo
+        const fullMotivo = String(b.motivo_cancelacion || "").trim();
+        if (fullMotivo){
+          const motivoRow = document.createElement("div");
+          motivoRow.className = "smad-info-row smad-info-row-motivo";
+
+          const motivoSpan = document.createElement("span");
+          motivoSpan.className = "smad-info-value smad-info-value-motivo";
+          motivoSpan.textContent = "Motivo: " + fullMotivo;
+          // Tooltip nativo con el texto completo
+          motivoSpan.title = fullMotivo;
+
+          motivoRow.appendChild(motivoSpan);
+          main.appendChild(motivoRow);
+        }
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "sm-admin-actions";
+
+      if (!b.cancelado && !isPast){
+        const rpBtn = document.createElement("button");
+        rpBtn.type = "button";
+        rpBtn.textContent = "Reprogramar";
+        rpBtn.classList.add("sm-admin-btn-orange");
+        rpBtn.addEventListener("click", ()=> openReprogModal(b));
+        actions.appendChild(rpBtn);
+      }
+
+      if (!b.cancelado && !isPast){
+        const reasignBtn = document.createElement("button");
+        reasignBtn.type = "button";
+        reasignBtn.textContent = "Reasignar";
+        reasignBtn.classList.add("sm-admin-btn-orange");
+        reasignBtn.addEventListener("click", ()=> openReassignModal(b));
+        actions.appendChild(reasignBtn);
+      }
+
+      if (!b.cancelado){
+        const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.textContent = "Cancelar";
+        cancelBtn.addEventListener("click", async ()=>{
+          const motivo = prompt("Motivo de cancelación:");
+          if (motivo === null) return;
+          showLoader(true);
+          try{
+            const res = await apiCancel(b.booking_id, motivo || "");
+            if (!res.ok) throw new Error(res.error || "cancel_error");
+            toast("Reserva cancelada");
+            reloadBookings();
+          }catch(err){
+            console.error(err);
+            toast("Error al cancelar");
+          }finally{
+            showLoader(false);
+          }
+        });
+        actions.appendChild(cancelBtn);
+      }
+
+      item.append(main, actions);
+      wrap.appendChild(item);
+    });
+  }
+
+
+
+  async function reloadBookings(){
+    const dateInput = qs("#sm-admin-date");
+    const sel = qs("#sm-admin-consultor");
+    if (!dateInput || !sel) return;
+
+    const dateStr = dateInput.value || ymdToday();
+    const consultor = sel.value || "todos";
+
+    showLoader(true);
+    try{
+      const data = await apiListBookings(dateStr, consultor);
+      if (!data.ok) throw new Error(data.error || "list_error");
+      renderBookings(dateStr, data.bookings || []);
+    }catch(err){
+      console.error(err);
+      toast("Error al cargar agendamientos");
+    }finally{
+      showLoader(false);
+    }
+  }
+
+  // ===== Selects de consultores =====
+  function buildConsultorSelects(consultores){
+    const selList  = qs("#sm-admin-consultor");
+    const selBlock = qs("#sm-block-consultor");
+    const selHor   = qs("#sm-hor-consultor");
+
+    if (selList){
+      selList.innerHTML = "";
+      const oAll = document.createElement("option");
+      oAll.value = "todos";
+      oAll.textContent = "Todos";
+      selList.appendChild(oAll);
+
+      consultores.filter(c => c.activo).forEach(c=>{
+        const o = document.createElement("option");
+        o.value = c.consultor_id;
+        o.textContent = c.consultor_id+" – "+(c.nombre || "Consultor");
+        selList.appendChild(o);
+      });
+
+      selList.value = "todos";
+    }
+
+    if (selBlock){
+      selBlock.innerHTML = "";
+      const oAll = document.createElement("option");
+      oAll.value = "ALL";
+      oAll.textContent = "Todos";
+      selBlock.appendChild(oAll);
+
+      consultores.filter(c => c.activo).forEach(c=>{
+        const o = document.createElement("option");
+        o.value = c.consultor_id;
+        o.textContent = c.consultor_id+" – "+(c.nombre || "Consultor");
+        selBlock.appendChild(o);
+      });
+
+      selBlock.value = "ALL";
+    }
+
+    if (selHor){
+      selHor.innerHTML = "";
+      const prevValue = selHor.value || "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Selecciona un consultor";
+      selHor.appendChild(placeholder);
+
+      const activos = consultores.filter(c=>c.activo);
+
+      if (activos.length){
+        activos.forEach(c=>{
+          const o = document.createElement("option");
+          o.value = c.consultor_id;
+          o.textContent = c.consultor_id+" – "+(c.nombre || "Consultor");
+          selHor.appendChild(o);
+        });
+        if (prevValue && activos.some(c=>c.consultor_id === prevValue)){
+          selHor.value = prevValue;
+        } else {
+          selHor.value = "";
+        }
+        loadScheduleForSelectedConsultor();
+      } else {
+        placeholder.textContent = "Sin consultores activos";
+        selHor.value = "";
+        loadScheduleForSelectedConsultor();
+      }
+    }
+  }
+
+  function renderConsultorList(consultores){
+    const wrap = qs("#sm-consultor-list");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+
+    const activos = (consultores || []).filter(c => c.activo);
+    if (!activos.length){
+      wrap.textContent = "No hay consultores activos.";
+      return;
+    }
+
+    activos.forEach(c=>{
+      const row = document.createElement("div");
+      row.className = "sm-cons-row";
+
+      const info = document.createElement("div");
+      info.className = "sm-cons-info";
+
+      const idSpan = document.createElement("span");
+      idSpan.className = "sm-cons-id";
+      idSpan.textContent = c.consultor_id;
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = " – " + (c.nombre || "Consultor");
+
+      info.append(idSpan, nameSpan);
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "sm-cons-delete-btn";
+      btn.textContent = "Eliminar";
+      btn.addEventListener("click", async ()=>{
+        if (!confirm("¿Eliminar consultor "+c.consultor_id+"? Ya no aparecerá en los listados.")) return;
+        showLoader(true);
+        try{
+          const res = await apiDeleteConsultor(c.consultor_id);
+          if (!res.ok){
+            const msg = res.error === "not_found" ? "Consultor no encontrado" : "Error al eliminar consultor";
+            toast(msg);
+            return;
+          }
+          toast("Consultor eliminado");
+          const consData = await apiGetConsultores();
+          if (consData.ok){
+            gConsultores = consData.consultores || [];
+            buildConsultorSelects(gConsultores);
+            renderConsultorList(gConsultores);
+          }
+        }catch(err){
+          console.error(err);
+          toast("Error al eliminar consultor");
+        }finally{
+          showLoader(false);
+        }
+      });
+
+      row.append(info, btn);
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderBlockList(blocks){
+    const wrap = qs("#sm-block-list");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+
+    if (!blocks || !blocks.length){
+      wrap.textContent = "No hay fechas bloqueadas.";
+      return;
+    }
+
+    const sorted = [...blocks].sort((a,b)=>{
+      if (a.fecha === b.fecha){
+        return String(a.consultor_id || "").localeCompare(String(b.consultor_id || ""));
+      }
+      return String(a.fecha || "").localeCompare(String(b.fecha || ""));
+    });
+
+    sorted.forEach(b=>{
+      const row = document.createElement("div");
+      row.className = "sm-block-row";
+
+      const info = document.createElement("div");
+      info.className = "sm-block-info";
+
+      const fechaEl = document.createElement("div");
+      fechaEl.className = "sm-block-date";
+      fechaEl.textContent = formatDateDDMMYYYY(b.fecha);
+
+      const consEl = document.createElement("div");
+      consEl.className = "sm-block-consultor";
+      consEl.textContent = "Consultor: " + formatConsultorLabel(b.consultor_id || "ALL");
+
+      info.append(fechaEl, consEl);
+
+      const motivo = String(b.motivo || "").trim();
+      if (motivo){
+        const motEl = document.createElement("div");
+        motEl.className = "sm-block-motivo";
+        motEl.textContent = "Motivo: " + motivo;
+        info.appendChild(motEl);
+      }
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "sm-block-delete-btn";
+      btn.textContent = "Eliminar";
+      btn.addEventListener("click", async ()=>{
+        const cid = b.consultor_id || "ALL";
+        const confirmMsg = "¿Quitar bloqueo del "+formatDateDDMMYYYY(b.fecha)+" para "+formatConsultorLabel(cid)+"?";
+        if (!confirm(confirmMsg)) return;
+
+        showLoader(true);
+        try{
+          const res = await apiUnblockDate(b.fecha, cid);
+          if (!res.ok) throw new Error(res.error || "unblock_error");
+          toast("Bloqueo eliminado");
+          await loadBlockList(false);
+          reloadBookings();
+        }catch(err){
+          console.error(err);
+          toast("Error al eliminar bloqueo");
+        }finally{
+          showLoader(false);
+        }
+      });
+
+      row.append(info, btn);
+      wrap.appendChild(row);
+    });
+  }
+
+  async function loadBlockList(withLoader = true){
+    const sel = qs("#sm-block-consultor");
+    const cid = sel?.value || "ALL";
+
+    if (withLoader) showLoader(true);
+    try{
+      const data = await apiListBlocks(cid);
+      if (!data.ok) throw new Error(data.error || "blocks_error");
+      renderBlockList(data.blocks || []);
+    }catch(err){
+      console.error(err);
+      toast("Error al cargar bloqueos");
+    }finally{
+      if (withLoader) showLoader(false);
+    }
+  }
+
+  async function initAdmin(){
+    showLoader(true);
+    try{
+      const dateInput = qs("#sm-admin-date");
+      if (dateInput) dateInput.value = ymdToday();
+
+      const consData = await apiGetConsultores();
+      if (!consData.ok) throw new Error(consData.error || "consultores_error");
+      gConsultores = consData.consultores || [];
+
+      buildConsultorSelects(gConsultores);
+      renderConsultorList(gConsultores);
+      await loadBlockList(false);
+      await reloadBookings();
+    }catch(err){
+      console.error(err);
+      toast("Error al cargar admin");
+    }finally{
+      showLoader(false);
+    }
+  }
+
+  // ===== Login =====
+  function handleLogin(){
+    const u = qs("#sm-admin-user")?.value || "";
+    const p = qs("#sm-admin-pass")?.value || "";
+
+    if (u === ADMIN_USER && p === ADMIN_PASS){
+      qs("#sm-admin-login").style.display = "none";
+
+      const panel = qs("#sm-admin-panel");
+      const configCard = qs("#sm-admin-config-card");
+      if (panel) panel.style.display = "block";
+      if (configCard) configCard.style.display = "block";
+
+      initAdmin();
+    } else {
+      toast("Usuario o clave incorrectos");
+    }
+  }
+
+  // ===== Eventos globales =====
+  document.addEventListener("DOMContentLoaded", ()=>{
+    const btnLogin = qs("#sm-admin-login-btn");
+    if (btnLogin){
+      btnLogin.addEventListener("click", handleLogin);
+      qs("#sm-admin-pass")?.addEventListener("keypress", ev=>{
+        if (ev.key === "Enter") handleLogin();
+      });
+    }
+
+    const dateInput = qs("#sm-admin-date");
+    const selCons   = qs("#sm-admin-consultor");
+    const selBlock  = qs("#sm-block-consultor");
+    if (dateInput) dateInput.addEventListener("change", reloadBookings);
+    if (selCons)   selCons.addEventListener("change", reloadBookings);
+    if (selBlock)  selBlock.addEventListener("change", ()=> loadBlockList());
+
+    const btnBlock = qs("#sm-btn-block");
+    const btnUnblock = qs("#sm-btn-unblock");
+
+    if (btnBlock){
+      btnBlock.addEventListener("click", async ()=>{
+        const fecha = qs("#sm-block-date")?.value || "";
+        const consultor_id = qs("#sm-block-consultor")?.value || "ALL";
+        const motivo = qs("#sm-block-motivo")?.value || "";
+        if (!fecha){ toast("Selecciona fecha"); return; }
+
+        showLoader(true);
+        try{
+          const res = await apiBlockDate(fecha, consultor_id, motivo);
+          if (!res.ok) throw new Error(res.error || "block_error");
+          toast("Fecha bloqueada");
+          await loadBlockList(false);
+          reloadBookings();
+        }catch(err){
+          console.error(err);
+          toast("Error al bloquear");
+        }finally{
+          showLoader(false);
+        }
+      });
+    }
+
+    if (btnUnblock){
+      btnUnblock.addEventListener("click", async ()=>{
+        const fecha = qs("#sm-block-date")?.value || "";
+        const consultor_id = qs("#sm-block-consultor")?.value || "ALL";
+        if (!fecha){ toast("Selecciona fecha"); return; }
+
+        showLoader(true);
+        try{
+          const res = await apiUnblockDate(fecha, consultor_id);
+          if (!res.ok) throw new Error(res.error || "unblock_error");
+          toast("Fecha desbloqueada");
+          await loadBlockList(false);
+          reloadBookings();
+        }catch(err){
+          console.error(err);
+          toast("Error al desbloquear");
+        }finally{
+          showLoader(false);
+        }
+      });
+    }
+
+    const btnAddCons = qs("#sm-btn-add-consultor");
+    if (btnAddCons){
+      btnAddCons.addEventListener("click", async ()=>{
+        const id = (qs("#sm-new-consultor-id")?.value || "").trim();
+        const nombre = (qs("#sm-new-consultor-name")?.value || "").trim();
+        if (!id){ toast("Ingresa un ID"); return; }
+
+        showLoader(true);
+        try{
+          const res = await apiAddConsultor(id, nombre);
+          if (!res.ok){
+            const msg = res.error === "duplicate_consultor_id" ? "Ese ID ya existe" : "Error al agregar consultor";
+            toast(msg);
+          } else {
+            toast("Consultor agregado");
+            const consData = await apiGetConsultores();
+            if (consData.ok){
+              gConsultores = consData.consultores || [];
+              buildConsultorSelects(gConsultores);
+              renderConsultorList(gConsultores);
+            }
+          }
+        }catch(err){
+          console.error(err);
+          toast("Error al agregar consultor");
+        }finally{
+          showLoader(false);
+        }
+      });
+    }
+
+    // Editor de horarios
+    const selHor    = qs("#sm-hor-consultor");
+    const btnHorSave = qs("#sm-hor-save");
+    if (selHor) selHor.addEventListener("change", loadScheduleForSelectedConsultor);
+    if (btnHorSave) btnHorSave.addEventListener("click", saveScheduleForSelectedConsultor);
+
+    // Modales
+    const reaModal = qs("#sm-rea-modal");
+    if (reaModal){
+      reaModal.querySelector(".sm-rea-backdrop")?.addEventListener("click", hideReassignModal);
+      reaModal.querySelector("#sm-rea-cancel")?.addEventListener("click", hideReassignModal);
+      reaModal.querySelector("#sm-rea-confirm")?.addEventListener("click", onConfirmReassign);
+    }
+
+    const rpModal = qs("#sm-rp-modal");
+    if (rpModal){
+      rpModal.querySelector(".sm-rp-backdrop")?.addEventListener("click", hideReprogModal);
+      rpModal.querySelector("#sm-rp-cancel")?.addEventListener("click", hideReprogModal);
+      rpModal.querySelector("#sm-rp-confirm")?.addEventListener("click", onConfirmReprog);
+    }
+
+    // Auto-refresh cada 15 min
+    setInterval(()=>{
+      if (qs("#sm-admin-panel") && qs("#sm-admin-panel").style.display !== "none"){
+        reloadBookings();
+      }
+    }, 15*60*1000);
+  });
+})();
+</script>
+
+<script>
+(function(){
+  function setLoadingButton(btn, loadingText){
+    if (!btn || btn.dataset.loading === "1") return;
+
+    btn.dataset.loading = "1";
+    btn.dataset.label = btn.textContent.trim();
+    btn.textContent = loadingText;
+    btn.disabled = true;
+
+    const loader = document.getElementById("sm-admin-loader");
+
+    const timer = setInterval(function(){
+      if (!loader || loader.style.display === "none"){
+        clearInterval(timer);
+        btn.textContent = btn.dataset.label || "";
+        btn.disabled = false;
+        btn.dataset.loading = "0";
+      }
+    }, 200);
+
+    setTimeout(function(){
+      if (btn.dataset.loading === "1"){
+        clearInterval(timer);
+        btn.textContent = btn.dataset.label || "";
+        btn.disabled = false;
+        btn.dataset.loading = "0";
+      }
+    }, 15000);
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    const btnReassign = document.getElementById("sm-rea-confirm");
+    const btnReprog   = document.getElementById("sm-rp-confirm");
+
+    if (btnReassign){
+      btnReassign.addEventListener("click", function(){
+        if (btnReassign.disabled) return;
+        setLoadingButton(btnReassign, "Reasignando...");
+      });
+    }
+
+    if (btnReprog){
+      btnReprog.addEventListener("click", function(){
+        if (btnReprog.disabled) return;
+        setLoadingButton(btnReprog, "Reprogramando...");
+      });
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

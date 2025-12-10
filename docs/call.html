@@ -26,7 +26,20 @@
       font-family:inherit;
       line-height:1.2;
     }
+    /* Evita FOUC: ocultamos el contenedor hasta que carguen estilos */
+    html.sm-preload #sm-vendedores-app{
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+    }
+    #sm-vendedores-app{
+      opacity:1;
+      transition:opacity .14s ease;
+    }
   </style>
+  <script>
+    document.documentElement.classList.add('sm-preload');
+  </script>
   <title>Portal</title>
 
   <script>
@@ -323,10 +336,6 @@
         </div>
       <!-- Acciones junto al logo -->
       <div class="sm-sheet-actions sm-sheet-actions-left">
-        <button id="sm-btn-stats" class="sm-icon-btn" type="button" aria-label="Abrir estadísticas">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column-big-icon lucide-chart-column-big"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="15" y="5" width="4" height="12" rx="1"/><rect x="7" y="8" width="4" height="9" rx="1"/></svg>
-          <span class="sm-icon-label">Puntos</span>
-        </button>
         <button id="sm-btn-calendar" class="sm-icon-btn" type="button" aria-label="Abrir calendario">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -338,6 +347,10 @@
         <button id="sm-btn-guiones-head" class="sm-icon-btn" type="button" aria-label="Abrir guiones">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-text-icon lucide-book-text"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 11h8"/><path d="M8 7h6"/></svg>
           <span class="sm-icon-label">Guiones</span>
+        </button>
+        <button id="sm-btn-stats" class="sm-icon-btn" type="button" aria-label="Abrir estadísticas">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column-big-icon lucide-chart-column-big"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="15" y="5" width="4" height="12" rx="1"/><rect x="7" y="8" width="4" height="9" rx="1"/></svg>
+          <span class="sm-icon-label">Puntos</span>
         </button>
       </div>
     </div>
@@ -587,6 +600,22 @@
       </div>
     </div>
   </div>
+  <!-- ===================== [B3.7] MODAL: AGENDA EMBEBIDA ===================== -->
+  <div id="sm-agenda-modal" class="sm-modal sm-agenda-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="sm-modal-backdrop"></div>
+    <div class="sm-modal-card sm-agenda-card">
+      <button type="button" id="sm-agenda-close" class="sm-agenda-close" aria-label="Cerrar agenda">✕</button>
+      <iframe id="sm-agenda-iframe" class="sm-agenda-frame" title="Agenda" allow="clipboard-read; clipboard-write"></iframe>
+    </div>
+  </div>
+  <!-- Modal agenda consultor (topbar) -->
+  <div id="sm-consultor-modal" class="sm-modal sm-agenda-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="sm-modal-backdrop"></div>
+    <div class="sm-modal-card sm-agenda-card">
+      <button type="button" id="sm-consultor-close" class="sm-agenda-close" aria-label="Cerrar agenda consultor">✕</button>
+      <iframe id="sm-consultor-iframe" class="sm-agenda-frame" title="Agenda consultor" allow="clipboard-read; clipboard-write"></iframe>
+    </div>
+  </div>
   <!-- ===================== [B3.6] MODAL: INACTIVIDAD ===================== -->
   <div id="sm-idle-modal" class="sm-idle-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="sm-idle-backdrop"></div>
@@ -656,7 +685,10 @@
   </div>
 </div>
 <!-- Tour trigger floating -->
-<button id="sm-btn-tour" class="sm-tour-tab" type="button" aria-label="Ver tour">Tour</button>
+<button id="sm-btn-tour" class="sm-tour-tab" type="button" aria-label="Ver tour">
+  Tour
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass-icon lucide-compass"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/><circle cx="12" cy="12" r="10"/></svg>
+</button>
 <!-- ===================== [B6] STYLES ===================== -->
 <style>
   #sm-vendedores-app { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
@@ -715,7 +747,7 @@
   .sm-topbar{
     position:sticky;
     top:0;
-    z-index:1000001;
+    z-index:1000001 !important;
     width:100%;
     box-sizing:border-box;
     margin-top: -2px;
@@ -866,9 +898,12 @@
     border-top:1px solid rgba(0,0,0,.08); background:#ffffff;
   }
   .sm-tour-tab{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
     position:fixed;
     left:0;
-    bottom:46px;
+    bottom:75px;
     padding:9px 9px;
     border:1px solid rgba(0,0,0,.12);
     border-radius:0 7px 7px 0;
@@ -879,7 +914,14 @@
     cursor:pointer;
     box-shadow:0 0px 15px rgba(0,0,0,.1);
     z-index:2147483644;
+    transform:translateX(calc(-50% - 3px));
     transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .sm-tour-tab svg{ width:16px; height:16px; }
+  .sm-tour-tab:hover,
+  .sm-tour-tab:focus-visible{
+    transform:translateX(0);
+    box-shadow:0 2px 18px rgba(0,0,0,.14);
   }
   .sm-toast{
     position:fixed; left:50%; top:18px; transform:translateX(-50%);
@@ -904,12 +946,43 @@
   }
   /* Modales */
   .sm-modal{
-    position:fixed; inset:0; z-index:1000001; display:none; align-items:center; justify-content:center; padding:18px;
+    position:fixed; inset:0; z-index:2147483647; display:none; align-items:center; justify-content:center; padding:18px;
   }
   .sm-modal-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.35); }
   .sm-modal-card{
     position:relative; width:min(560px, calc(100vw - 36px)); background:#fff; border-radius:18px;
     padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.22);
+  }
+  .sm-modal-card.sm-agenda-card{
+    width:min(1080px, calc(100vw - 32px));
+    max-width:1080px;
+    height:min(90vh, calc(100vh - 60px));
+    padding:0;
+    overflow:hidden;
+  }
+  .sm-agenda-modal{ z-index:2147483647 !important; }
+  .sm-agenda-close{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:34px;
+    height:34px;
+    border:0;
+    border-radius:50%;
+    background:rgba(0,0,0,.08);
+    color:#111827;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2;
+  }
+  .sm-agenda-close:hover{ background:rgba(0,0,0,.12); }
+  .sm-agenda-frame{
+    width:100%;
+    height:100%;
+    border:0;
+    display:block;
   }
   .sm-modal-title{ font-size:16px; font-weight:700; color:#111827; margin-bottom:6px; }
   .sm-modal-sub{ font-size:13px; color:#6b7280; margin-bottom:12px; }
@@ -1278,6 +1351,38 @@
   .smf-opt:hover .smf-letter{background:transparent;color:#111827;border-color:rgba(17,24,39,.22)}
   .smf-opt.is-selected .smf-letter{background:#0069ec;border-color:#0069ec;color:#fff}
   .smf-extra{margin:4px 0 16px 0}
+  .smf-extra-label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:#374151;
+    margin:0 0 6px 0;
+  }
+  .smf-extra-label-inline{display:flex;align-items:center;gap:6px}
+  .smf-info-icn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:18px;
+    height:18px;
+    color:#9ca3af;
+    cursor:default;
+    position:relative;
+  }
+  .smf-tooltip{
+    display:none;
+    position:absolute;
+    bottom:110%;
+    left:0;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    box-shadow:0 0px 15px rgba(0,0,0,.05);
+    border-radius:10px;
+    padding:10px;
+    z-index:10;
+  }
+  .smf-tooltip img{ display:block; width:200px; height:auto; }
+  .smf-info-icn:hover .smf-tooltip{ display:block; }
   .smf-input{
     width:100%;box-sizing:border-box;border:none;border-bottom:1px solid rgba(17,24,39,.28);
     border-radius:0;padding:10px 2px;font-size:14px;outline:none;background:transparent;color:#111827; margin-bottom: 35px;
@@ -1452,6 +1557,26 @@
 
 <script>
 (function(){
+  const root = document.documentElement;
+  function reveal(){
+    const finish = ()=> root.classList.remove('sm-preload');
+    const show = ()=> requestAnimationFrame(()=> requestAnimationFrame(finish));
+    if (document.fonts && document.fonts.ready){
+      document.fonts.ready.then(show).catch(show);
+    }else{
+      show();
+    }
+  }
+  if (document.readyState === "complete" || document.readyState === "interactive"){
+    reveal();
+  }else{
+    document.addEventListener("DOMContentLoaded", reveal, { once:true });
+  }
+})();
+</script>
+
+<script>
+(function(){
   const el = document.getElementById("sm-start-title");
   if(!el) return;
   const params = new URLSearchParams(window.location.search);
@@ -1537,6 +1662,9 @@
     return (p.get('idc') || "").trim();
   }
 
+  // Código de agendamiento traído desde el iframe de agenda
+  window.__smAgendaCode = window.__smAgendaCode || "";
+
   function setLinkOrDash(el, url, label){
     if (!el) return;
     url = (url || "").trim();
@@ -1548,10 +1676,113 @@
     el.innerHTML = `<a class="sm-btn sm-btn-secondary" href="${url}" target="_blank" rel="noopener noreferrer">${txt}</a>`;
   }
 
+  function buildAgendaURL(){
+    const d = state.deal || {};
+    const params = new URLSearchParams();
+    const idc = getIDC();
+    const phoneInput = (qs("#sm-phone")?.value || "").trim();
+
+    if(idc) params.set("idc", idc);
+    const nombre = (d.NOMBRE || "").trim();
+    if(nombre) params.set("nombre", nombre);
+    const email = (d.EMAIL || "").trim();
+    if(email) params.set("email", email);
+    const tel = phoneInput || (d.TELEFONO || "").trim();
+    if(tel) params.set("telefono", tel);
+    const marca = (d.MARCA || "").trim();
+    if(marca) params.set("marca", marca);
+    const tipo = (d.TIPO || "").trim();
+    if(tipo) params.set("tipo", tipo);
+    const idpipe = (d.IDPIPE || "").trim();
+    if(idpipe) params.set("idpipe", idpipe);
+
+    const qsStr = params.toString();
+    return "./calendar/agendar.html" + (qsStr ? `?${qsStr}` : "");
+  }
+
+  function buildConsultorURL(){
+    const params = new URLSearchParams();
+    const idc = getIDC();
+    if(idc) params.set("idc", idc);
+    const qsStr = params.toString();
+    return "./calendar/consultor.html" + (qsStr ? `?${qsStr}` : "");
+  }
+
+  function handleAgendaMessage(ev){
+    const data = ev?.data;
+    if(!data || typeof data !== "object") return;
+    const t = String(data.type || data.event || "").toLowerCase();
+    if(t === "sm_booking_close"){
+      closeAgendaPopup();
+      return;
+    }
+    if(t === "sm_goto_deal"){
+      const rid = String(data.id || data.rid || "").trim();
+      if(!rid) return;
+      closeConsultorPopup();
+      closeAgendaPopup();
+      loadDealByIdpipe(rid);
+      return;
+    }
+    if(t === "sm_booking_id"){
+      const code = String(data.bookingId || data.booking_id || "").trim();
+      if(!code) return;
+      window.__smAgendaCode = code;
+      try{
+        if (typeof window.__smSetAgendaCode === "function"){
+          window.__smSetAgendaCode(code);
+        }
+      }catch(_){}
+    }
+  }
+
+  function openAgendaPopup(){
+    const modal = qs("#sm-agenda-modal");
+    const frame = qs("#sm-agenda-iframe");
+    const url = buildAgendaURL();
+    if(modal && frame){
+      frame.src = url;
+      modal.style.display = "flex";
+      modal.setAttribute("aria-hidden", "false");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function openConsultorPopup(){
+    const modal = qs("#sm-consultor-modal");
+    const frame = qs("#sm-consultor-iframe");
+    const url = buildConsultorURL();
+    if(modal && frame){
+      frame.src = url;
+      modal.style.display = "flex";
+      modal.setAttribute("aria-hidden", "false");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function closeAgendaPopup(){
+    const modal = qs("#sm-agenda-modal");
+    if(!modal) return;
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  function closeConsultorPopup(){
+    const modal = qs("#sm-consultor-modal");
+    if(!modal) return;
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+  }
+
   function openQuickAction(action){
     const d = state.deal || {};
+    if (action === "agenda"){
+      openAgendaPopup();
+      return;
+    }
     const map = {
-      agenda: d.URL_AGENDA,
       ficha_registro: d.URL_FICHA,
       ficha_vigilancia: d.URL_FICHA_VIGILANCIA
     };
@@ -2732,6 +2963,26 @@ const nextPromise =
     }
   }
 
+  // Cargar trato usando IDPIPE (búsqueda directa, sin abrir modal de búsqueda)
+  async function loadDealByIdpipe(idpipe){
+    const q = String(idpipe || "").trim();
+    if(!q) return;
+    startDealLoader();
+    try{
+      const data = await apiSearch(q);
+      if(!data?.ok || data.type !== "idpipe" || !data.deal) throw new Error(data?.error || "bad_search");
+      closeSearchModal();
+      dealToUI(data.deal);
+      openPopup();
+      toast("Trato cargado");
+    }catch(e){
+      console.error("[SM] search by idpipe error", e);
+      toast("No se pudo cargar");
+    }finally{
+      finishDealLoader();
+    }
+  }
+
   /* ===================== [F6] ZOOM PHONE ===================== */
   function initZoom(){
     const iframe = qs("#sm-zoomphone-iframe");
@@ -3517,11 +3768,7 @@ const nextPromise =
       const calBtn = el && el.closest && el.closest("#sm-btn-calendar");
       if (calBtn){
       ev.preventDefault();
-      const idc = getIDC();
-      const url = idc
-        ? `https://agenda.simplemarcas.cl/consultor?idc=${encodeURIComponent(idc)}`
-        : "https://agenda.simplemarcas.cl/consultor";
-      window.open(url, "_blank", "noopener,noreferrer");
+      openConsultorPopup();
       return;
       }
 
@@ -3659,18 +3906,30 @@ const nextPromise =
         return;
       }
 
-      const sm = qs("#sm-search-modal");
-      if(sm && sm.style.display === "flex"){
-        closeSearchModal();
-        return;
-      }
-
-      const lm = qs("#sm-log-modal");
-      if(lm && lm.style.display === "flex"){
-        closeLogModal();
-        return;
-      }
+    const sm = qs("#sm-search-modal");
+    if(sm && sm.style.display === "flex"){
+      closeSearchModal();
+      return;
     }
+
+    const lm = qs("#sm-log-modal");
+    if(lm && lm.style.display === "flex"){
+      closeLogModal();
+      return;
+    }
+
+    const am = qs("#sm-agenda-modal");
+    if(am && am.style.display === "flex"){
+      closeAgendaPopup();
+      return;
+    }
+
+    const cm = qs("#sm-consultor-modal");
+    if(cm && cm.style.display === "flex"){
+      closeConsultorPopup();
+      return;
+    }
+  }
 
     // Enter para buscar
     if(ev.key === "Enter"){
@@ -3717,11 +3976,44 @@ const nextPromise =
     });
   }
 
+  function wireAgendaModal(){
+    // Mueve el modal al body para asegurar que cubra todo (incluida la topbar)
+    [
+      { modal:"#sm-agenda-modal", close:"#sm-agenda-close", onClose: closeAgendaPopup },
+      { modal:"#sm-consultor-modal", close:"#sm-consultor-close", onClose: closeConsultorPopup }
+    ].forEach(({ modal, close, onClose })=>{
+      const m = qs(modal);
+      if(m && m.parentElement !== document.body){
+        document.body.appendChild(m);
+      }
+
+      const closeBtn = qs(close);
+      if(closeBtn && !closeBtn._smCloseBound){
+        closeBtn._smCloseBound = true;
+        closeBtn.addEventListener("click", (ev)=>{
+          ev.preventDefault();
+          onClose();
+        });
+      }
+
+      if(m && !m._smBackdropBound){
+        m._smBackdropBound = true;
+        m.addEventListener("click", (ev)=>{
+          if(ev.target && ev.target.classList && ev.target.classList.contains("sm-modal-backdrop")){
+            onClose();
+          }
+        });
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", ()=>{
     ensureDebugUI();
     initZoom();
     wireCopy();
     wirePayAndLog();
+    wireAgendaModal();
+    window.addEventListener("message", handleAgendaMessage);
     updateStatsIcon();
   });
 })();
@@ -4069,6 +4361,16 @@ const nextPromise =
       }
     };
 
+    const AGENDA_CODE_OPTION_IDS = new Set([
+      "A.2.4", "A.3.2.2", "A.3.1.2", "A.5.2.2", "A.5.1.2",
+      "B.2.4", "B.2.5.2", "B.4.2.2", "B.4.1.2",
+      "C.2.4", "C.2.5.2"
+    ]);
+
+    function needsAgendaCode(option){
+      return !!(option && AGENDA_CODE_OPTION_IDS.has(option.id));
+    }
+
     const ROOT = document.getElementById("sm-typeform-min");
     if(!ROOT) return;
 
@@ -4077,8 +4379,20 @@ const nextPromise =
       branch: null,
       selected: null,
       detalle: "",
+      agendaCode: "",
       history: [],
       answers: {}
+    };
+    window.__smSetAgendaCode = function(code){
+      const val = String(code || "").trim();
+      if(!val) return;
+      st.agendaCode = val;
+      const input = ROOT.querySelector("input[data-agenda-code='1']");
+      if(input){
+        input.value = val;
+        const btn = ROOT.querySelector("[data-sendbtn='1']");
+        if(btn) btn.disabled = !canProceedFinal(findOptionInNode(st.nodeId, getNodeById(st.nodeId), st.selected));
+      }
     };
 
     let smfAutoTimer = null;
@@ -4123,8 +4437,11 @@ const nextPromise =
 
     function canProceedFinal(option){
       if(!isFinal(option)) return true;
-      if(!option.requires_text) return true;
-      return (st.detalle || "").trim().length > 0;
+      const needsDetalle = !!option.requires_text;
+      const needsCode = needsAgendaCode(option);
+      if(needsDetalle && !(st.detalle || "").trim()) return false;
+      if(needsCode && !(st.agendaCode || "").trim()) return false;
+      return true;
     }
 
     function buildRecorridoString(){
@@ -4155,6 +4472,7 @@ const nextPromise =
         if(!opt) return;
 
         const det = (ans.detalle || "").trim();
+        const agendaCode = (ans.agendaCode || "").trim();
         let step;
 
         if(isYesNoNode(nid, node)){
@@ -4164,6 +4482,7 @@ const nextPromise =
         }
 
         if(opt.requires_text && det) step += " — " + det;
+        if(needsAgendaCode(opt) && agendaCode) step += " — Código del agendamiento: " + agendaCode;
         steps.push(step);
       });
 
@@ -4181,6 +4500,7 @@ return compact.join(" > ");
       const data = {
         numero_pregunta: payload.numero_pregunta ?? "",
         detalle: payload.detalle ?? "",
+        codigo_agendamiento: payload.codigo_agendamiento ?? "",
         recorrido: payload.recorrido ?? "",
         // NUEVO: datos del popup
         idpipe: safe.idpipe || "",
@@ -4256,12 +4576,13 @@ return compact.join(" > ");
         const a = st.answers[newNodeId];
         st.selected = a ? a.selected : null;
         st.detalle = a ? (a.detalle || "") : "";
+        st.agendaCode = a ? (a.agendaCode || "") : "";
         render(newNodeId,true);
       });
     }
 
     function goNext(option){
-      st.answers[st.nodeId] = { selected: st.selected, detalle: st.detalle };
+      st.answers[st.nodeId] = { selected: st.selected, detalle: st.detalle, agendaCode: st.agendaCode };
 
       if(st.nodeId === "Q0"){
         st.history.push({ nodeId:"Q0", branch: st.branch });
@@ -4269,6 +4590,7 @@ return compact.join(" > ");
         st.nodeId = st.branch + "|Q1";
         st.selected = null;
         st.detalle = "";
+        st.agendaCode = "";
         animateTo(st.nodeId);
         return;
       }
@@ -4277,6 +4599,7 @@ return compact.join(" > ");
       st.nodeId = option.next;
       st.selected = null;
       st.detalle = "";
+      st.agendaCode = "";
       animateTo(st.nodeId);
     }
 
@@ -4321,8 +4644,10 @@ return compact.join(" > ");
             smfAutoTimer = null;
           }
 
+          const optNeedsCode = needsAgendaCode(o);
           st.selected = o.id;
           if(!o.requires_text) st.detalle = "";
+          if(!optNeedsCode) st.agendaCode = "";
           paintSelected(optsWrap, o.id);
 
           if(o.next){
@@ -4343,21 +4668,64 @@ return compact.join(" > ");
 
       const currentOpt = findOptionInNode(nodeId, node, st.selected);
 
-      if(currentOpt && !currentOpt.next && currentOpt.requires_text){
-        const extra = ce("div","smf-extra");
-        const input = ce("input","smf-input");
-        input.type = "text";
-        input.placeholder = "Escribe el motivo...";
-        input.value = st.detalle || "";
+      if(currentOpt && !currentOpt.next){
+        const needsCode = needsAgendaCode(currentOpt);
+        const needsDetalle = !!currentOpt.requires_text;
 
-        input.addEventListener("input", (e)=>{
-          st.detalle = e.target.value;
-          const btn = ROOT.querySelector("[data-sendbtn='1']");
-          if(btn) btn.disabled = !canProceedFinal(currentOpt);
-        });
+        if(needsCode || needsDetalle){
+          const extra = ce("div","smf-extra");
 
-        extra.appendChild(input);
-        wrap.appendChild(extra);
+          if(needsCode){
+            const lbl = ce("div","smf-extra-label smf-extra-label-inline","");
+            const lblTxt = ce("span","smf-extra-label-text","Código del agendamiento:");
+            const info = ce("span","smf-info-icn");
+            info.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info-icon lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
+            const tooltip = ce("div","smf-tooltip");
+            const img = document.createElement("img");
+            img.src = "./files/codigo.png";
+            img.alt = "Ejemplo de código de agendamiento";
+            img.width = 200;
+            tooltip.appendChild(img);
+            info.appendChild(tooltip);
+
+            lbl.appendChild(lblTxt);
+            lbl.appendChild(info);
+            const codeInput = ce("input","smf-input");
+            codeInput.type = "text";
+            codeInput.placeholder = "Código del agendamiento...";
+            if(!st.agendaCode && window.__smAgendaCode){
+              st.agendaCode = window.__smAgendaCode;
+            }
+            codeInput.value = st.agendaCode || "";
+            codeInput.setAttribute("data-agenda-code","1");
+
+            codeInput.addEventListener("input", (e)=>{
+              st.agendaCode = e.target.value;
+              const btn = ROOT.querySelector("[data-sendbtn='1']");
+              if(btn) btn.disabled = !canProceedFinal(currentOpt);
+            });
+
+            extra.appendChild(lbl);
+            extra.appendChild(codeInput);
+          }
+
+          if(needsDetalle){
+            const input = ce("input","smf-input");
+            input.type = "text";
+            input.placeholder = "Escribe el motivo...";
+            input.value = st.detalle || "";
+
+            input.addEventListener("input", (e)=>{
+              st.detalle = e.target.value;
+              const btn = ROOT.querySelector("[data-sendbtn='1']");
+              if(btn) btn.disabled = !canProceedFinal(currentOpt);
+            });
+
+            extra.appendChild(input);
+          }
+
+          wrap.appendChild(extra);
+        }
       }
 
       const nav = ce("div","smf-nav");
@@ -4381,6 +4749,7 @@ return compact.join(" > ");
         const a = st.answers[st.nodeId];
         st.selected = a ? a.selected : null;
         st.detalle = a ? (a.detalle || "") : "";
+        st.agendaCode = a ? (a.agendaCode || "") : "";
 
         animateTo(st.nodeId);
       });
@@ -4408,14 +4777,21 @@ return compact.join(" > ");
 
         if(!canProceedFinal(currentOpt)) return;
 
-        st.answers[st.nodeId] = { selected: st.selected, detalle: st.detalle };
+        st.answers[st.nodeId] = { selected: st.selected, detalle: st.detalle, agendaCode: st.agendaCode };
         const recorrido = buildRecorridoString();
+        const agendaCode = needsAgendaCode(currentOpt)
+          ? (st.agendaCode || window.__smAgendaCode || "").trim()
+          : "";
 
         const payload = {
           numero_pregunta: currentOpt.id,
           detalle: (currentOpt.requires_text ? (st.detalle || "").trim() : ""),
-          recorrido
+          recorrido,
+          codigo_agendamiento: agendaCode
         };
+        if (agendaCode && needsAgendaCode(currentOpt)){
+          window.__smAgendaCode = "";
+        }
 
         const ctx = (window.__smSurveyGetContext && window.__smSurveyGetContext()) || {};
 
@@ -4454,6 +4830,7 @@ return compact.join(" > ");
       st.nodeId = "Q0";
       st.selected = null;
       st.detalle = "";
+      st.agendaCode = "";
       st.history = [];
       st.answers = {};
       render("Q0", true);

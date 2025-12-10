@@ -1,0 +1,1668 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="files/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Mi agenda</title>
+  <!-- OpenReplay Tracking Code -->
+<script>
+  // ===== 1) Obtener idc desde la URL =====
+  function smGetIDCFromURL() {
+    var search = window.location.search || "";
+    if (!search) return "";
+    try {
+      // Navegadores modernos
+      var params = new URLSearchParams(search);
+      return params.get("idc") || "";
+    } catch (e) {
+      // Fallback simple por si acaso
+      var m = search.match(/[?&]idc=([^&]+)/i);
+      return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+    }
+  }
+
+  // Guardamos el idc para usarlo como userID
+  var smIDC = smGetIDCFromURL();
+  window.__smIDC = smIDC; // por si lo quieres usar en otras partes de tu app
+
+  // ===== 2) Configuración OpenReplay =====
+  var initOpts = {
+    projectKey: "QonwVB9oKHTLvpz3EkMc",
+    // 0 - plain, 1 - obscured, 2 - ignored
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: false
+  };
+
+  // Aquí conectamos el idc al userID
+  var startOpts = { userID: smIDC || "" };
+
+  (function(A,s,a,y,e,r){
+    r = window.OpenReplay = [e, r, y, [s - 1, e]];
+    s = document.createElement('script');
+    s.src = A;
+    s.async = !a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+
+    r.start = function(v){ r.push([0]); };
+    r.stop = function(v){ r.push([1]); };
+    r.setUserID = function(id){ r.push([2, id]); };
+    r.setUserAnonymousID = function(id){ r.push([3, id]); };
+    r.setMetadata = function(k, v){ r.push([4, k, v]); };
+    r.event = function(k, p, i){ r.push([5, k, p, i]); };
+    r.issue = function(k, p){ r.push([6, k, p]); };
+    r.isActive = function(){ return false; };
+    r.getSessionToken = function(){};
+  })("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+
+  // (Opcional) Si quieres forzar el setUserID explícito cuando exista idc:
+  (function(){
+    if (!smIDC) return;
+    try {
+      if (window.OpenReplay && typeof OpenReplay.setUserID === "function") {
+        OpenReplay.setUserID(smIDC);
+      }
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+
+<div class="sm-logo-wrap">
+  <img class="sm-logo" src="files/logon.png" alt="Logo">
+</div>
+<div class="smc-wrap">
+  <div class="smc-card">
+    <h2 class="smc-title">Agenda del consultor</h2>
+    <div class="smc-header">
+      <div class="smc-header-left">
+        <div class="smc-row">
+          <label class="smc-label">Fecha
+            <input id="smc-date" class="smc-input" type="date">
+          </label>
+        </div>
+      </div>
+      <div class="smc-header-right">
+        <div class="smc-cons-info">
+          Consultor: <span id="smc-consultor-id" class="smc-cons-pill">—</span>
+        </div>
+        <div class="smc-hint">La lista se actualiza automáticamente cada 15 minutos.</div>
+      </div>
+    </div>
+    <div class="smc-subtitle" style="margin-top:10px;">Reuniones del día</div>
+    <div id="smc-list" class="smc-list"></div>
+  </div>
+  <!-- Modal Reprogramar -->
+  <div id="smc-rp-modal" class="sm-rp-modal">
+    <div class="sm-rp-backdrop"></div>
+    <div class="sm-rp-dialog">
+      <div class="sm-rp-title">Reprogramar reunión</div>
+      <div class="sm-rp-body" id="smc-rp-body">
+        Selecciona una nueva fecha y horario.
+      </div>
+      <div class="sm-rp-grid">
+        <div class="sm-rp-cal-wrap">
+          <div id="smc-rp-cal" class="sm-rp-cal">Cargando calendario…</div>
+        </div>
+        <div class="sm-rp-slots-wrap">
+          <div class="sm-rp-date-label" id="smc-rp-date-label">Selecciona una fecha</div>
+          <div id="smc-rp-slots" class="sm-rp-slots"></div>
+        </div>
+      </div>
+      <div class="sm-rp-footer">
+        <button type="button" class="sm-rp-btn" id="smc-rp-cancel">Cerrar</button>
+        <button type="button" class="sm-rp-btn sm-rp-btn-primary" id="smc-rp-confirm" disabled>Reprogramar</button>
+      </div>
+    </div>
+  </div>
+  <!-- Toast + Loader -->
+  <div id="smc-toast" class="sm-toast"></div>
+  <div id="smc-loader" class="sm-loader" style="display:none;">
+    <div class="sm-spinner"></div>
+  </div>
+  <!-- Overlay de éxito -->
+  <div id="smc-success-overlay" class="sm-success-overlay" style="display:none;">
+    <div class="sm-success-card">
+      <h2 class="sm-success-title">¡Listo!</h2>
+      <p id="smc-success-text" class="sm-success-text">
+        Has reprogramado la reunión.
+      </p>
+      <div id="smc-booking-code" class="sm-booking-code">
+        <div class="sm-booking-code-label">Código de agendamiento</div>
+        <div class="sm-booking-code-row">
+          <div id="smc-booking-code-value" class="sm-booking-code-value"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+:root{
+  font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.sm-logo-wrap{
+  display:none;
+}
+.sm-logo{
+  max-width:120px;
+  width:100%;
+  height:auto;
+}
+body{
+  margin:0;
+  font-family:inherit;
+  -webkit-font-smoothing:antialiased;
+  background:#FFFFFF;
+}
+/* ===== Calendario Reprogramar – Consultores ===== */
+.sm-rp-cal {
+  font-family: inherit;
+}
+.sm-rp-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.sm-rp-cal-month {
+  font-weight: 600;
+  font-size: 14px;
+}
+.sm-rp-cal-nav button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+.sm-rp-cal-nav button:hover {
+  background: #f3f4f6;
+}
+.sm-rp-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-top: 4px;
+}
+.sm-rp-dow {
+  font-size: 11px;
+  text-align: center;
+  color: #6b7280;
+  font-weight: 500;
+}
+/* Botón de día */
+.sm-rp-day-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 0;
+  font-size: 13px;
+  line-height: 1;
+  background: #f3f4f6;
+  color: #111827;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+/* Día seleccionado */
+.sm-rp-day-btn.selected {
+  background: #2563eb;       /* azul principal */
+  color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.4);
+  transform: none;
+}
+/* Días deshabilitados */
+.sm-rp-day-btn.disabled,
+.sm-rp-day-btn:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: default;
+  opacity: 0.7;
+  box-shadow: none;
+  transform: none;
+}
+</style>
+<style>
+.smc-info-row{
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  margin-top: 2px;
+}
+.smc-info-row-top{
+  margin-bottom: 4px;
+}
+.smc-info-label{
+  color: #6b7280; /* gris texto label */
+}
+.smc-info-value{
+  color: #111827; /* texto normal */
+}
+.smc-copy-btn{
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin-left: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.smc-copy-btn svg{
+  width: 13px;
+  height: 13px;
+  stroke: #6b7280;
+}
+.smc-copy-btn:hover svg{
+  stroke: #111827;
+}
+/* Badge para el tipo */
+.smc-badge-tipo{
+  margin-left: 0px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #374151;
+}
+    .smc-btn-yellow{
+    background:#f9f2b8 !important;
+    color:#6d6521 !important;
+    text-decoration:none
+  }
+  .smc-btn-yellow:hover,
+  .smc-btn-yellow:focus{
+    text-decoration:none;
+  }
+  .smc-btn-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+  }
+  .smc-fly-tooltip{
+    position:fixed;
+    background:#071E34;
+    color:#fff;
+    font-size:11px;
+    padding:5px 8px;
+    border-radius:6px;
+    white-space:nowrap;
+    box-shadow:0 8px 24px rgba(0,0,0,.18);
+    z-index:2147483647;
+    pointer-events:none;
+  }
+
+    .smc-wrap{
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    padding:24px 0;
+  }
+  .smc-card{
+    max-width:1000px;
+    margin:0 auto 18px;
+    background:#fff;
+    border-radius:18px;
+    padding:20px;
+    box-shadow:none;
+  }
+  .smc-title{
+    margin:0 0 8px;
+    font-size:22px;
+    font-weight:700;
+    color:#111827;
+  }
+  .smc-header{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-top:4px;
+  }
+  .smc-header-left,
+  .smc-header-right{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .smc-row{margin-bottom:0;}
+  .smc-label{
+    display:block;
+    font-size:13px;
+    color:#374151;
+    margin-bottom:2px;
+    font-weight:500;
+  }
+  .smc-input{
+    width:100%;
+    padding:7px 9px;
+    border-radius:10px;
+    border:1px solid #d1d5db;
+    font-size:13px;
+    box-sizing:border-box;
+  }
+  .smc-input:focus{
+    outline:none;
+    border-color:#1f6feb;
+    box-shadow:0 0 0 1px rgba(31,111,235,0.07);
+  }
+  #smc-date{
+    line-height:15px;
+  }
+  .smc-cons-info{
+    font-size:13px;
+    color:#4b5563;
+  }
+  .smc-cons-pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:2px 8px;
+    border-radius:999px;
+    background:#eff6ff;
+    color:#1d4ed8;
+    font-size:12px;
+    font-weight:600;
+    margin-left:4px;
+  }
+  .smc-hint{
+    font-size:12px;
+    color:#9ca3af;
+  }
+  .smc-subtitle{
+    margin:0 0 6px;
+    font-size:15px;
+    font-weight:600;
+    color:#111827;
+  }
+
+  /* Lista de reuniones */
+  .smc-list{
+    margin-top:8px;
+    border-radius:14px;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    padding:10px;
+    max-height:420px;
+    overflow:auto;
+    font-size:13px;
+  }
+  .smc-item{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    justify-content:space-between;
+    padding:6px 8px;
+    border-radius:10px;
+    margin-bottom:4px;
+  }
+  .smc-item.is-past{opacity:0.45;}
+  .smc-item.is-now{
+    background:#ecfdf3;
+    border:1px solid #bbf7d0;
+  }
+  .smc-item.is-cancelled{
+    text-decoration:line-through;
+    opacity:0.55;
+  }
+  .smc-item-main{
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    align-items:center;
+  }
+  .smc-badge{
+    border-radius:999px;
+    padding:2px 8px;
+    font-size:11px;
+    background:#e5e7eb;
+    color:#111827;
+  }
+  .smc-badge-hora{
+    background:#f3f4f6;
+    color:#111827;
+  }
+  .smc-badge-cancel{
+    background:#fee2e2;
+    color:#b91c1c;
+  }
+  .smc-actions{
+    display:flex;
+    gap:6px;
+  }
+  .smc-btn{
+    border:none;
+    border-radius:999px;
+    padding:4px 10px;
+    font-size:11px;
+    cursor:pointer;
+    background:#e5e7eb;
+    color:#111827;
+  }
+  .smc-btn-orange{
+    background:#ffeadc;
+    color:#ea580c;
+  }
+  .smc-btn-red{
+    background:#fee2e2;
+    color:#b91c1c;
+  }
+  .smc-btn-blue{
+    background:#0069ec;
+    color:#ffffff;
+    border-color:#0069ec;
+  }
+  .smc-btn-blue:hover{ filter:brightness(.94); }
+
+  /* Toast + Loader (mismo estilo que admin) */
+  .sm-toast{
+    position:fixed;
+    left:50%;
+    bottom:20px;
+    transform:translateX(-50%);
+    background:#111827;
+    color:#fff;
+    padding:10px 14px;
+    border-radius:999px;
+    font-size:13px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s,transform .2s;
+    z-index:99999;
+  }
+  .sm-toast.is-show{
+    opacity:1;
+    transform:translateX(-50%) translateY(-4px);
+  }
+  .sm-loader{
+    position:fixed;
+    inset:0;
+    background:rgba(255,255,255,0.75);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+  }
+  .sm-spinner{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    border:3px solid rgba(31,111,235,0.2);
+    border-top-color:#1f6feb;
+    animation:sm-spin .8s linear infinite;
+  }
+  @keyframes sm-spin{
+    to{transform:rotate(360deg);}
+  }
+
+  /* Overlay de éxito (mismo estilo de agendar) */
+  .sm-success-overlay{
+    position:fixed;
+    inset:0;
+    background:#ffffff94;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:10000;
+  }
+  .sm-success-card{
+    max-width:420px;
+    width:90%;
+    margin:0 auto;
+    background:#ffffff;
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(15,23,42,0.12);
+    padding:24px 20px 18px;
+    text-align:center;
+  }
+  .sm-success-title{
+    margin:0 0 8px;
+    font-size:22px;
+    font-weight:700;
+    color:#111827;
+  }
+  .sm-success-text{
+    margin:0 0 16px;
+    font-size:14px;
+    color:#4b5563;
+  }
+  .sm-booking-code{
+    display:none;
+    margin-top:30px;
+    padding:12px;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    background:#f9fafb;
+    text-align:left;
+  }
+  .sm-booking-code-label{
+    font-size:13px;
+    color:#374151;
+    margin:0 0 8px;
+    line-height:1.4;
+    text-align:center;
+    font-weight:500;
+  }
+  .sm-booking-code-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    justify-content:center;
+  }
+  .sm-booking-code-value{
+    font-weight:600;
+    font-size:14px;
+    color:#111827;
+    word-break:break-all;
+    background:#fff;
+    padding:13px;
+    border-radius:11px;
+    border:1px dashed #cccccc;
+    margin-top:5px;
+  }
+
+  /* ===== Modal Reprogramar (reutilizamos estilo admin) ===== */
+  .sm-rp-modal{
+    position:fixed;
+    inset:0;
+    z-index:99989;
+    display:none;
+    align-items:center;
+    justify-content:center;
+  }
+  .sm-rp-backdrop{
+    position:absolute;
+    inset:0;
+    background:rgba(15,23,42,0.45);
+  }
+  .sm-rp-dialog{
+    position:relative;
+    background:#ffffff;
+    border-radius:18px;
+    max-width:480px;
+    width:95%;
+    padding:16px 16px 14px;
+    box-shadow:0 18px 45px rgba(15,23,42,0.22);
+    font-family:inherit;
+    z-index:1;
+  }
+  .sm-rp-title{
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:4px;
+    color:#111827;
+  }
+  .sm-rp-body{
+    font-size:14px;
+    color:#4b5563;
+    margin-bottom:10px;
+  }
+  .sm-rp-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);
+    gap:12px;
+    align-items:flex-start;
+  }
+  .sm-rp-cal-wrap{
+    border-radius:14px;
+    border:1px solid #e5e7eb;
+    padding:10px;
+    background:#f9fafb;
+  }
+  .sm-rp-slots-wrap{
+    border-radius:14px;
+    border:1px solid #e5e7eb;
+    padding:10px;
+    background:#ffffff;
+    min-height:150px;
+    font-size:13px;
+  }
+  .sm-rp-date-label{
+    font-size:13px;
+    font-weight:500;
+    margin-bottom:6px;
+    color:#111827;
+  }
+  .sm-rp-slots{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .sm-rp-slot-btn{
+    border-radius:999px;
+    border:1px solid #d1d5db;
+    padding:4px 10px;
+    font-size:12px;
+    background:#f9fafb;
+    cursor:pointer;
+  }
+  .sm-rp-slot-btn.selected{
+    background:#1f6feb;
+    color:#ffffff;
+    border-color:#1f6feb;
+  }
+  .sm-rp-footer{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top:10px;
+  }
+  .sm-rp-btn{
+    border-radius:999px;
+    border:1px solid #d1d5db;
+    padding:6px 14px;
+    font-size:13px;
+    background:#f9fafb;
+    cursor:pointer;
+  }
+  .sm-rp-btn-primary{
+    background:#1f6feb;
+    color:#ffffff;
+    border-color:#1f6feb;
+  }
+  .sm-rp-cal{
+    font-size:12px;
+  }
+  .sm-rp-cal-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:6px;
+  }
+  .sm-rp-cal-month{
+    font-weight:600;
+    font-size:13px;
+    color:#111827;
+  }
+  .sm-rp-cal-nav button{
+    border-radius:999px;
+    border:1px solid #d1d5db;
+    width:24px;
+    height:24px;
+    font-size:13px;
+    background:#ffffff;
+    cursor:pointer;
+  }
+  .sm-rp-cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    gap:2px;
+  }
+  .sm-rp-dow{
+    text-align:center;
+    font-size:11px;
+    color:#9ca3af;
+    padding:2px 0;
+  }
+  .sm-rp-day-btn{
+    border-radius:5px;
+    border:none;
+    padding:3px 0;
+    font-size:11px;
+    cursor:pointer;
+    background:#efeff0;
+    height: 28px;
+  }
+  .sm-rp-day-btn.disabled{
+    cursor:default;}
+  
+</style>
+<script>
+(function(){
+    // ENDPOINT (principal):
+  // - Web App de Google Apps Script (URL /exec).
+  // - Este es el backend principal que recibe los datos del front.
+  // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
+  // - Código fuente (copia local para editar/analizar con Codex): /apps-script/code.gs
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyJvUfgU2-i3RxZ3vHDfi2HKRf8YtIeA3_HJpqt88I_b8yj03pbUMH4dMPR9Z2eVQ91/exec";
+
+  const qs  = s => document.querySelector(s);
+  const qsa = s => Array.from(document.querySelectorAll(s));
+
+  function toast(msg, ms=1800){
+    const t = qs("#smc-toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add("is-show");
+    setTimeout(()=> t.classList.remove("is-show"), ms);
+  }
+
+  function showLoader(show){
+    const l = qs("#smc-loader");
+    if (!l) return;
+    l.style.display = show ? "flex" : "none";
+  }
+
+  // ====== copiar al portapapeles ======
+  function copyToClipboard(text){
+    if (!text) return;
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text)
+        .then(()=> toast("Copiado"))
+        .catch(err=>{
+          console.error(err);
+          toast("No se pudo copiar");
+        });
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      try{
+        document.execCommand("copy");
+        toast("Copiado");
+      }catch(err){
+        console.error(err);
+        toast("No se pudo copiar");
+      }
+      document.body.removeChild(ta);
+    }
+  }
+
+  // ahora acepta displayValue para mostrar truncado pero copiar el valor completo
+  function makeCopyRow(label, value, displayValue){
+    if (!value) return null;
+
+    const shown = displayValue || value;
+
+    const row = document.createElement("div");
+    row.className = "smc-info-row";
+
+    const spanValue = document.createElement("span");
+    spanValue.className = "smc-info-value";
+    spanValue.textContent = shown;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "smc-copy-btn";
+    btn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" ' +
+      'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy">' +
+      '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>' +
+      '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>' +
+      '</svg>';
+
+    btn.addEventListener("click", ()=> copyToClipboard(value));
+
+    row.append(spanValue, btn);
+    return row;
+  }
+  // ====== FIN copiar ======
+
+  function renderBookingCode(bookingId){
+    lastBookingId = bookingId || "";
+    const box = qs("#smc-booking-code");
+    const val = qs("#smc-booking-code-value");
+    if (box) box.style.display = lastBookingId ? "block" : "none";
+    if (val) val.textContent = lastBookingId;
+    try{
+      if (window.parent && window.parent !== window){
+        window.parent.postMessage({ type:"sm_booking_id", bookingId: lastBookingId }, "*");
+      }
+    }catch(_){}
+  }
+
+  function showSuccessOverlay(fecha, hora, bookingId){
+    renderBookingCode(bookingId);
+    const overlay = qs("#smc-success-overlay");
+    const text = qs("#smc-success-text");
+    if (text && fecha && hora){
+      const [y,m,d] = String(fecha).split("-");
+      const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+      const monthIdx = Number(m) - 1;
+      const fechaStr = d && y && monthIdx >= 0 && monthIdx < meses.length
+        ? `${d} de ${meses[monthIdx]} de ${y}`
+        : fecha;
+      text.innerHTML = `Has reprogramado la reunión al <strong>${fechaStr}</strong> a las <strong>${hora} hrs</strong>.`;
+    }
+    if (overlay){
+      overlay.style.display = "flex";
+    }
+  }
+
+  function hideSuccessOverlay(){
+    const overlay = qs("#smc-success-overlay");
+    if (overlay) overlay.style.display = "none";
+  }
+
+  function bindBookingCodeCopy(){
+    if (bindBookingCodeCopy._bound) return;
+    bindBookingCodeCopy._bound = true;
+    const overlay = qs("#smc-success-overlay");
+    if (overlay){
+      overlay.addEventListener("click", hideSuccessOverlay);
+    }
+    const copyTargets = qsa("#smc-booking-code, #smc-booking-code-value");
+    copyTargets.forEach(el=>{
+      el.addEventListener("click", ev=>{
+        ev.stopPropagation();
+        if (!lastBookingId){
+          toast("No hay código para copiar");
+          return;
+        }
+        copyToClipboard(lastBookingId);
+      });
+    });
+    window.smCopyBookingCode = function(){
+      if (!lastBookingId){
+        toast("No hay código para copiar");
+        return;
+      }
+      copyToClipboard(lastBookingId);
+    };
+  }
+
+  function pad2(n){
+    return n<10 ? "0"+n : ""+n;
+  }
+
+  function ymdToday(){
+    const d = new Date();
+    return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+  }
+
+  function normTime(hhmm){
+    if (!hhmm) return "";
+    const p = String(hhmm).split(":");
+    const h = Number(p[0]) || 0;
+    const m = Number(p[1]) || 0;
+    return pad2(h)+":"+pad2(m);
+  }
+
+  function parseMinutes(hhmm){
+    if (!hhmm) return null;
+    const p = String(hhmm).split(":");
+    if (p.length < 2) return null;
+    const h = Number(p[0]), m = Number(p[1]);
+    if (isNaN(h) || isNaN(m)) return null;
+    return h*60 + m;
+  }
+
+  // ===== API GETs =====
+  async function apiListBookings(dateStr, consultorId){
+    const url = ENDPOINT+"?mode=listBookings"
+      +"&date="+encodeURIComponent(dateStr)
+      +"&consultor="+encodeURIComponent(consultorId)
+      +"&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("listBookings "+res.status);
+    return res.json();
+  }
+
+  async function apiGetConsultores(){
+    const url = ENDPOINT+"?mode=consultores&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("consultores "+res.status);
+    return res.json();
+  }
+
+  async function apiSlots(consultor_id, fecha){
+    const url = ENDPOINT+"?mode=slots"
+      +"&consultor="+encodeURIComponent(consultor_id)
+      +"&date="+encodeURIComponent(fecha)
+      +"&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("slots "+res.status);
+    return res.json();
+  }
+
+  async function apiAvailableDays(consultor, from, to){
+    const url = ENDPOINT+"?mode=availableDays"
+      +"&consultor="+encodeURIComponent(consultor)
+      +"&from="+encodeURIComponent(from)
+      +"&to="+encodeURIComponent(to)
+      +"&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("availableDays "+res.status);
+    return res.json();
+  }
+
+  async function apiInitBooking(){
+    const url = ENDPOINT+"?mode=init_booking&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("init_booking "+res.status);
+    return res.json();
+  }
+
+  // ===== API POSTs =====
+  async function apiBook(payload){
+    const body = new URLSearchParams();
+    body.append("mode","book");
+    Object.entries(payload).forEach(([k,v])=>{
+      if (v !== undefined && v !== null) body.append(k, v);
+    });
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("book "+res.status);
+    return res.json();
+  }
+
+  async function apiCancel(booking_id, motivo){
+    const body = new URLSearchParams();
+    body.append("mode","cancel");
+    body.append("booking_id", booking_id);
+    body.append("motivo", motivo || "");
+    const res = await fetch(ENDPOINT, { method:"POST", body });
+    if (!res.ok) throw new Error("cancel "+res.status);
+    return res.json();
+  }
+
+  // ===== Estado global =====
+  let CONSULTOR_ID = null;
+  let CONSULTOR_DAYS_LIMIT = null;
+  let currentReprogBooking = null;
+  let lastBookingId = "";
+
+  // ===== Reprogramar: estado =====
+  let rpState = {
+    inited: false,
+    today: null,
+    days_ahead_max: 90,
+    global_days_ahead_max: 90,
+    consultorId: null,
+    currentMonth: null,
+    availableDays: {},
+    selectedDate: null,
+    selectedTime: null
+  };
+
+  function consultorCapDays(){
+    const base = rpState.global_days_ahead_max || 90;
+    if (CONSULTOR_DAYS_LIMIT == null) return base;
+    const n = Number(CONSULTOR_DAYS_LIMIT);
+    if (!Number.isFinite(n) || n < 1) return base;
+    return Math.min(base, Math.floor(n));
+  }
+
+  function rpBuildMonthKey(d){
+    return d.getFullYear()+"-"+pad2(d.getMonth()+1);
+  }
+
+  async function rpEnsureAvailableDaysForCurrentMonth(){
+    const mk = rpBuildMonthKey(rpState.currentMonth);
+    if (rpState.availableDays[mk]) return;
+
+    const y = rpState.currentMonth.getFullYear();
+    const m = rpState.currentMonth.getMonth();
+    const first = new Date(y, m, 1);
+    const last  = new Date(y, m+1, 0);
+
+    const from = first.getFullYear()+"-"+pad2(first.getMonth()+1)+"-"+pad2(first.getDate());
+    const to   = last.getFullYear()+"-"+pad2(last.getMonth()+1)+"-"+pad2(last.getDate());
+
+    const data = await apiAvailableDays(rpState.consultorId, from, to);
+    if (!data.ok) throw new Error(data.error || "availableDays_error");
+    rpState.availableDays[mk] = data.dates || [];
+  }
+
+  function rpRenderCalendar(){
+    const wrap = qs("#smc-rp-cal");
+    if (!wrap || !rpState.currentMonth) return;
+    wrap.innerHTML = "";
+
+    const d = rpState.currentMonth;
+    const year  = d.getFullYear();
+    const month = d.getMonth();
+
+    const header = document.createElement("div");
+    header.className = "sm-rp-cal-header";
+
+    const monthLabel = document.createElement("div");
+    monthLabel.className = "sm-rp-cal-month";
+    const monthNames = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    monthLabel.textContent = monthNames[month]+" "+year;
+
+    const nav = document.createElement("div");
+    nav.className = "sm-rp-cal-nav";
+
+    const btnPrev = document.createElement("button");
+    btnPrev.type = "button";
+    btnPrev.textContent = "‹";
+
+    const btnNext = document.createElement("button");
+    btnNext.type = "button";
+    btnNext.textContent = "›";
+
+    nav.append(btnPrev, btnNext);
+    header.append(monthLabel, nav);
+    wrap.appendChild(header);
+
+    const grid = document.createElement("div");
+    grid.className = "sm-rp-cal-grid";
+
+    const dows = ["L","M","M","J","V","S","D"];
+    dows.forEach(dn=>{
+      const el = document.createElement("div");
+      el.className = "sm-rp-dow";
+      el.textContent = dn;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(year, month, 1);
+    let dow = firstDay.getDay(); // 0=dom..6=sab
+    dow = (dow === 0 ? 7 : dow);
+    const blanks = dow - 1;
+    for (let i=0;i<blanks;i++){
+      const b = document.createElement("div");
+      grid.appendChild(b);
+    }
+
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const mk = rpBuildMonthKey(rpState.currentMonth);
+    const availForMonth = new Set(rpState.availableDays[mk] || []);
+
+    for (let day=1; day<=daysInMonth; day++){
+      const dateObj = new Date(year, month, day);
+      const ymd = dateObj.getFullYear()+"-"+pad2(dateObj.getMonth()+1)+"-"+pad2(dateObj.getDate());
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "sm-rp-day-btn";
+      btn.textContent = String(day);
+
+      const isAvailable = availForMonth.has(ymd);
+      if (isAvailable) btn.classList.add("available");
+      else            btn.classList.add("disabled");
+
+      if (rpState.selectedDate === ymd) btn.classList.add("selected");
+
+      if (!isAvailable){
+        btn.disabled = true;
+      } else {
+        btn.addEventListener("click", ()=>{
+          rpState.selectedDate = ymd;
+          rpState.selectedTime = null;
+          qsa(".sm-rp-day-btn").forEach(b=> b.classList.toggle("selected", b === btn));
+          rpLoadSlotsForSelectedDate();
+        });
+      }
+      grid.appendChild(btn);
+    }
+
+    wrap.appendChild(grid);
+
+    btnPrev.addEventListener("click", ()=>{
+      const today = new Date(rpState.today);
+      const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const prev = new Date(rpState.currentMonth.getFullYear(), rpState.currentMonth.getMonth()-1, 1);
+      if (prev < minMonth) return;
+      rpState.currentMonth = prev;
+      rpEnsureAvailableDaysForCurrentMonth()
+        .then(()=> rpRenderCalendar())
+        .catch(console.error);
+    });
+
+    btnNext.addEventListener("click", ()=>{
+      const today = new Date(rpState.today);
+      const maxDate = new Date(today.getTime());
+      maxDate.setDate(maxDate.getDate() + Math.max(rpState.days_ahead_max - 1, 0));
+      const maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+      const next = new Date(rpState.currentMonth.getFullYear(), rpState.currentMonth.getMonth()+1, 1);
+      if (next > maxMonth) return;
+      rpState.currentMonth = next;
+      rpEnsureAvailableDaysForCurrentMonth()
+        .then(()=> rpRenderCalendar())
+        .catch(console.error);
+    });
+  }
+
+  async function rpLoadSlotsForSelectedDate(){
+    const slotsWrap = qs("#smc-rp-slots");
+    const label     = qs("#smc-rp-date-label");
+    const btnConfirm = qs("#smc-rp-confirm");
+    if (!slotsWrap || !rpState.selectedDate) return;
+
+    if (btnConfirm) btnConfirm.disabled = true;
+    slotsWrap.textContent = "Cargando horarios…";
+
+    try{
+      const data = await apiSlots(rpState.consultorId, rpState.selectedDate);
+      if (!data.ok) throw new Error("slots_error");
+      const slots = data.slots || [];
+
+      if (label) label.textContent = "Horarios para "+rpState.selectedDate;
+
+      if (!slots.length){
+        slotsWrap.textContent = "No hay horarios disponibles en esta fecha.";
+        return;
+      }
+
+      slotsWrap.innerHTML = "";
+      slots.forEach(t=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "sm-rp-slot-btn";
+        btn.textContent = t;
+
+        if (rpState.selectedTime === t) btn.classList.add("selected");
+
+        btn.addEventListener("click", ()=>{
+          rpState.selectedTime = t;
+          qsa(".sm-rp-slot-btn").forEach(b=> b.classList.toggle("selected", b === btn));
+          if (btnConfirm) btnConfirm.disabled = !rpState.selectedTime;
+        });
+
+        slotsWrap.appendChild(btn);
+      });
+    }catch(err){
+      console.error(err);
+      slotsWrap.textContent = "Error al cargar horarios.";
+    }
+  }
+
+  function showReprogModal(){
+    const modal = qs("#smc-rp-modal");
+    if (modal) modal.style.display = "flex";
+  }
+
+  function hideReprogModal(){
+    const modal = qs("#smc-rp-modal");
+    if (modal) modal.style.display = "none";
+  }
+
+  async function openReprogModal(booking){
+    currentReprogBooking = booking;
+    showReprogModal();
+
+    const body      = qs("#smc-rp-body");
+    const slotsWrap = qs("#smc-rp-slots");
+    const label     = qs("#smc-rp-date-label");
+    const cal       = qs("#smc-rp-cal");
+    const btnConfirm = qs("#smc-rp-confirm");
+
+    if (body)      body.textContent = "Selecciona una nueva fecha y horario.";
+    if (slotsWrap) slotsWrap.innerHTML = "";
+    if (label)     label.textContent = "Selecciona una fecha";
+    if (cal)       cal.textContent = "Cargando calendario…";
+    if (btnConfirm) btnConfirm.disabled = true;
+
+    rpState.consultorId   = CONSULTOR_ID;
+    rpState.availableDays = {};
+    rpState.selectedDate  = null;
+    rpState.selectedTime  = null;
+
+    try{
+      if (!rpState.inited){
+        const init = await apiInitBooking();
+        if (!init.ok) throw new Error("init_booking_error");
+        rpState.today = init.today;
+        rpState.global_days_ahead_max = init.days_ahead_max || 90;
+        rpState.days_ahead_max = rpState.global_days_ahead_max;
+        rpState.inited = true;
+      }
+
+      rpState.days_ahead_max = consultorCapDays();
+
+      const todayDate = new Date(rpState.today);
+      rpState.currentMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+      await rpEnsureAvailableDaysForCurrentMonth();
+      rpRenderCalendar();
+    }catch(err){
+      console.error(err);
+      if (cal) cal.textContent = "Error al cargar calendario.";
+    }
+  }
+
+  // ===== onConfirmReprog =====
+  async function onConfirmReprog(){
+    if (!currentReprogBooking) return;
+    if (!rpState.selectedDate || !rpState.selectedTime){
+      toast("Selecciona fecha y hora");
+      return;
+    }
+
+    const b = currentReprogBooking;
+    showLoader(true);
+    try{
+      const data = await apiBook({
+        fecha: rpState.selectedDate,
+        hora: rpState.selectedTime,
+        consultor: rpState.consultorId,
+        nombre: b.nombre || "",
+        email: b.email || "",
+        telefono: b.telefono || "",
+        marca: b.marca || "",
+        tipo: b.tipo || "",
+        idpipe: b.idpipe || ""
+      });
+      if (!data.ok){
+        const msg = data.error === "slot_not_available"
+          ? "Ese horario se ocupó justo ahora."
+          : data.error === "too_soon"
+          ? "La hora no cumple la regla de anticipación."
+          : data.error === "too_far_consultor"
+          ? "Esa fecha está fuera del rango permitido."
+          : data.error === "no_consultor_for_date"
+          ? "No hay consultores disponibles para esa fecha."
+          : "No se pudo reprogramar.";
+        toast(msg);
+        return;
+      }
+
+      const bookingId = data.booking_id || "";
+      const motivo = "Reprogramado a "+rpState.selectedDate+" "+rpState.selectedTime;
+      await apiCancel(b.booking_id, motivo);
+      hideReprogModal();
+      showSuccessOverlay(rpState.selectedDate, rpState.selectedTime, bookingId);
+      toast("Reunión reprogramada");
+      reloadBookings();
+    }catch(err){
+      console.error(err);
+      toast("Error al reprogramar");
+    }finally{
+      showLoader(false);
+    }
+  }
+
+  // ===== RENDER LISTADO =====
+  function renderBookings(dateStr, bookings){
+    const wrap = qs("#smc-list");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+
+    if (!bookings || !bookings.length){
+      wrap.textContent = "No hay reuniones para esta fecha.";
+      return;
+    }
+
+    const now = new Date();
+    const todayStr = ymdToday();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+
+    bookings.forEach(b=>{
+      const item = document.createElement("div");
+      item.className = "smc-item";
+
+      let isPast=false, isNow=false;
+      if (b.fecha === todayStr){
+        const startM = parseMinutes(b.hora);
+        const endM   = startM!=null ? startM+30 : null;
+        if (startM != null){
+          if (endM <= nowMin) isPast = true;
+          else if (startM <= nowMin && nowMin < endM) isNow = true;
+        }
+      } else if (b.fecha < todayStr){
+        isPast = true;
+      }
+
+      if (isPast) item.classList.add("is-past");
+      if (isNow)  item.classList.add("is-now");
+      if (b.cancelado) item.classList.add("is-cancelled");
+
+      const main = document.createElement("div");
+      main.className = "smc-item-main";
+
+      // Fila superior: solo Hora
+      const topRow = document.createElement("div");
+      topRow.className = "smc-info-row smc-info-row-top";
+
+      const bHora = document.createElement("span");
+      bHora.className = "smc-badge smc-badge-hora";
+      bHora.textContent = b.hora;
+
+      topRow.append(bHora);
+      main.appendChild(topRow);
+
+            // ID Pipe + Email en la misma fila, ambos truncados y copiables (+ tooltip nativo)
+      (function(){
+        const idValue = b.idpipe || "";
+        const emailValue = b.email || "";
+
+        // Si no hay ni idpipe ni email, no mostramos la fila
+        if (!idValue && !emailValue) return;
+
+        const row = document.createElement("div");
+        row.className = "smc-info-row";
+
+        // ID Pipe copiable, mostrado truncado (primeros 5 caracteres + "...")
+        if (idValue){
+          const idDisplay = idValue.length > 5 ? idValue.slice(0,5) + "..." : idValue;
+
+          const idSpan = document.createElement("span");
+          idSpan.className = "smc-info-value";
+          idSpan.textContent = idDisplay;
+          idSpan.title = idValue; // tooltip nativo con el valor completo
+
+          const idBtn = document.createElement("button");
+          idBtn.type = "button";
+          idBtn.className = "smc-copy-btn";
+          idBtn.innerHTML =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" ' +
+            'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+            'stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy">' +
+            '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>' +
+            '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>' +
+            '</svg>';
+
+          idBtn.addEventListener("click", function(){
+            copyToClipboard(idValue);
+          });
+
+          row.append(idSpan, idBtn);
+        }
+
+        // Email copiable, mostrado truncado con "..." + tooltip nativo
+        if (emailValue){
+          const emailDisplay = emailValue.length > 14
+            ? emailValue.slice(0,14) + "..."
+            : emailValue;
+
+          const emailSpan = document.createElement("span");
+          emailSpan.className = "smc-info-value";
+          emailSpan.style.marginLeft = "8px";
+          emailSpan.textContent = emailDisplay;
+          emailSpan.title = emailValue; // tooltip nativo con el email completo
+
+          const emailBtn = document.createElement("button");
+          emailBtn.type = "button";
+          emailBtn.className = "smc-copy-btn";
+          emailBtn.innerHTML =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" ' +
+            'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+            'stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy">' +
+            '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>' +
+            '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>' +
+            '</svg>';
+
+          emailBtn.addEventListener("click", function(){
+            copyToClipboard(emailValue);
+          });
+
+          row.append(emailSpan, emailBtn);
+        }
+
+        main.appendChild(row);
+      })();
+
+
+      // Teléfono copiable (texto completo)
+      const telRow = makeCopyRow("Teléfono", b.telefono);
+      if (telRow) main.appendChild(telRow);
+
+            // Nombre truncado con tooltip nativo
+      const nombreRow = document.createElement("div");
+      nombreRow.className = "smc-info-row";
+
+      const fullName = b.nombre || "(sin nombre)";
+      const maxNameLen = 22; // puedes ajustar el largo visible
+
+      const displayName = fullName.length > maxNameLen
+        ? fullName.slice(0, maxNameLen) + "..."
+        : fullName;
+
+      const nombreValue = document.createElement("span");
+      nombreValue.className = "smc-info-value";
+      nombreValue.textContent = displayName;
+      nombreValue.title = fullName; // tooltip nativo con el nombre completo
+
+      nombreRow.append(nombreValue);
+      main.appendChild(nombreRow);
+
+
+      // Tipo al final, solo si existe
+      if (b.tipo){
+        const tipoRow = document.createElement("div");
+        tipoRow.className = "smc-info-row";
+        const tipoSpan = document.createElement("span");
+        tipoSpan.className = "smc-badge smc-badge-tipo";
+        tipoSpan.textContent = b.tipo;
+        tipoRow.appendChild(tipoSpan);
+        main.appendChild(tipoRow);
+      }
+
+      if (b.cancelado){
+        const bc = document.createElement("span");
+        bc.className = "smc-badge smc-badge-cancel";
+        bc.textContent = "Cancelado";
+        main.appendChild(bc);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "smc-actions";
+
+      // Reprogramar (solo si no está cancelado)
+      if (!b.cancelado){
+        const rpBtn = document.createElement("button");
+        rpBtn.type = "button";
+        rpBtn.className = "smc-btn smc-btn-orange smc-btn-icon";
+        rpBtn.setAttribute("data-tooltip","Reprogramar");
+        rpBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-sync-icon lucide-calendar-sync"><path d="M11 10v4h4"/><path d="m11 14 1.535-1.605a5 5 0 0 1 8 1.5"/><path d="M16 2v4"/><path d="m21 18-1.535 1.605a5 5 0 0 1-8-1.5"/><path d="M21 22v-4h-4"/><path d="M21 8.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4.3"/><path d="M3 10h4"/><path d="M8 2v4"/></svg>';
+        rpBtn.addEventListener("click", ()=>{
+          openReprogModal(b);
+        });
+        actions.appendChild(rpBtn);
+      }
+            // Formulario Paperform (si hay email)
+      if (b.email){
+        const pfBtn = document.createElement("a");
+        pfBtn.href = "https://jdanuvv6.paperform.co/?emailc=" + encodeURIComponent(b.email);
+        pfBtn.target = "_blank";
+        pfBtn.rel = "noopener noreferrer";
+        pfBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-alert-icon lucide-clock-alert"><path d="M12 6v6l4 2"/><path d="M20 12v5"/><path d="M20 21h.01"/><path d="M21.25 8.2A10 10 0 1 0 16 21.16"/></svg>';
+        pfBtn.setAttribute("data-tooltip","Retraso llamada");
+        pfBtn.className = "smc-btn smc-btn-yellow smc-btn-icon";
+        actions.appendChild(pfBtn);
+      }
+
+      // Cancelar (solo si no está cancelado)
+      if (!b.cancelado){
+        const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.className = "smc-btn smc-btn-red smc-btn-icon";
+        cancelBtn.setAttribute("data-tooltip","Cancelar");
+        cancelBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ban-icon lucide-ban"><path d="M4.929 4.929 19.07 19.071"/><circle cx="12" cy="12" r="10"/></svg>';
+        cancelBtn.addEventListener("click", async ()=>{
+          const motivo = prompt("Motivo de cancelación:");
+          if (motivo === null) return;
+          showLoader(true);
+          try{
+            const res = await apiCancel(b.booking_id, motivo || "");
+            if (!res.ok) throw new Error(res.error || "cancel_error");
+            toast("Reunión cancelada");
+            reloadBookings();
+          }catch(err){
+            console.error(err);
+            toast("Error al cancelar");
+          }finally{
+            showLoader(false);
+          }
+        });
+        actions.appendChild(cancelBtn);
+      }
+
+      // Ir al trato (usa IDPIPE)
+      if (b.idpipe){
+        const goBtn = document.createElement("button");
+        goBtn.type = "button";
+        goBtn.className = "smc-btn smc-btn-blue smc-btn-icon";
+        goBtn.setAttribute("data-tooltip","Ir al trato");
+        goBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-arrow-right-icon lucide-circle-arrow-right"><circle cx="12" cy="12" r="10"/><path d="m12 16 4-4-4-4"/><path d="M8 12h8"/></svg>';
+        goBtn.addEventListener("click", ()=>{
+          try{
+            if (window.parent && window.parent !== window){
+              window.parent.postMessage({ type:"sm_goto_deal", id: b.idpipe }, "*");
+            }
+          }catch(_){}
+        });
+        actions.appendChild(goBtn);
+      }
+
+      item.append(main, actions);
+      wrap.appendChild(item);
+    });
+
+    attachActionTooltips();
+  }
+
+  // Tooltips flotantes para acciones (evitan corte por overflow del listado)
+  let flyTooltip = null;
+  function removeFlyTooltip(){
+    if (flyTooltip){
+      flyTooltip.remove();
+      flyTooltip = null;
+    }
+  }
+  function showFlyTooltip(el){
+    const txt = (el.getAttribute("data-tooltip") || "").trim();
+    if(!txt) return;
+    removeFlyTooltip();
+    const tip = document.createElement("div");
+    tip.className = "smc-fly-tooltip";
+    tip.textContent = txt;
+    document.body.appendChild(tip);
+    const rect = el.getBoundingClientRect();
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    const top = rect.top - th - 8;
+    const left = rect.left + (rect.width/2) - (tw/2);
+    tip.style.top = Math.max(4, top) + "px";
+    tip.style.left = Math.max(4, left) + "px";
+    flyTooltip = tip;
+  }
+  function attachActionTooltips(){
+    const els = qsa(".smc-btn-icon[data-tooltip]");
+    els.forEach(el=>{
+      if(el._smTipBound) return;
+      el._smTipBound = true;
+      el.addEventListener("mouseenter", ()=> showFlyTooltip(el));
+      el.addEventListener("mouseleave", removeFlyTooltip);
+    });
+    window.addEventListener("scroll", removeFlyTooltip, true);
+  }
+
+  async function reloadBookings(){
+    if (!CONSULTOR_ID) return;
+    const dateInput = qs("#smc-date");
+    const dateStr = (dateInput?.value) || ymdToday();
+    showLoader(true);
+    try{
+      const data = await apiListBookings(dateStr, CONSULTOR_ID);
+      if (!data.ok) throw new Error("list_error");
+      renderBookings(dateStr, data.bookings || []);
+    }catch(err){
+      console.error(err);
+      toast("Error al cargar reuniones");
+    }finally{
+      showLoader(false);
+    }
+  }
+
+  // ===== Init =====
+  document.addEventListener("DOMContentLoaded", ()=>{
+    const params = new URLSearchParams(location.search);
+    CONSULTOR_ID = params.get("idc") || "";
+
+    const consLabel = qs("#smc-consultor-id");
+    if (!CONSULTOR_ID){
+      if (consLabel) consLabel.textContent = "Error";
+      const list = qs("#smc-list");
+      if (list) list.textContent = "Se ha producido un error. Solicita ayuda al coordinador.";
+      return;
+    } else {
+      if (consLabel) consLabel.textContent = CONSULTOR_ID;
+    }
+
+    const dateInput = qs("#smc-date");
+    if (dateInput) dateInput.value = ymdToday();
+
+    if (dateInput){
+      dateInput.addEventListener("change", reloadBookings);
+    }
+
+    const rpModal = qs("#smc-rp-modal");
+    if (rpModal){
+      rpModal.querySelector(".sm-rp-backdrop")
+        ?.addEventListener("click", hideReprogModal);
+      rpModal.querySelector("#smc-rp-cancel")
+        ?.addEventListener("click", hideReprogModal);
+      rpModal.querySelector("#smc-rp-confirm")
+        ?.addEventListener("click", onConfirmReprog);
+    }
+
+    bindBookingCodeCopy();
+
+    // Carga límite de días (para reprogramar)
+    apiGetConsultores()
+      .then(data=>{
+        if (!data || !data.ok) return;
+        const c = (data.consultores || []).find(
+          x => String(x.consultor_id || "").trim() === String(CONSULTOR_ID)
+        );
+        if (c && c.days_ahead_limit != null){
+          const n = Number(c.days_ahead_limit);
+          if (Number.isFinite(n) && n > 0){
+            CONSULTOR_DAYS_LIMIT = Math.floor(n);
+          }
+        }
+      })
+      .catch(()=>{});
+
+    // Carga inicial
+    reloadBookings();
+
+    // Auto-refresh cada 15 minutos
+    setInterval(()=>{
+      reloadBookings();
+    }, 15*60*1000);
+  });
+})();
+</script>
+
+<script>
+(function(){
+  function setLoadingButton(btn, loadingText){
+    if (!btn || btn.dataset.loading === "1") return;
+
+    btn.dataset.loading = "1";
+    btn.dataset.label = btn.textContent.trim();
+    btn.textContent = loadingText;
+    btn.disabled = true;
+
+    const loader = document.getElementById("smc-loader");
+
+    const timer = setInterval(function(){
+      if (!loader || loader.style.display === "none"){
+        clearInterval(timer);
+        btn.textContent = btn.dataset.label || "";
+        btn.disabled = false;
+        btn.dataset.loading = "0";
+      }
+    }, 200);
+
+    setTimeout(function(){
+      if (btn.dataset.loading === "1"){
+        clearInterval(timer);
+        btn.textContent = btn.dataset.label || "";
+        btn.disabled = false;
+        btn.dataset.loading = "0";
+      }
+    }, 15000);
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    const btnReprog = document.getElementById("smc-rp-confirm");
+    if (!btnReprog) return;
+
+    btnReprog.addEventListener("click", function(){
+      if (btnReprog.disabled) return;
+      setLoadingButton(btnReprog, "Reprogramando...");
+    });
+  });
+})();
+</script>
+
+    
+</body>
+</html>
