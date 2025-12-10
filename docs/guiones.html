@@ -109,52 +109,30 @@
 })();
 </script>
 
-<!-- OpenReplay Tracking Code -->
+<!-- OpenReplay Tracking Code for my first project -->
 <script>
-(function(){
-  if (window.__smORLoaded) return;
-  window.__smORLoaded = true;
-
-  function smGetIDCFromURL() {
-    var search = window.location.search || "";
-    if (!search) return "";
-    try {
-      var params = new URLSearchParams(search);
-      return params.get("idc") || "";
-    } catch (e) {
-      var m = search.match(/[?&]idc=([^&]+)/i);
-      return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
-    }
-  }
-
-  var smIDC = smGetIDCFromURL();
-  window.__smIDC = smIDC;
-
   var initOpts = {
     projectKey: "QonwVB9oKHTLvpz3EkMc",
+    // 0 - plain, 1 - obscured, 2 - ignored
     defaultInputMode: 0,
     obscureTextNumbers: false,
-    obscureTextEmails: false
+    obscureTextEmails: false,
   };
-  var startOpts = { userID: smIDC || "" };
-
+  var startOpts = { userID: "" };
   (function(A,s,a,y,e,r){
-    r = window.OpenReplay = [e, r, y, [s - 1, e]];
-    s = document.createElement('script');
-    s.src = A;
-    s.async = !a;
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
     document.getElementsByTagName('head')[0].appendChild(s);
-    r.start = function(v){ r.push([0]); };
-    r.stop = function(v){ r.push([1]); };
-    r.setUserID = function(id){ r.push([2, id]); };
-    r.setUserAnonymousID = function(id){ r.push([3, id]); };
-    r.setMetadata = function(k, v){ r.push([4, k, v]); };
-    r.event = function(k, p, i){ r.push([5, k, p, i]); };
-    r.issue = function(k, p){ r.push([6, k, p]); };
-    r.isActive = function(){ return false; };
-    r.getSessionToken = function(){};
-  })("https://static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
-})();
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
 </script>
 </head>
 <body>
