@@ -732,7 +732,9 @@
     function ymdToUTCDate(ymd){
       const m = String(ymd||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (!m) return null;
-      return new Date(Date.UTC(Number(m[1]), Number(m[2])-1, Number(m[3]), 0,0,0));
+      const ts = tzMidnightTsFromYMD(`${m[1]}-${m[2]}-${m[3]}`);
+      if (!isFinite(ts)) return null;
+      return new Date(ts); // ancla al inicio del día en la TZ para evitar corrimientos
     }
 
     function utcDateToYMD(d){

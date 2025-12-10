@@ -354,14 +354,50 @@ body{
   display:flex;
   gap:6px;
 }
-.sm-admin-actions button{
+.sm-admin-btn{
   border:none;
   border-radius:999px;
   padding:4px 10px;
   font-size:11px;
   cursor:pointer;
+  background:#e5e7eb;
+  color:#111827;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.sm-admin-btn-icon{
+  padding:4px 8px;
+}
+.sm-admin-btn svg{
+  width:18px;
+  height:18px;
+  display:block;
+}
+.sm-admin-btn-orange{
+  background:#ffeadc;
+  color:#ea580c;
+}
+.sm-admin-btn-yellow{
+  background:#f9f2b8;
+  color:#6d6521;
+}
+.sm-admin-btn-red{
   background:#fee2e2;
   color:#b91c1c;
+}
+.smc-fly-tooltip{
+  position:fixed;
+  background:#071E34;
+  color:#fff;
+  font-size:11px;
+  padding:5px 8px;
+  border-radius:6px;
+  white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+  z-index:2147483647;
+  pointer-events:none;
 }
 
 .sm-admin-info{
@@ -2059,27 +2095,37 @@ body{
       actions.className = "sm-admin-actions";
 
       if (!b.cancelado && !isPast){
-        const rpBtn = document.createElement("button");
-        rpBtn.type = "button";
-        rpBtn.textContent = "Reprogramar";
-        rpBtn.classList.add("sm-admin-btn-orange");
-        rpBtn.addEventListener("click", ()=> openReprogModal(b));
-        actions.appendChild(rpBtn);
-      }
-
-      if (!b.cancelado && !isPast){
         const reasignBtn = document.createElement("button");
         reasignBtn.type = "button";
-        reasignBtn.textContent = "Reasignar";
-        reasignBtn.classList.add("sm-admin-btn-orange");
+        reasignBtn.className = "sm-admin-btn sm-admin-btn-yellow sm-admin-btn-icon";
+        reasignBtn.title = "Reasignar";
+        reasignBtn.setAttribute("aria-label","Reasignar");
+        reasignBtn.setAttribute("data-tooltip","Reasignar");
+        reasignBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-left-icon lucide-arrow-right-left"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>';
         reasignBtn.addEventListener("click", ()=> openReassignModal(b));
         actions.appendChild(reasignBtn);
       }
 
       if (!b.cancelado){
+        const rpBtn = document.createElement("button");
+        rpBtn.type = "button";
+        rpBtn.className = "sm-admin-btn sm-admin-btn-orange sm-admin-btn-icon";
+        rpBtn.title = "Reprogramar";
+        rpBtn.setAttribute("aria-label","Reprogramar");
+        rpBtn.setAttribute("data-tooltip","Reprogramar");
+        rpBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-sync-icon lucide-calendar-sync"><path d="M11 10v4h4"/><path d="m11 14 1.535-1.605a5 5 0 0 1 8 1.5"/><path d="M16 2v4"/><path d="m21 18-1.535 1.605a5 5 0 0 1-8-1.5"/><path d="M21 22v-4h-4"/><path d="M21 8.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4.3"/><path d="M3 10h4"/><path d="M8 2v4"/></svg>';
+        rpBtn.addEventListener("click", ()=> openReprogModal(b));
+        actions.appendChild(rpBtn);
+      }
+
+      if (!b.cancelado){
         const cancelBtn = document.createElement("button");
         cancelBtn.type = "button";
-        cancelBtn.textContent = "Cancelar";
+        cancelBtn.className = "sm-admin-btn sm-admin-btn-red sm-admin-btn-icon";
+        cancelBtn.title = "Cancelar";
+        cancelBtn.setAttribute("aria-label","Cancelar");
+        cancelBtn.setAttribute("data-tooltip","Cancelar");
+        cancelBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ban-icon lucide-ban"><path d="M4.929 4.929 19.07 19.071"/><circle cx="12" cy="12" r="10"/></svg>';
         cancelBtn.addEventListener("click", async ()=>{
           const motivo = prompt("Motivo de cancelación:");
           if (motivo === null) return;
@@ -2102,6 +2148,48 @@ body{
       item.append(main, actions);
       wrap.appendChild(item);
     });
+
+    attachActionTooltips();
+  }
+
+
+  // Tooltips flotantes para acciones (similar a consultor)
+  let flyTooltip = null;
+  function removeFlyTooltip(){
+    if (flyTooltip){
+      flyTooltip.remove();
+      flyTooltip = null;
+    }
+  }
+  function showFlyTooltip(el){
+    const txt = (el.getAttribute("data-tooltip") || "").trim();
+    if(!txt) return;
+    removeFlyTooltip();
+    const tip = document.createElement("div");
+    tip.className = "smc-fly-tooltip";
+    tip.textContent = txt;
+    document.body.appendChild(tip);
+    const rect = el.getBoundingClientRect();
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    const top = rect.top - th - 8;
+    const left = rect.left + (rect.width/2) - (tw/2);
+    tip.style.top = Math.max(4, top) + "px";
+    tip.style.left = Math.max(4, left) + "px";
+    flyTooltip = tip;
+  }
+  function attachActionTooltips(){
+    const els = qsa(".sm-admin-btn-icon[data-tooltip]");
+    els.forEach(el=>{
+      if(el._smTipBound) return;
+      el._smTipBound = true;
+      el.addEventListener("mouseenter", ()=> showFlyTooltip(el));
+      el.addEventListener("mouseleave", removeFlyTooltip);
+    });
+    if (!attachActionTooltips._scrollBound){
+      window.addEventListener("scroll", removeFlyTooltip, true);
+      attachActionTooltips._scrollBound = true;
+    }
   }
 
 
@@ -2264,12 +2352,15 @@ body{
     if (!wrap) return;
     wrap.innerHTML = "";
 
-    if (!blocks || !blocks.length){
+    const today = ymdToday();
+    const upcoming = (blocks || []).filter(b=> String(b.fecha || "") >= today);
+
+    if (!upcoming.length){
       wrap.textContent = "No hay fechas bloqueadas.";
       return;
     }
 
-    const sorted = [...blocks].sort((a,b)=>{
+    const sorted = [...upcoming].sort((a,b)=>{
       if (a.fecha === b.fecha){
         return String(a.consultor_id || "").localeCompare(String(b.consultor_id || ""));
       }
