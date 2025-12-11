@@ -925,18 +925,7 @@ body{
     optAll.textContent = "Todos";
     sel.appendChild(optAll);
 
-    // Solo mostramos el listado completo si NO viene un consultor en idc
-    if (!prefCid){
-      activos.forEach(c=>{
-        const cid = String(c.consultor_id || "").trim();
-        if (!cid) return;
-        const o = document.createElement("option");
-        o.value = cid;
-        o.textContent = formatConsultorLabel(c);
-        sel.appendChild(o);
-      });
-    }
-
+    // Si no hay idc en la URL, dejamos solo "Todos"
     sel.value = prefCid ? prefValue : "todos";
     state.selectedConsultor = sel.value || "todos";
 
