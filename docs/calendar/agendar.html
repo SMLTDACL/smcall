@@ -899,18 +899,24 @@ body{
     if (!sel) return;
     sel.innerHTML = "";
 
+    const formatConsultorLabel = (c)=>{
+      const cid = String(c.consultor_id || "").trim();
+      return cid;
+    };
+
     const prefCid = String(preferredCid || "").trim();
     const activos = (consultores || []).filter(c=>c.activo);
     const prefConsultor = prefCid
-      ? activos.find(c => String(c.consultor_id || "").trim() === prefCid)
+      ? activos.find(c => String(c.consultor_id || "").trim().toLowerCase() === prefCid.toLowerCase())
       : null;
-    let prefValue = "";
+    const prefValue = prefConsultor
+      ? String(prefConsultor.consultor_id || "").trim()
+      : prefCid;
 
-    if (prefConsultor){
-      prefValue = String(prefConsultor.consultor_id || "").trim();
+    if (prefCid){
       const o = document.createElement("option");
-      o.value = prefValue;
-      o.textContent = prefValue;
+      o.value = prefValue || prefCid;
+      o.textContent = formatConsultorLabel(prefConsultor || { consultor_id: prefValue || prefCid });
       sel.appendChild(o);
     }
 
@@ -919,8 +925,20 @@ body{
     optAll.textContent = "Todos";
     sel.appendChild(optAll);
 
-    sel.value = (prefConsultor ? prefValue : "todos");
-    state.selectedConsultor = sel.value;
+    // Solo mostramos el listado completo si NO viene un consultor en idc
+    if (!prefCid){
+      activos.forEach(c=>{
+        const cid = String(c.consultor_id || "").trim();
+        if (!cid) return;
+        const o = document.createElement("option");
+        o.value = cid;
+        o.textContent = formatConsultorLabel(c);
+        sel.appendChild(o);
+      });
+    }
+
+    sel.value = prefCid ? prefValue : "todos";
+    state.selectedConsultor = sel.value || "todos";
 
 
     sel.addEventListener("change", ()=>{

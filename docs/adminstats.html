@@ -945,6 +945,19 @@
     function isAdjusted(row){
       return String(row?.FLAG_STATUS || "").toLowerCase() === "adjusted";
     }
+    function markDupFlags(rows){
+      const lastByCons = new Map(); // key -> last IDPIPE seen (orden actual)
+      for (const r of rows){
+        const info = normalizeConsultor(r);
+        const id = String(r.IDPIPE || "").trim();
+        const prev = lastByCons.get(info.key);
+        r.__dupFlag = false;
+        if (id && prev && prev === id){
+          r.__dupFlag = true;
+        }
+        if (id) lastByCons.set(info.key, id);
+      }
+    }
     function isAdjusted(row){
       return String(row?.FLAG_STATUS || "").toLowerCase() === "adjusted";
     }
@@ -960,7 +973,7 @@
       const cond2 = hasAny(rec, ["se envia ficha","se envía ficha"]) && sec < 300; // <5 min
       const cond3 = !rec.includes("telefono invalido") && sec <= 1; // 0:00 sin Telefono Invalido
 
-      return cond1 || cond2 || cond3;
+      return cond1 || cond2 || cond3 || !!row.__dupFlag;
     }
     function buildRedFlagReason(row){
       const rec = normText(row?.RECORRIDO || "");
@@ -973,6 +986,9 @@
       }
       if (!rec.includes("telefono invalido") && sec <= 1){
         return "Sin Teléfono Inválido y duración 0:00";
+      }
+      if (row.__dupFlag){
+        return "ID repetido consecutivo (consultor)";
       }
       return "";
     }
@@ -1760,6 +1776,7 @@
     function renderAll(customRows){
       const baseRows = Array.isArray(customRows) ? customRows : state.rows;
       const rowsSelected = filterBySelection(baseRows);
+      markDupFlags(rowsSelected);
       const rowsForMetrics = rowsSelected.filter(r => !isRejected(r));
       const totals = computeTotals(rowsForMetrics);
 
