@@ -344,13 +344,19 @@
           </svg>
           <span class="sm-icon-label">Agenda</span>
         </button>
-        <button id="sm-btn-guiones-head" class="sm-icon-btn" type="button" aria-label="Abrir guiones">
+        <button id="sm-btn-guiones-head" class="sm-icon-btn sm-icon-btn-hover" type="button" aria-label="Abrir guiones">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-text-icon lucide-book-text"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 11h8"/><path d="M8 7h6"/></svg>
           <span class="sm-icon-label">Guiones</span>
+          <span class="sm-hover-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-right-icon lucide-arrow-up-right"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+          </span>
         </button>
-        <button id="sm-btn-stats" class="sm-icon-btn" type="button" aria-label="Abrir estadísticas">
+        <button id="sm-btn-stats" class="sm-icon-btn sm-icon-btn-hover" type="button" aria-label="Abrir estadísticas">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column-big-icon lucide-chart-column-big"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="15" y="5" width="4" height="12" rx="1"/><rect x="7" y="8" width="4" height="9" rx="1"/></svg>
           <span class="sm-icon-label">Puntos</span>
+          <span class="sm-hover-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-right-icon lucide-arrow-up-right"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+          </span>
         </button>
       </div>
     </div>
@@ -776,11 +782,33 @@
     border-radius:99px; color:#555555; display:inline-flex; align-items:center; gap:8px;
     transition:background-color .15s ease, color .15s ease;
   }
+  .sm-icon-btn-hover{ position:relative; gap:0; }
+  .sm-icon-btn-hover > svg:first-child{ margin-right:8px; }
   .sm-icon-btn:hover{ background:rgba(0,0,0,.04); }
   .sm-icon-btn svg{
     width:18px;
     height:18px;
     color:inherit;
+  }
+  .sm-hover-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:0;
+    height:18px;
+    color:inherit;
+    opacity:0;
+    transform:translateX(-4px);
+    overflow:hidden;
+    margin-left:0;
+    transition:opacity .18s ease, transform .18s ease, width .18s ease, margin-left .18s ease;
+    pointer-events:none;
+  }
+  .sm-icon-btn-hover:hover .sm-hover-icon{
+    opacity:.5;
+    transform:translateX(0);
+    width:18px;
+    margin-left:6px;
   }
   .sm-icon-label{
     font-size:14px;
@@ -1603,7 +1631,7 @@
   // - Separado del ENDPOINT principal para aislar carga y mantener el backend principal más limpio.
   // - Nota: esta URL también apunta al despliegue en Google, no a tu carpeta local.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/log-mensual/code.gs
-  const ENDPOINT_LOG_MENSUAL = "https://script.google.com/macros/s/AKfycbz2GJsbih171ZzArTkhjCCR57P9kJMAguP-iDNKRPeiyp4SGo4Uz5ahFrxbiLP5GTM9/exec";
+  const ENDPOINT_LOG_MENSUAL = "https://script.google.com/macros/s/AKfycbwu1EIBD8PPVTCKIe39zO_sjMzUIAnjGqQxehzdEG2sXppjJEJnta8ZTegTv19T7W2y/exec";
 
   // ZAPIER WEBHOOKS
   const ZAPIER_ANALISIS = "https://hooks.zapier.com/hooks/catch/6030955/ukh9o60/";
@@ -3696,7 +3724,8 @@ const nextPromise =
     const btn = qs("#sm-btn-stats");
     if (!btn) return;
 
-    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dollar-sign-icon lucide-circle-dollar-sign"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg><span class=\"sm-icon-label\">Puntos</span>';
+    const hoverArrow = '<span class="sm-hover-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-right-icon lucide-arrow-up-right"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></span>';
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dollar-sign-icon lucide-circle-dollar-sign"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg><span class=\"sm-icon-label\">Puntos</span>' + hoverArrow;
   }
 
   /* ===================== [F8] COPY HANDLERS ===================== */
@@ -4149,7 +4178,7 @@ const nextPromise =
           options:[
             { id:"A.2.1", label:"Número equivocado", next:null, requires_text:false },
             { id:"A.2.6", label:"No corresponde a ventas", next:null, requires_text:false },
-            { id:"A.2.3", label:"Quiere el servicio, pero no quiere agendar (cliente dice se comunicará en el futuro)", next:null, requires_text:false },
+            { id:"A.2.3", label:"Le interesa, pero no quiere que lo llamen más por ahora, el se contactará por email o por la página.", next:null, requires_text:false },
             { id:"A.2.4", label:"Agendado (no podía hablar ahora)", next:null, requires_text:false },
             { id:"A.2.2", label:"Ya no quiere el Registro", next:"A|Q2_2", requires_text:false },
             { id:"A.2.5", label:"Se envía Ficha", next:"A|Q3", requires_text:false }
@@ -4192,7 +4221,7 @@ const nextPromise =
           id:"A|Q3_2",
           text:"¿Se agendó para verificar el pago?",
           options:[
-            { id:"A.3.2.1", label:"No quiere agendar dice que se comunicará en el futuro", next:null, requires_text:false },
+            { id:"A.3.2.1", label:"No quiere que lo llamen más por ahora, el se contactará por email o por la página.", next:null, requires_text:false },
             { id:"A.3.2.2", label:"Agendado (no podía pagar ahora)", next:null, requires_text:false }
           ]
         },
@@ -4224,7 +4253,7 @@ const nextPromise =
           id:"A|Q5_2",
           text:"¿Se agendó para verificar el pago?",
           options:[
-            { id:"A.5.2.1", label:"No quiere agendar dice que se comunicará en el futuro", next:null, requires_text:false },
+            { id:"A.5.2.1", label:"No quiere que lo llamen más por ahora, el se contactará por email o por la página.", next:null, requires_text:false },
             { id:"A.5.2.2", label:"Agendado (no podía pagar ahora)", next:null, requires_text:false }
           ]
         },
@@ -4250,7 +4279,7 @@ const nextPromise =
           text:"¿Qué pasó al inicio de la llamada?",
           options:[
             { id:"B.2.1", label:"Número equivocado", next:null, requires_text:false },
-            { id:"B.2.3", label:"Quiere el servicio, pero no quiere agendar (cliente dice se comunicará en el futuro)", next:null, requires_text:false },
+            { id:"B.2.3", label:"Le interesa, pero no quiere que lo llamen más por ahora, el se contactará por email o por la página.", next:null, requires_text:false },
             { id:"B.2.4", label:"Agendado (no podía hablar ahora)", next:null, requires_text:false },
             { id:"B.2.2", label:"Ya no quiere el Registro", next:"B|Q2_2", requires_text:false },
             { id:"B.2.5", label:"Se asistió el pago", next:"B|Q2_5", requires_text:false }
@@ -4309,7 +4338,7 @@ const nextPromise =
           id:"B|Q4_2",
           text:"¿Se agendó para verificar el pago?",
           options:[
-            { id:"B.4.2.1", label:"No quiere agendar dice que se comunicará en el futuro", next:null, requires_text:false },
+            { id:"B.4.2.1", label:"No quiere que lo llamen más por ahora, el se contactará por email o por la página.", next:null, requires_text:false },
             { id:"B.4.2.2", label:"Agendado (no podía pagar ahora)", next:null, requires_text:false }
           ]
         },
@@ -4335,7 +4364,7 @@ const nextPromise =
           text:"¿Qué pasó al inicio de la llamada?",
           options:[
             { id:"C.2.1", label:"Número equivocado", next:null, requires_text:false },
-            { id:"C.2.3", label:"Quiere el servicio, pero no quiere agendar (cliente dice se comunicará en el futuro)", next:null, requires_text:false },
+            { id:"C.2.3", label:"Le interesa, pero no quiere que lo llamen más por ahora, el se contactará por email o por la página.", next:null, requires_text:false },
             { id:"C.2.4", label:"Agendado (no podía hablar ahora)", next:null, requires_text:false },
             { id:"C.2.2", label:"Ya no quiere la Vigilancia", next:"C|Q2_2", requires_text:false },
             { id:"C.2.5", label:"Se asistió el pago", next:"C|Q2_5", requires_text:false }

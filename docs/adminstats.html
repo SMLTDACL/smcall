@@ -140,7 +140,7 @@
     <!-- Top bar -->
     <div class="ga-top">
       <div class="ga-title-wrap">
-        <div class="ga-title">Puntos</div>
+        <div class="ga-title">Admin · Consultores</div>
         <div class="ga-subtitle" id="gaRangeLabel"></div>
       </div>
       <div class="ga-controls">
@@ -181,6 +181,32 @@
           <input type="hidden" id="smrStart">
           <input type="hidden" id="smrEnd">
         </div>
+        <div class="ga-chip-group" id="gaMetricToggle" role="group" aria-label="Métrica">
+          <button type="button" class="ga-chip ga-chip-active" data-metric="puntos">Puntos</button>
+          <button type="button" class="ga-chip" data-metric="pesos" id="gaMetricPesos">Pesos</button>
+        </div>
+        <div class="ga-cons-filter">
+          <button type="button" class="ga-range-btn ga-cons-btn" id="gaConsBtn" aria-haspopup="dialog" aria-expanded="false">
+            <span class="ga-cons-label">Consultores</span>
+            <span class="ga-cons-summary" id="gaConsBtnSummary">Todos</span>
+            <span class="ga-range-caret" aria-hidden="true"></span>
+          </button>
+          <div class="ga-cons-pop" id="gaConsPop" style="display:none;">
+            <div class="ga-cons-inner">
+              <div class="ga-cons-head">
+                <div class="ga-cons-title">Consultores</div>
+                <div class="ga-cons-actions">
+                  <button type="button" class="ga-cons-link" id="gaConsAll">Todos</button>
+                  <button type="button" class="ga-cons-link" id="gaConsClear">Limpiar</button>
+                </div>
+              </div>
+              <div class="ga-cons-search">
+                <input type="search" id="gaConsSearch" placeholder="Buscar por nombre o ID">
+              </div>
+              <div class="ga-cons-list" id="gaConsList"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- KPI cards -->
@@ -201,13 +227,51 @@
       </div>
     </div>
     <!-- Chart -->
-    <div class="ga-card ga-chart">
+    <div class="ga-card ga-chart" style="margin-top: 14px;">
       <div class="ga-card-head">
-        <div class="ga-card-title">Puntos en el tiempo</div>
-        <div class="ga-card-note">Suma diaria (según rango)</div>
+        <div>
+          <div class="ga-card-title" id="gaChartTitle">Puntos en el tiempo</div>
+          <div class="ga-card-note" id="gaChartNote">Suma diaria (según rango)</div>
+        </div>
+        <div class="ga-chip-group ga-chip-group-compact" aria-label="Periodicidad">
+          <button type="button" class="ga-chip" data-period="daily">Diario</button>
+          <button type="button" class="ga-chip ga-chip-active" data-period="weekly">Semanal (L-D)</button>
+        </div>
       </div>
       <div class="ga-chart-canvas">
         <canvas id="smrChart"></canvas>
+      </div>
+    </div>
+    <div class="ga-card ga-summary" id="gaSummaryCard">
+      <div class="ga-card-head">
+        <div class="ga-card-title">Resumen por consultor</div>
+        <div class="ga-card-note" id="gaSummaryNote">Totales del rango seleccionado</div>
+      </div>
+      <div class="ga-cons-listing" id="gaConsSummary"></div>
+    </div>
+    <div class="ga-card ga-table" id="gaRedFlagsCard">
+      <div class="ga-card-head">
+        <div class="ga-card-title">Red Flags</div>
+        <div class="ga-card-note">Datos atípicos para revisión manual</div>
+      </div>
+      <div class="ga-skeleton" id="gaRedFlagsLoading"></div>
+      <div class="ga-table-wrap" style="display:none;" id="gaRedFlagsWrap">
+        <table class="ga-t">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Consultor</th>
+              <th>ID</th>
+              <th>Recorrido</th>
+              <th>Tiempo</th>
+              <th class="ga-right ga-col-puntos">Puntos</th>
+              <th class="ga-right ga-col-pesos">Pesos</th>
+              <th>Motivo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="gaRedFlagsBody"></tbody>
+        </table>
       </div>
     </div>
     <!-- Table -->
@@ -222,12 +286,14 @@
           <thead>
             <tr>
               <th>Fecha</th>
+              <th>Consultor</th>
               <th>ID</th>
               <th>Recorrido</th>
               <th>Tiempo</th>
-              <th class="ga-right">Puntos</th>
+              <th class="ga-right ga-col-puntos">Puntos</th>
               <th class="ga-right ga-col-pesos">Pesos</th>
               <th>Observaciones</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody id="smrTbody"></tbody>
@@ -252,6 +318,66 @@
   .ga-title{font-size:18px;font-weight:800;letter-spacing:-.01em}
   .ga-subtitle{font-size:12px;color:#6b7280;margin-top:4px}
   .ga-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+  .ga-chip-group{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .ga-chip-group-compact .ga-chip{padding:7px 10px;font-size:12px}
+  .ga-chip{
+    border:1px solid rgba(17,24,39,.12);
+    background:#fff;
+    color:#111827;
+    border-radius:999px;
+    padding:9px 12px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .ga-chip:hover{background:#f8fafc}
+  .ga-chip-active{
+    background:#111827;
+    color:#fff;
+    border-color:#111827;
+  }
+  .ga-cons-filter{position:relative}
+  .ga-cons-btn{min-width:190px;justify-content:space-between}
+  .ga-cons-btn .ga-cons-label{font-weight:800}
+  .ga-cons-btn .ga-cons-summary{color:#6b7280;font-weight:600}
+  .ga-cons-pop{
+    position:absolute;
+    top:calc(100% + 8px);
+    right:0;
+    z-index:999999;
+    width:340px;
+    max-width:calc(100vw - 24px);
+    background:#fff;
+    border:1px solid rgba(17,24,39,.12);
+    border-radius:14px;
+    box-shadow:0 14px 38px rgba(17,24,39,.12);
+    overflow:hidden;
+  }
+  .ga-cons-inner{display:flex;flex-direction:column;max-height:420px}
+  .ga-cons-head{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid rgba(17,24,39,.08)}
+  .ga-cons-title{font-weight:800;font-size:13px}
+  .ga-cons-actions{display:flex;gap:10px}
+  .ga-cons-link{border:0;background:transparent;color:#2563eb;font-weight:700;font-size:12px;cursor:pointer;padding:0}
+  .ga-cons-search{padding:10px 12px;border-bottom:1px solid rgba(17,24,39,.08)}
+  .ga-cons-search input{
+    width:100%;
+    border:1px solid rgba(17,24,39,.12);
+    border-radius:10px;
+    padding:8px 10px;
+    font-size:13px;
+    outline:none;
+  }
+  .ga-cons-list{max-height:320px;overflow:auto;padding:4px 0}
+  .ga-cons-item{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 12px;
+    cursor:pointer;
+  }
+  .ga-cons-item:hover{background:#f9fafb}
+  .ga-cons-item input{accent-color:#111827}
+  .ga-cons-dot{width:12px;height:12px;border-radius:999px;flex:0 0 auto}
+  .ga-cons-name{font-weight:700;font-size:13px}
+  .ga-cons-id{font-size:12px;color:#6b7280}
+  .ga-cons-empty{padding:12px;font-size:13px;color:#6b7280}
   /* KPI grid */
   .ga-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px}
   @media(min-width:920px){ .ga-grid{grid-template-columns:1fr 1fr} }
@@ -278,6 +404,22 @@
   .ga-card-note{font-size:12px;color:#6b7280}
   .ga-chart-canvas{padding:0 10px 12px}
   .ga-chart-canvas canvas{width:100% !important;height:320px !important}
+  .ga-summary{margin-top:12px}
+  .ga-cons-listing{padding:4px 12px 14px;display:flex;flex-direction:column;gap:8px}
+  .ga-cons-row{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:10px;border:1px solid rgba(17,24,39,.06);border-radius:12px;
+  }
+  .ga-cons-row-main{display:flex;align-items:center;gap:10px;min-width:0}
+  .ga-cons-row-meta{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .ga-cons-row-meta .ga-cons-name{
+    font-size:14px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .ga-cons-row-meta .ga-cons-id{font-size:12px;color:#6b7280}
+  .ga-cons-value{font-weight:800;font-size:16px;text-align:right;white-space:nowrap}
+  .ga-cons-subvalue{font-size:12px;color:#6b7280;text-align:right}
+  .ga-dot{width:12px;height:12px;border-radius:999px;flex:0 0 auto}
   /* Table */
   .ga-table{margin-top:12px}
   .ga-table-wrap{overflow:auto;padding:6px 10px 12px;position:relative;z-index:0}
@@ -293,7 +435,25 @@
     white-space:nowrap;vertical-align:top;
   }
   .ga-t tbody tr:hover{background:#fafafa}
+  .ga-right{text-align:right}
   .ga-row-rejected td{ text-decoration:line-through; color:#9ca3af; }
+  .ga-flag-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .ga-btn-flag{
+    border:0;
+    background:#fff;
+    border-radius:999px;
+    padding:6px;
+    font-size:12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:32px;
+    height:32px;
+  }
+  .ga-btn-flag-accept{color:#15803d;border:1px solid rgba(21,128,61,.12);background:rgba(21,128,61,.08);}
+  .ga-btn-flag-reject{color:#b91c1c;border:1px solid rgba(185,28,28,.12);background:rgba(185,28,28,.08);}
+  .ga-btn-flag-edit{color:#0f172a;border:1px solid rgba(15,23,42,.12);background:rgba(15,23,42,.06);}
   .ga-tip{
     position:relative;
     display:inline-block;
@@ -321,7 +481,6 @@
     max-width:320px;
     z-index:20000;
   }
-  .ga-right{text-align:right}
   /* Recorrido */
   .ga-rec{
     white-space:nowrap;
@@ -337,6 +496,9 @@
   #sm-puntos-app.ga.ga-show-pesos .ga-pesos-only{ display:block; }
   #sm-puntos-app.ga.ga-show-pesos .ga-col-pesos{ display:table-cell; }
   #sm-puntos-app.ga.ga-no-pesos .ga-grid{ grid-template-columns:1fr !important; }
+  /* Métrica seleccionada */
+  #sm-puntos-app.ga.ga-metric-puntos .ga-col-pesos{ display:none !important; }
+  #sm-puntos-app.ga.ga-metric-pesos .ga-col-puntos{ display:none !important; }
   /* ===================== GA RANGE (UNIFICADO / SIN DUPLICADOS) ===================== */
   .ga-range{position:relative;display:flex;align-items:center}
   .ga-range-btn{
@@ -579,7 +741,7 @@
     const idc = (params.get("idc") || params.get("IDC") || "").trim();
     const codep = (params.get("codep") || "").trim();
     const payload = decodeTokenPayload(token);
-    if (!token || !idc || !codep || !payload){
+    if (!token || !codep || !payload){
       try{ sessionStorage.removeItem("sm_token"); }catch(_){}
       window.location.href = LOGIN_URL;
       return null;
@@ -631,18 +793,9 @@
     const rangeLbl = qs("#gaRangeLabel");
     if (rangeLbl) rangeLbl.textContent = "";
 
-    // ========= PESOS: SOLO si codep=917830109 =========
-    const showPesos = (auth.codep === "917830109");
-
-    if (showPesos){
-      root.classList.add("ga-show-pesos");
-    } else {
-      root.classList.add("ga-no-pesos");
-      const pesosCard = qs("#gaPesosCard");
-      if (pesosCard) pesosCard.remove();
-      const pesosTh = qs("th.ga-col-pesos");
-      if (pesosTh) pesosTh.remove();
-    }
+    // ========= PESOS: SIEMPRE DISPONIBLE EN ADMIN =========
+    const showPesos = true;
+    root.classList.add("ga-show-pesos");
 
     function getIDCFilter(){ return auth.idc; }
 
@@ -697,6 +850,8 @@
       const pl = qs("#gaPesosLoading");
       const lw = qs("#smrListLoading");
       const tw = qs("#smrTableWrap");
+      const rfl = qs("#gaRedFlagsLoading");
+      const rfw = qs("#gaRedFlagsWrap");
 
       if (t)  t.style.display  = on ? "none" : "block";
       if (tl) tl.style.display = on ? "block" : "none";
@@ -704,6 +859,8 @@
       if (pl) pl.style.display = on ? "block" : "none";
       if (lw) lw.style.display = on ? "block" : "none";
       if (tw) tw.style.display = on ? "none" : "block";
+      if (rfl) rfl.style.display = on ? "block" : "none";
+      if (rfw) rfw.style.display = on ? "none" : "block";
     }
 
     function esc(s){
@@ -758,6 +915,66 @@
       }
 
       return String(v).trim();
+    }
+    function toSeconds(row){
+      const sec = Number(row?.["TIEMPO TOTAL EN LLAMADA SEC"] || row?.TIEMPO_TOTAL_EN_LLAMADA_SEC || 0);
+      if (isFinite(sec) && sec >= 0) return sec;
+      const raw = String(row?.["TIEMPO TOTAL EN LLAMADA"] || "").trim();
+      const m = raw.match(/^(\d{1,3}):(\d{2})(?::(\d{2}))?$/);
+      if (m){
+        const h = Number(m[1]) || 0;
+        const mi = Number(m[2]) || 0;
+        const s = Number(m[3] || 0) || 0;
+        return h*3600 + mi*60 + s;
+      }
+      return 0;
+    }
+    function normText(s){
+      return String(s || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    }
+    function hasAny(txt, arr){
+      const t = normText(txt);
+      return arr.some(x => t.includes(normText(x)));
+    }
+    function isRejected(row){
+      return String(row?.FLAG_STATUS || "").toLowerCase() === "rejected";
+    }
+    function isAdjusted(row){
+      return String(row?.FLAG_STATUS || "").toLowerCase() === "adjusted";
+    }
+    function isAdjusted(row){
+      return String(row?.FLAG_STATUS || "").toLowerCase() === "adjusted";
+    }
+    function isRedFlag(row){
+      // Ya gestionados (aceptados/rechazados/ajustados) no se muestran en la lista
+      const st = String(row?.FLAG_STATUS || "").toLowerCase();
+      if (st === "accepted" || st === "rejected" || st === "adjusted") return false;
+
+      const rec = normText(row?.RECORRIDO || "");
+      const sec = toSeconds(row);
+
+      const cond1 = hasAny(rec, ["numero equivocado","telefono invalido","no contesto"]) && sec > 180; // >3 min
+      const cond2 = hasAny(rec, ["se envia ficha","se envía ficha"]) && sec < 300; // <5 min
+      const cond3 = !rec.includes("telefono invalido") && sec <= 1; // 0:00 sin Telefono Invalido
+
+      return cond1 || cond2 || cond3;
+    }
+    function buildRedFlagReason(row){
+      const rec = normText(row?.RECORRIDO || "");
+      const sec = toSeconds(row);
+      if (hasAny(rec, ["numero equivocado","telefono invalido","no contesto"]) && sec > 180){
+        return "Número equivocado/No contesta > 3 min";
+      }
+      if (hasAny(rec, ["se envia ficha","se envía ficha"]) && sec < 300){
+        return "Se envía ficha < 5 min";
+      }
+      if (!rec.includes("telefono invalido") && sec <= 1){
+        return "Sin Teléfono Inválido y duración 0:00";
+      }
+      return "";
     }
 
     // ======== RANGE PICKER PRO (scroll meses) ========
@@ -1115,127 +1332,465 @@
         });
       }
 
-      // init: Hoy
-      applied = presetByKey("today");
+      // init: últimos 28 días (más útil para ver datos al cargar)
+      applied = presetByKey("28d");
       pending = { ...applied };
-      setActivePresetKey("today");
+      setActivePresetKey("28d");
       setHiddenRangeFromApplied();
       syncTopButton();
       paintSelection();
     }
 
-    // ======== CHART ========
-    let chart = null;
+    // ======== CONSULTOR & MÉTRICAS ========
+    const METRIC_PUNTOS = "puntos";
+    const METRIC_PESOS = "pesos";
+    const PERIOD_DAILY = "daily";
+    const PERIOD_WEEKLY = "weekly";
+    const palette = [
+      "#2563EB", // azul
+      "#D946EF", // fucsia
+      "#16A34A", // verde
+      "#F97316", // naranja
+      "#DC2626", // rojo
+      "#0EA5E9", // celeste
+      "#7C3AED", // púrpura
+      "#22C55E", // verde claro
+      "#EAB308", // amarillo
+      "#F43F5E", // rosado
+      "#0891B2", // teal
+      "#B45309", // café
+      "#475569", // gris azulado
+      "#10B981", // esmeralda
+      "#EF4444"  // rojo vivo extra
+    ];
+    const dayFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit" });
+    function weekStartFromYMD(ymd){
+      const d = ymdToUTCDate(ymd);
+      if (!d) return "";
+      const dowMon0 = (d.getUTCDay() + 6) % 7; // 0 lunes .. 6 domingo
+      d.setUTCDate(d.getUTCDate() - dowMon0);
+      return utcDateToYMD(d);
+    }
+    function weekLabel(weekStartYMD){
+      const start = weekStartYMD;
+      const end = addDaysYMD(weekStartYMD, 6);
+      return fmtRangeTextFromYMD(start, end);
+    }
 
+    let chart = null;
+    const state = {
+      rows: [],
+      metric: METRIC_PUNTOS,
+      period: PERIOD_WEEKLY,
+      consultores: [],
+      selectedKeys: new Set(),
+      colorByKey: new Map()
+    };
+
+    function colorForKey(key){
+      const k = String(key || "");
+      if (state.colorByKey.has(k)) return state.colorByKey.get(k);
+      const idx = state.colorByKey.size;
+      let color = palette[idx % palette.length] || palette[0];
+      if (idx >= palette.length){
+        const angle = (idx - palette.length) * 137.508; // golden angle for spread
+        const h = ((angle % 360) + 360) % 360;
+        color = `hsl(${h}deg, 65%, 52%)`;
+      }
+      state.colorByKey.set(k, color);
+      return color;
+    }
+    function assignColors(list){
+      const newMap = new Map();
+      let assigned = 0;
+      for (const c of list){
+        const key = String(c.key || "");
+        if (!key) continue;
+        const existing = state.colorByKey.get(key);
+        if (existing){
+          newMap.set(key, existing);
+          continue;
+        }
+        let color = palette[assigned % palette.length] || palette[0];
+        if (assigned >= palette.length){
+          const angle = (assigned - palette.length) * 137.508;
+          const h = ((angle % 360) + 360) % 360;
+          color = `hsl(${h}deg, 65%, 52%)`;
+        }
+        newMap.set(key, color);
+        assigned++;
+      }
+      state.colorByKey = newMap;
+    }
+    function rgba(hex, alpha){
+      const m = String(hex || "").trim().match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+      if (!m) return hex;
+      const r = parseInt(m[1],16);
+      const g = parseInt(m[2],16);
+      const b = parseInt(m[3],16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+    function normalizeConsultor(row){
+      const rawIdc = String(row?.IDC ?? row?.idc ?? row?.CONSULTOR_ID ?? row?.consultor_id ?? "").trim();
+      const rawName = String(row?.CONSULTOR ?? row?.consultor ?? row?.NOMBRE ?? row?.nombre ?? "").trim();
+      const key = rawIdc || (rawName ? `name:${rawName.toLowerCase()}` : "desconocido");
+      const display = rawName && rawIdc ? `${rawName} (${rawIdc})` : (rawName || rawIdc || "Sin consultor");
+      return { key, idc: rawIdc, name: rawName, display };
+    }
+    function getMetricValue(row, metric){
+      return Number((metric === METRIC_PESOS ? row?.PESOS : row?.PUNTOS) || 0);
+    }
+    function fmtMetricVal(val, metric){
+      if (metric === METRIC_PESOS){
+        return `$ ${Number(val || 0).toLocaleString("es-CL")}`;
+      }
+      return Number(val || 0).toLocaleString("es-CL");
+    }
     function computeTotals(rows){
       let puntos = 0, pesos = 0;
       for (const r of rows){
         puntos += Number(r?.PUNTOS || 0);
         pesos  += Number(r?.PESOS  || 0);
       }
-      return { puntos, pesos };
+      return { puntos, pesos, count: rows.length };
+    }
+    function filterBySelection(rows){
+      if (!state.selectedKeys.size) return [];
+      if (state.selectedKeys.size === state.consultores.length) return rows;
+      return rows.filter(r => state.selectedKeys.has(normalizeConsultor(r).key));
+    }
+    function syncMetricUI(){
+      qsa("[data-metric]").forEach(btn=>{
+        const m = btn.getAttribute("data-metric");
+        btn.classList.toggle("ga-chip-active", m === state.metric);
+      });
+      root.classList.toggle("ga-metric-puntos", state.metric === METRIC_PUNTOS);
+      root.classList.toggle("ga-metric-pesos", state.metric === METRIC_PESOS);
+      const title = qs("#gaChartTitle");
+      const note  = qs("#gaChartNote");
+      if (title) title.textContent = state.metric === METRIC_PESOS ? "Pesos en el tiempo" : "Puntos en el tiempo";
+      if (note)  note.textContent  = state.metric === METRIC_PESOS
+        ? (state.period === PERIOD_WEEKLY ? "Suma semanal en pesos (lun-dom)" : "Suma diaria en pesos (según rango)")
+        : (state.period === PERIOD_WEEKLY ? "Suma semanal (lun-dom)" : "Suma diaria (según rango)");
+    }
+    function syncPeriodUI(){
+      qsa("[data-period]").forEach(btn=>{
+        const p = btn.getAttribute("data-period");
+        btn.classList.toggle("ga-chip-active", p === state.period);
+      });
+      syncMetricUI();
+      renderAll();
+    }
+    function updateConsBtnSummary(){
+      const el = qs("#gaConsBtnSummary");
+      if (!el) return;
+      const total = state.consultores.length;
+      const sel = state.selectedKeys.size;
+      if (!total){
+        el.textContent = "Sin datos";
+        return;
+      }
+      if (sel === 0){
+        el.textContent = "Ninguno";
+        return;
+      }
+      if (sel === total){
+        el.textContent = "Todos";
+        return;
+      }
+      if (sel === 1){
+        const only = state.consultores.find(c => state.selectedKeys.has(c.key));
+        el.textContent = only ? only.display : "1 seleccionado";
+        return;
+      }
+      el.textContent = `${sel} seleccionados`;
     }
 
-    function computeSeries(rows){
+    function renderConsSelector(filterTerm){
+      const list = qs("#gaConsList");
+      if (!list) return;
+      const term = (filterTerm || "").toLowerCase();
+      list.innerHTML = "";
+      const filtered = state.consultores.filter(c=>{
+        if (!term) return true;
+        return c.display.toLowerCase().includes(term) || String(c.idc || "").toLowerCase().includes(term);
+      });
+      if (!filtered.length){
+        list.innerHTML = `<div class="ga-cons-empty">No hay consultores</div>`;
+        return;
+      }
+      for (const c of filtered){
+        const row = document.createElement("label");
+        row.className = "ga-cons-item";
+        row.innerHTML = `
+          <input type="checkbox" data-key="${esc(c.key)}" ${state.selectedKeys.has(c.key) ? "checked" : ""}>
+          <span class="ga-cons-dot" style="background:${colorForKey(c.key)}"></span>
+          <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+            <span class="ga-cons-name">${esc(c.name || c.display || "Sin consultor")}</span>
+            <span class="ga-cons-id">${esc(c.idc || "")}</span>
+          </div>
+        `;
+        row.querySelector("input").addEventListener("change",(ev)=>{
+          const key = c.key;
+          const next = new Set(state.selectedKeys);
+          if (ev.target.checked) next.add(key); else next.delete(key);
+          state.selectedKeys = next;
+          updateConsBtnSummary();
+          renderConsSelector(qs("#gaConsSearch")?.value || "");
+          renderAll();
+        });
+        list.appendChild(row);
+      }
+    }
+    function openConsPop(){
+      const pop = qs("#gaConsPop");
+      const btn = qs("#gaConsBtn");
+      if (!pop || !btn) return;
+      pop.style.display = "block";
+      btn.setAttribute("aria-expanded","true");
+      const search = qs("#gaConsSearch");
+      if (search){ search.value = ""; }
+      renderConsSelector("");
+    }
+    function closeConsPop(){
+      const pop = qs("#gaConsPop");
+      const btn = qs("#gaConsBtn");
+      if (!pop || !btn) return;
+      pop.style.display = "none";
+      btn.setAttribute("aria-expanded","false");
+    }
+
+    function buildSeriesByConsultor(rows){
+      const labelsSet = new Set();
+      const perCons = new Map(); // key -> { info, map(date->sum) }
+      for (const r of rows){
+        const info = normalizeConsultor(r);
+        const ts = Number(r?.TS_MS || 0);
+        const dateKey = ts ? dayFmt.format(new Date(ts)) : "";
+        if (!dateKey) continue;
+        const aggKey = state.period === PERIOD_WEEKLY ? weekStartFromYMD(dateKey) : dateKey;
+        if (!aggKey) continue;
+        labelsSet.add(aggKey);
+        if (!perCons.has(info.key)){
+          perCons.set(info.key, { info, map:new Map() });
+        }
+        const entry = perCons.get(info.key);
+        entry.map.set(aggKey, (entry.map.get(aggKey) || 0) + getMetricValue(r, state.metric));
+      }
+      const labels = Array.from(labelsSet).sort();
+      const datasets = Array.from(perCons.values()).map(({info,map})=>{
+        const color = colorForKey(info.key);
+        const data = labels.map(l => map.get(l) || 0);
+        return {
+          label: info.display,
+          data,
+          tension: 0,
+          pointRadius: 3,
+          borderColor: color,
+          pointBorderColor: color,
+          pointBackgroundColor: color,
+          backgroundColor: rgba(color, 0.1)
+        };
+      });
+      const displayLabels = labels.map(l => state.period === PERIOD_WEEKLY ? weekLabel(l) : l);
+      return { labels: displayLabels, datasets };
+    }
+
+    function renderSummary(rows){
+      const wrap = qs("#gaConsSummary");
+      const note = qs("#gaSummaryNote");
+      if (!wrap) return;
+      wrap.innerHTML = "";
       const map = new Map();
       for (const r of rows){
-        const ts = Number(r?.TS_MS || 0);
-        const k = ts ? dayFmt.format(new Date(ts)) : "";
-        if (!k) continue;
-        map.set(k, (map.get(k) || 0) + Number(r?.PUNTOS || 0));
+        const info = normalizeConsultor(r);
+        if (!map.has(info.key)){
+          map.set(info.key, { info, puntos:0, pesos:0, count:0 });
+        }
+        const entry = map.get(info.key);
+        entry.puntos += Number(r?.PUNTOS || 0);
+        entry.pesos  += Number(r?.PESOS  || 0);
+        entry.count  += 1;
       }
-      const labels = Array.from(map.keys()).sort();
-      return labels.map(d => ({ date:d, puntos: map.get(d) || 0 }));
+      const arr = Array.from(map.values());
+      const metricToSort = state.metric;
+      arr.sort((a,b)=>{
+        const va = metricToSort === METRIC_PESOS ? a.pesos : a.puntos;
+        const vb = metricToSort === METRIC_PESOS ? b.pesos : b.puntos;
+        if (vb !== va) return vb - va; // descendente
+        const na = (a.info.name || a.info.display || "").toLowerCase();
+        const nb = (b.info.name || b.info.display || "").toLowerCase();
+        return na.localeCompare(nb);
+      });
+      if (!arr.length){
+        wrap.innerHTML = `<div class="ga-cons-empty" style="padding:12px;">Sin consultores seleccionados</div>`;
+      } else {
+        for (const item of arr){
+          const color = colorForKey(item.info.key);
+          const mainVal = metricToSort === METRIC_PESOS ? item.pesos : item.puntos;
+          wrap.insertAdjacentHTML("beforeend", `
+            <div class="ga-cons-row">
+              <div class="ga-cons-row-main">
+                <span class="ga-dot" style="background:${color}"></span>
+                <div class="ga-cons-row-meta">
+                  <span class="ga-cons-name">${esc(item.info.name || item.info.display || "Sin consultor")}</span>
+                  <span class="ga-cons-id">${esc(item.info.idc || "")}</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px;text-align:right;">
+                <span class="ga-cons-value">${fmtMetricVal(mainVal, state.metric)}</span>
+              </div>
+            </div>
+          `);
+        }
+      }
+      if (note){
+        const totalSel = state.selectedKeys.size;
+        note.textContent = totalSel ? `Consultores seleccionados: ${totalSel}` : "Sin consultores seleccionados";
+      }
     }
 
-    const dayFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit" });
-    function isRejected(row){
-      return String(row?.FLAG_STATUS || "").toLowerCase() === "rejected";
-    }
-
-    function renderAll(rowsFiltered){
-      const rowsForMetrics = rowsFiltered.filter(r => !isRejected(r));
-      const totals = computeTotals(rowsForMetrics);
-      const series = computeSeries(rowsForMetrics);
-
-      const pTotal = qs("#smrTotal");
-      const pMeta  = qs("#smrMeta");
-      if (pTotal) pTotal.textContent = totals.puntos.toLocaleString("es-CL");
-      if (pMeta)  pMeta.textContent  = "";
-
-      const pesosEl = qs("#gaPesos");
-      const rowsEl  = qs("#gaRowsCount");
-      if (showPesos && pesosEl) pesosEl.textContent = `$ ${totals.pesos.toLocaleString("es-CL")}`;
-      if (rowsEl) rowsEl.textContent = "";
-
+    function renderChart(rows){
       const canvas = qs("#smrChart");
-      if (canvas && window.Chart){
-        const ctx = canvas.getContext("2d");
-        if (chart) chart.destroy();
-        chart = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels: series.map(x=>x.date),
-            datasets: [{
-              label: "Puntos por día",
-              data: series.map(x=>Number(x.puntos || 0)),
-              tension: 0,
-              pointRadius: 3,
-              borderColor: "#3674E8",
-              pointBorderColor: "#3674E8",
-              pointBackgroundColor: "#3674E8"
-            }]
-          },
-          options: {
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{ display:false, onClick:null } },
-            scales:{ y:{ beginAtZero:true } }
-          }
-        });
+      if (!canvas || !window.Chart){
+        return;
       }
+      const { labels, datasets } = buildSeriesByConsultor(rows);
+      const ctx = canvas.getContext("2d");
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{ display:true } },
+          scales:{ y:{ beginAtZero:true } }
+        }
+      });
+    }
 
-      const tbody = qs("#smrTbody");
-      if (tbody){
-        tbody.innerHTML = "";
-        for (const r of rowsFiltered){
+    function renderRedFlags(rows){
+      const body = qs("#gaRedFlagsBody");
+      const wrap = qs("#gaRedFlagsWrap");
+      const skel = qs("#gaRedFlagsLoading");
+      if (!body || !wrap || !skel) return;
+
+      const flags = rows.filter(r => isRedFlag(r));
+      body.innerHTML = "";
+      if (!flags.length){
+        body.innerHTML = `<tr><td colspan="8" style="padding:12px;color:#6b7280;">Sin red flags pendientes.</td></tr>`;
+      } else {
+        for (const r of flags){
+          const info = normalizeConsultor(r);
           const ts = Number(r?.TS_MS || 0);
           const d = ts ? new Date(ts).toLocaleString("es-CL") : (r["FECHA COMPLETA"] || "");
-          const rejected = isRejected(r);
-          const tr = document.createElement("tr");
-          if (rejected) tr.classList.add("ga-row-rejected");
-
-          const pesosCell = showPesos
-            ? `<td class="ga-right ga-col-pesos">$ ${Number(r.PESOS || 0).toLocaleString("es-CL")}</td>`
-            : ``;
-          const hasObs = !!String(r.FLAG_REASON || "").trim();
-          const reasonCell = `<td>${hasObs ? fmtReason(r.FLAG_REASON || "") : ""}</td>`;
-
           const fullRec = String(r.RECORRIDO ?? "");
           const cutRec = fullRec.length > 80 ? fullRec.slice(0,80) + "..." : fullRec;
+          const key = r.__key || `${r.__sheet || ""}#${r.__row || ""}`;
+          const puntosVal = fmtMetricVal(r.PUNTOS || 0, METRIC_PUNTOS);
+          const pesosVal = fmtMetricVal(r.PESOS || 0, METRIC_PESOS);
+          const reason = isRedFlag(r) ? buildRedFlagReason(r) : "";
+          body.insertAdjacentHTML("beforeend", `
+            <tr data-key="${esc(key)}">
+              <td>${esc(d)}</td>
+              <td>${esc(info.display)}</td>
+              <td>${esc(String(r.IDPIPE ?? ""))}</td>
+              <td><span class="ga-rec" title="${esc(fullRec)}">${esc(cutRec)}</span></td>
+              <td>${esc(fmtTimeHHMM(r["TIEMPO TOTAL EN LLAMADA"]))}</td>
+              <td class="ga-right ga-col-puntos">${puntosVal}</td>
+              <td class="ga-right ga-col-pesos">${pesosVal}</td>
+              <td>${reason ? fmtReason(reason) : ""}</td>
+              <td>
+                <div class="ga-flag-actions">
+                  <button type="button" class="ga-btn-flag ga-btn-flag-accept" data-flag="accept" aria-label="Aceptar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                  </button>
+                  <button type="button" class="ga-btn-flag ga-btn-flag-reject" data-flag="reject" aria-label="Rechazar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ban"><path d="M4.929 4.929 19.07 19.071"/><circle cx="12" cy="12" r="10"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `);
+        }
+      }
+      skel.style.display = "none";
+      wrap.style.display = "block";
+    }
 
-          tr.innerHTML = `
+    function renderTable(rows){
+      const tbody = qs("#smrTbody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      for (const r of rows){
+        const info = normalizeConsultor(r);
+        const ts = Number(r?.TS_MS || 0);
+        const d = ts ? new Date(ts).toLocaleString("es-CL") : (r["FECHA COMPLETA"] || "");
+        const rejected = isRejected(r);
+        const pesosCell = showPesos
+          ? `<td class="ga-right ga-col-pesos">${fmtMetricVal(r.PESOS || 0, METRIC_PESOS)}</td>`
+          : ``;
+        const fullRec = String(r.RECORRIDO ?? "");
+        const cutRec = fullRec.length > 80 ? fullRec.slice(0,80) + "..." : fullRec;
+        const hasObs = !!String(r.FLAG_REASON || "").trim();
+        const rowHtml = `
+          <tr class="${rejected ? "ga-row-rejected" : ""}">
             <td>${esc(d)}</td>
+            <td>${esc(info.display)}</td>
             <td>${esc(String(r.IDPIPE ?? ""))}</td>
             <td><span class="ga-rec" title="${esc(fullRec)}">${esc(cutRec)}</span></td>
             <td>${esc(fmtTimeHHMM(r["TIEMPO TOTAL EN LLAMADA"]))}</td>
-            <td class="ga-right"><b>${Number(r.PUNTOS || 0).toLocaleString("es-CL")}</b></td>
+            <td class="ga-right ga-col-puntos"><b>${fmtMetricVal(r.PUNTOS || 0, METRIC_PUNTOS)}</b></td>
             ${pesosCell}
-            ${reasonCell}
-          `;
-          tbody.appendChild(tr);
-        }
+            <td>${hasObs ? fmtReason(r.FLAG_REASON || "") : ""}</td>
+            <td>
+              <div class="ga-flag-actions">
+                <button type="button" class="ga-btn-flag ga-btn-flag-edit" data-edit="pesos" aria-label="Cambiar monto" data-key="${esc(r.__key || "")}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1.767 1.767 0 0 1 2.5 2.5L12 14l-4 1 1-4Z"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", rowHtml);
       }
     }
 
-    async function load(){
-      const idcFilter = getIDCFilter();
-      if (!idcFilter){
-        setLoading(false);
-        renderAll([]);
-        return;
+    function renderAll(customRows){
+      const baseRows = Array.isArray(customRows) ? customRows : state.rows;
+      const rowsSelected = filterBySelection(baseRows);
+      const rowsForMetrics = rowsSelected.filter(r => !isRejected(r));
+      const totals = computeTotals(rowsForMetrics);
+
+      const pTotal = qs("#smrTotal");
+      const pMeta  = qs("#smrMeta");
+      const pesosEl = qs("#gaPesos");
+      const rowsEl  = qs("#gaRowsCount");
+
+      // KPI visibility según métrica
+      const puntosCard = qs("#smrTotal")?.closest(".ga-card");
+      const pesosCard  = qs("#gaPesosCard");
+      if (state.metric === METRIC_PUNTOS){
+        if (puntosCard) puntosCard.style.display = "";
+        if (pesosCard) pesosCard.style.display = "none";
+      } else {
+        if (puntosCard) puntosCard.style.display = "none";
+        if (pesosCard) pesosCard.style.display = "";
       }
 
+      if (pTotal) pTotal.textContent = totals.puntos.toLocaleString("es-CL");
+      if (pMeta)  pMeta.textContent  = `${totals.count} filas`;
+      if (pesosEl) pesosEl.textContent = fmtMetricVal(totals.pesos, METRIC_PESOS);
+      if (rowsEl) rowsEl.textContent = `${totals.count} filas`;
+
+      renderSummary(rowsForMetrics);
+      renderChart(rowsForMetrics);
+      renderRedFlags(rowsSelected);
+      renderTable(rowsSelected);
+    }
+
+    async function load(){
       const startInp = qs("#smrStart");
       const endInp   = qs("#smrEnd");
       const sYMD = startInp ? String(startInp.value||"").trim() : "";
@@ -1254,7 +1809,7 @@
 
       try{
         const token = getToken();
-        const url = `${ENDPOINT_LOG_MENSUAL}?action=report&start_ts=${encodeURIComponent(start_ts)}&end_ts=${encodeURIComponent(end_ts)}&limit=1000&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+        const url = `${ENDPOINT_LOG_MENSUAL}?action=report&scope=all&codep=${encodeURIComponent(auth.codep)}&start_ts=${encodeURIComponent(start_ts)}&end_ts=${encodeURIComponent(end_ts)}&limit=5000&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
         const res = await authFetch(url, { cache:"no-store" });
         const text = await res.text();
 
@@ -1263,18 +1818,230 @@
         if (!json.ok) throw new Error(json.error || "Error en report");
 
         const allRows = Array.isArray(json.rows) ? json.rows : [];
-        const rowsFiltered = allRows.filter(r => sameIDC(r?.IDC, idcFilter));
 
-        renderAll(rowsFiltered);
+        // rebuild consultores list
+        const consMap = new Map();
+        for (const r of allRows){
+          const info = normalizeConsultor(r);
+          if (!consMap.has(info.key)){
+            consMap.set(info.key, info);
+          }
+        }
+        state.consultores = Array.from(consMap.values()).sort((a,b)=>{
+          const ida = Number(a.idc || a.name || a.display);
+          const idb = Number(b.idc || b.name || b.display);
+          const bothNum = isFinite(ida) && isFinite(idb);
+          if (bothNum && ida !== idb) return ida - idb;
+          const sa = String(a.idc || a.name || a.display || "");
+          const sb = String(b.idc || b.name || b.display || "");
+          return sa.localeCompare(sb, undefined, { numeric:true });
+        });
+        assignColors(state.consultores);
+
+        // keep previous selection if possible; otherwise select all
+        const previous = new Set(state.selectedKeys);
+        const validPrev = Array.from(previous).filter(k => consMap.has(k));
+        if (validPrev.length){
+          state.selectedKeys = new Set(validPrev);
+        } else {
+          state.selectedKeys = new Set(state.consultores.map(c=>c.key));
+        }
+        state.rows = allRows.map(r=>({
+          ...r,
+          FLAG_STATUS: String(r.FLAG_STATUS || "").trim(),
+          FLAG_REASON: String(r.FLAG_REASON || "").trim(),
+          __key: `${r.__sheet || ""}#${r.__row || ""}`
+        }));
+
+        // UI sync
+        updateConsBtnSummary();
+        renderConsSelector(qs("#gaConsSearch")?.value || "");
+        syncMetricUI();
+        renderAll();
       }catch(_){
-        renderAll([]);
+        state.rows = [];
+        state.consultores = [];
+        state.selectedKeys = new Set();
+        updateConsBtnSummary();
+        renderConsSelector(qs("#gaConsSearch")?.value || "");
+        renderAll();
       }finally{
         setLoading(false);
       }
     }
 
+    // UI hooks
+    const metricBtns = qsa("[data-metric]");
+    metricBtns.forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const m = btn.getAttribute("data-metric");
+        if (!m || (m === METRIC_PESOS && !showPesos)) return;
+        state.metric = m;
+        syncMetricUI();
+        renderAll();
+      });
+    });
+    const periodBtns = qsa("[data-period]");
+    periodBtns.forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const p = btn.getAttribute("data-period");
+        if (!p || (p !== PERIOD_DAILY && p !== PERIOD_WEEKLY)) return;
+        if (state.period === p) return;
+        state.period = p;
+        syncPeriodUI();
+      });
+    });
+
+    function findRowByKey(key){
+      return state.rows.find(r => (r.__key || `${r.__sheet || ""}#${r.__row || ""}`) === key);
+    }
+    async function sendFlagUpdate(row, status, reason){
+      const token = getToken();
+      if (!token) throw new Error("missing_token");
+      const body = new URLSearchParams();
+      body.append("action","flag");
+      body.append("sheet", row.__sheet || "");
+      body.append("row", String(row.__row || ""));
+      body.append("status", status);
+      body.append("reason", reason || "");
+      body.append("token", token);
+      const res = await authFetch(ENDPOINT_LOG_MENSUAL, { method:"POST", body });
+      const text = await res.text();
+      let json;
+      try{ json = JSON.parse(text); }catch(_){ throw new Error("flag_update_invalid_response"); }
+      if (!json.ok) throw new Error(json.error || "flag_update_error");
+      return json;
+    }
+    async function sendAdjustUpdate(row, pesos, reason){
+      const token = getToken();
+      if (!token) throw new Error("missing_token");
+      const body = new URLSearchParams();
+      body.append("action","adjust");
+      body.append("sheet", row.__sheet || "");
+      body.append("row", String(row.__row || ""));
+      body.append("pesos", String(pesos));
+      body.append("reason", reason || "");
+      body.append("token", token);
+      const res = await authFetch(ENDPOINT_LOG_MENSUAL, { method:"POST", body });
+      const text = await res.text();
+      let json;
+      try{ json = JSON.parse(text); }catch(_){ throw new Error("adjust_invalid_response"); }
+      if (!json.ok) throw new Error(json.error || "adjust_error");
+      return json;
+    }
+
+    const redBody = qs("#gaRedFlagsBody");
+    if (redBody){
+      redBody.addEventListener("click", async (ev)=>{
+        const btn = ev.target && ev.target.closest && ev.target.closest("[data-flag]");
+        if (!btn) return;
+        const tr = btn.closest("tr[data-key]");
+        if (!tr) return;
+        const key = tr.getAttribute("data-key") || "";
+        const action = btn.getAttribute("data-flag");
+        const row = findRowByKey(key);
+        if (!row) return;
+        try{
+          if (action === "accept"){
+            await sendFlagUpdate(row, "accepted", "");
+            row.FLAG_STATUS = "accepted";
+            row.FLAG_REASON = "";
+          } else if (action === "reject"){
+            const reason = window.prompt("Motivo del rechazo:");
+            if (reason === null) return; // cancelado
+            const trimmed = String(reason || "").trim();
+            if (!trimmed) return;
+            await sendFlagUpdate(row, "rejected", trimmed);
+            row.FLAG_STATUS = "rejected";
+            row.FLAG_REASON = trimmed;
+          } else {
+            return;
+          }
+          renderAll();
+        }catch(_){
+          alert("No se pudo actualizar el estado. Intenta nuevamente.");
+        }
+      });
+    }
+    const histBody = qs("#smrTbody");
+    if (histBody){
+      histBody.addEventListener("click", async (ev)=>{
+        const btn = ev.target && ev.target.closest && ev.target.closest("[data-edit='pesos']");
+        if (!btn) return;
+        const key = btn.getAttribute("data-key") || "";
+        const row = findRowByKey(key);
+        if (!row) return;
+        const current = Number(row.PESOS || 0);
+        const newValStr = window.prompt("Nuevo monto en pesos:", isFinite(current) ? String(current) : "");
+        if (newValStr === null) return;
+        const newVal = Number(newValStr);
+        if (!isFinite(newVal)){
+          alert("Monto inválido.");
+          return;
+        }
+        const reason = window.prompt("Motivo del cambio:");
+        if (reason === null) return;
+        const trimmed = String(reason || "").trim();
+        if (!trimmed){
+          alert("Ingresa un motivo.");
+          return;
+        }
+        try{
+          await sendAdjustUpdate(row, newVal, trimmed);
+          row.PESOS = newVal;
+          row.FLAG_STATUS = "adjusted";
+          row.FLAG_REASON = trimmed;
+          renderAll();
+        }catch(_){
+          alert("No se pudo actualizar el monto. Intenta nuevamente.");
+        }
+      });
+    }
+
+    const consBtn = qs("#gaConsBtn");
+    const consPop = qs("#gaConsPop");
+    if (consBtn && consPop){
+      consBtn.addEventListener("click",(ev)=>{
+        ev.preventDefault();
+        ev.stopPropagation();
+        const open = consPop.style.display === "block";
+        if (open) closeConsPop(); else openConsPop();
+      });
+      consPop.addEventListener("click",(ev)=> ev.stopPropagation());
+      document.addEventListener("click", ()=> closeConsPop());
+    }
+    const consAll = qs("#gaConsAll");
+    const consClear = qs("#gaConsClear");
+    if (consAll){
+      consAll.addEventListener("click",(ev)=>{
+        ev.preventDefault();
+        state.selectedKeys = new Set(state.consultores.map(c=>c.key));
+        updateConsBtnSummary();
+        renderConsSelector(qs("#gaConsSearch")?.value || "");
+        renderAll();
+      });
+    }
+    if (consClear){
+      consClear.addEventListener("click",(ev)=>{
+        ev.preventDefault();
+        state.selectedKeys = new Set();
+        updateConsBtnSummary();
+        renderConsSelector(qs("#gaConsSearch")?.value || "");
+        renderAll();
+      });
+    }
+    const consSearch = qs("#gaConsSearch");
+    if (consSearch){
+      consSearch.addEventListener("input",(ev)=>{
+        renderConsSelector(ev.target.value || "");
+      });
+    }
+
     // INIT
     initRangeUI();
+    syncMetricUI();
+    syncPeriodUI();
+    updateConsBtnSummary();
     load();
   }
 })();

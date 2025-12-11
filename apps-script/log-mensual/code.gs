@@ -8,7 +8,9 @@ const HEADERS = [
   "TIEMPO TOTAL EN LLAMADA SEC",
   "PUNTOS",
   "PESOS",
-  "TS_MS" 
+  "TS_MS",
+  "FLAG_STATUS",
+  "FLAG_REASON"
 ];
 
 // Tabla PUNTOS / PESOS según respuesta final
@@ -112,6 +114,15 @@ function doPost(e){
     const tokenRaw = String(p.token || p.t || "").trim();
     const vTok = verifyToken_(tokenRaw);
     if (!vTok.ok) return json_({ ok:false, error:vTok.err });
+    const action = String(p.action || p.mode || "").trim().toLowerCase();
+
+    if (action === "flag"){
+      return flagRow_(p, vTok.data);
+    }
+    if (action === "adjust"){
+      return adjustRow_(p, vTok.data);
+    }
+
     const tokIDC = String(vTok.data?.idc || "").trim();
     if (!rateLimitOk_(tokIDC || "anon", 120, 300)) return json_({ ok:false, error:"rate_limited" });
 
@@ -130,7 +141,7 @@ function doPost(e){
     const tsMs = Number(p.ts_ms || p.ts || p.timestamp || 0) || Date.now();
 
 
-    sh.appendRow([idc, idpipe, fechaCompleta, recorrido, tTotal, tTotalSec, puntos, pesos, tsMs]);
+    sh.appendRow([idc, idpipe, fechaCompleta, recorrido, tTotal, tTotalSec, puntos, pesos, tsMs, "", ""]);
 
 
     return json_({ ok:true, sheet: sh.getName(), puntos, pesos });
@@ -198,7 +209,8 @@ function doGet(e){
     const vTok = verifyToken_(tokenRaw);
     if (!vTok.ok) return out_({ ok:false, error:vTok.err }, cb);
     const tokIDC = String(vTok.data?.idc || "").trim();
-    if (!rateLimitOk_(tokIDC || "anon", 60, 300)) return out_({ ok:false, error:"rate_limited" }, cb);
+    const tokCodep = String(vTok.data?.codep || "").trim();
+    if (!rateLimitOk_(tokIDC || tokCodep || "anon", 60, 300)) return out_({ ok:false, error:"rate_limited" }, cb);
 
     if (action !== "report"){
       return out_({ ok:true, hint:'Use ?action=report&start_ts=...&end_ts=...'}, cb);
@@ -208,7 +220,10 @@ function doGet(e){
     const endTs   = Number(p.end_ts || 0) || Date.now();
 
     const idcFilterParam = String(p.idc || "").trim(); // opcional
-    const idcFilter = tokIDC || idcFilterParam;
+    const codepParam = String(p.codep || "").trim();
+    const scopeAll = String(p.scope || p.all || "").trim().toLowerCase();
+    const allowAll = (scopeAll === "all" || scopeAll === "1" || scopeAll === "true") && !!tokCodep && tokCodep === codepParam;
+    const idcFilter = allowAll ? "" : (tokIDC || idcFilterParam);
     const limit = Math.min(Math.max(Number(p.limit || 500) || 500, 1), 5000);
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -256,7 +271,8 @@ function readRowsInRange_(ss, startTs, endTs, idcFilter, limit){
 
     const values = sh.getRange(2,1,lastRow-1,lastCol).getValues();
 
-    for (const r of values){
+    for (let i=0; i<values.length; i++){
+      const r = values[i];
       const obj = rowToObj_(r, col);
 
       // filtro IDC si viene
@@ -279,6 +295,8 @@ function readRowsInRange_(ss, startTs, endTs, idcFilter, limit){
 
       // guardamos row
       obj.__ts = ts;
+      obj.__sheet = sh.getName();
+      obj.__row = 2 + i; // header (1) + data offset
       rows.push(obj);
 
       if (rows.length >= limit) break;
@@ -330,7 +348,9 @@ function rowToObj_(r, col){
     "TIEMPO TOTAL EN LLAMADA SEC": get("TIEMPO TOTAL EN LLAMADA SEC"),
     PUNTOS: get("PUNTOS"),
     PESOS: get("PESOS"),
-    TS_MS: get("TS_MS")
+    TS_MS: get("TS_MS"),
+    FLAG_STATUS: get("FLAG_STATUS"),
+    FLAG_REASON: get("FLAG_REASON")
   };
 }
 
@@ -354,6 +374,82 @@ function getRowTsMs_(obj){
   if (!isNaN(t)) return t;
 
   return 0;
+}
+
+function ensureFlagColumns_(sh, colMap){
+  let header = sh.getRange(1,1,1, sh.getLastColumn()).getValues()[0].map(x=>String(x||"").trim());
+  let changed = false;
+  const need = ["FLAG_STATUS","FLAG_REASON"];
+  let lastCol = header.length;
+  need.forEach(name=>{
+    let idx = header.indexOf(name);
+    if (idx === -1){
+      lastCol += 1;
+      if (header.length < lastCol) header.length = lastCol;
+      header[lastCol-1] = name;
+      idx = lastCol-1;
+      changed = true;
+    }
+    colMap[name] = idx;
+  });
+  if (changed){
+    sh.getRange(1,1,1, header.length).setValues([header]);
+  }
+  return colMap;
+}
+
+function flagRow_(p, tokenData){
+  const sheetName = String(p.sheet || p.sh || "").trim();
+  const rowNum = Number(p.row || p.r || 0);
+  const status = String(p.status || "").trim().toLowerCase();
+  const reason = String(p.reason || "").trim();
+
+  if (!sheetName || !rowNum || rowNum < 2) return json_({ ok:false, error:"missing_sheet_or_row" });
+  if (status !== "accepted" && status !== "rejected") return json_({ ok:false, error:"invalid_status" });
+  if (status === "rejected" && !reason) return json_({ ok:false, error:"missing_reason" });
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(sheetName);
+  if (!sh) return json_({ ok:false, error:"sheet_not_found" });
+  if (rowNum > sh.getLastRow()) return json_({ ok:false, error:"row_out_of_bounds" });
+
+  let col = headerIndexMap_(sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0].map(x=>String(x||"").trim()));
+  col = ensureFlagColumns_(sh, col);
+  const colStatus = (col["FLAG_STATUS"] || 0) + 1;
+  const colReason = (col["FLAG_REASON"] || 0) + 1;
+
+  sh.getRange(rowNum, colStatus).setValue(status);
+  sh.getRange(rowNum, colReason).setValue(status === "rejected" ? reason : "");
+
+  return json_({ ok:true, sheet: sheetName, row: rowNum, status, reason });
+}
+
+function adjustRow_(p, tokenData){
+  const sheetName = String(p.sheet || p.sh || "").trim();
+  const rowNum = Number(p.row || p.r || 0);
+  const reason = String(p.reason || "").trim();
+  const pesosNew = Number(p.pesos || p.monto || p.amount || 0);
+
+  if (!sheetName || !rowNum || rowNum < 2) return json_({ ok:false, error:"missing_sheet_or_row" });
+  if (!isFinite(pesosNew)) return json_({ ok:false, error:"invalid_pesos" });
+  if (!reason) return json_({ ok:false, error:"missing_reason" });
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(sheetName);
+  if (!sh) return json_({ ok:false, error:"sheet_not_found" });
+  if (rowNum > sh.getLastRow()) return json_({ ok:false, error:"row_out_of_bounds" });
+
+  let col = headerIndexMap_(sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0].map(x=>String(x||"").trim()));
+  col = ensureFlagColumns_(sh, col);
+  const colStatus = (col["FLAG_STATUS"] || 0) + 1;
+  const colReason = (col["FLAG_REASON"] || 0) + 1;
+  const colPesos  = (col["PESOS"] || 0) + 1;
+
+  sh.getRange(rowNum, colPesos).setValue(pesosNew);
+  sh.getRange(rowNum, colStatus).setValue("adjusted");
+  sh.getRange(rowNum, colReason).setValue(reason);
+
+  return json_({ ok:true, sheet: sheetName, row: rowNum, pesos: pesosNew, status:"adjusted", reason });
 }
 
 function parseMonthTab_(name){
