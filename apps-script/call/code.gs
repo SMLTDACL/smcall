@@ -1019,10 +1019,14 @@ function doPost(e){
   if (calls || recorrido){
     const btCell = sh.getRange(rid, COL.LOG_BT);
     const prevBT = asStr(btCell.getValue());
+    const tsRecorrido = recorrido ? Utilities.formatDate(now, TZ, "dd-MM-yyyy HH:mm") : "";
 
     let entry = "";
     if (calls) entry += calls;
-    if (recorrido) entry += (entry ? "\n" : "") + recorrido;
+    if (recorrido){
+      const recorridoLine = tsRecorrido ? `${tsRecorrido}: ${recorrido}` : recorrido;
+      entry += (entry ? "\n" : "") + recorridoLine;
+    }
 
     const nextBT = prevBT ? (prevBT + "\n" + entry) : entry;
     btCell.setValue(nextBT);
