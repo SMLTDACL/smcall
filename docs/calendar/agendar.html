@@ -24,6 +24,13 @@
           <!-- Se llena por JS: "Todos" + consultores -->
         </select>
       </label>
+      <div id="sm-consultor-note" class="sm-consultor-note">
+        Recuerda decirle al cliente:<br>
+        <strong>Te comento que para este llamado te va a llamar otro de los ejecutivos de nuestro equipo.<br>
+        Pero de todas formas él va a tener toda la información, para que así puedan retomar desde donde quedemos.</strong><br><br>
+        Y recuerda poner en las Observaciones:<br>
+        <strong>"Agendado para otro consultor"</strong>
+      </div>
     </div>
     <div class="sm-grid">
       <div class="sm-col sm-col-left">
@@ -114,6 +121,20 @@ body{
   .sm-row{margin-bottom:12px;}
   .sm-label{display:block;font-size:13px;color:#374151;margin-bottom:2px;}
   .sm-input,.sm-select{width:100%;padding:8px 10px;border-radius:10px;border:1px solid #d1d5db;font-size:14px;box-sizing:border-box;margin-top: 6px;}
+  .sm-consultor-note{
+    display:none;
+    margin-top:8px;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px dashed #e5e7eb;
+    background:#e7f3ff;
+    font-size:13px;
+    color:#374151;
+    line-height:2;
+    max-width: 49.5%;
+    margin-top: 14px;
+
+  }
   .sm-input:focus,.sm-select:focus{outline:none;border-color:#1f6feb;box-shadow:0 0 0 1px rgba(31,111,235,0.1);}
   .sm-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;margin-top:25px;align-items:start;}
   .sm-col{display:flex;flex-direction:column;gap:8px;min-height:100%;}
@@ -877,6 +898,12 @@ body{
     if (form) form.style.display = "none";
   }
 
+  function updateConsultorNote(){
+    const note = qs("#sm-consultor-note");
+    if (!note) return;
+    note.style.display = state.selectedConsultor === "todos" ? "block" : "none";
+  }
+
   function prefillFromURL(){
     const p = getParams();
     const nombre = p.get("nombre") || "";
@@ -928,6 +955,7 @@ body{
     // Si no hay idc en la URL, dejamos solo "Todos"
     sel.value = prefCid ? prefValue : "todos";
     state.selectedConsultor = sel.value || "todos";
+    updateConsultorNote();
 
 
     sel.addEventListener("change", ()=>{
@@ -937,6 +965,7 @@ body{
       const prevDate = state.selectedDate;
 
       state.selectedConsultor = sel.value;
+      updateConsultorNote();
 
       // (1) No borramos selectedDate aquí; solo descliqueamos la hora
       state.selectedTime = null;
