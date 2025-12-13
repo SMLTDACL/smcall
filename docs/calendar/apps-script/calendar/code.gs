@@ -5,7 +5,8 @@
  * - Bloqueos: A:fecha(yyyy-MM-dd), B:consultor_id|ALL, C:motivo
  * - Agendas: A:booking_id, B:fecha, C:hora, D:consultor_id,
  *            E:nombre, F:email, G:telefono, H:marca, I:tipo,
- *            J:idpipe, K:timestamp_creado, L:cancelado, M:motivo_cancelacion
+ *            J:idpipe, K:timestamp_creado, L:cancelado, M:motivo_cancelacion,
+ *            N:retraso_enviado (timestamp o vacío)
  * - AgendasIndex (NUEVO): A:key(fecha||cid), B:fecha, C:consultor_id, D:times_csv, E:count, F:updated_at
  *
  * Endpoints:
@@ -60,6 +61,12 @@ function nowTime_(){
 function timestampISO_(){
   const now = new Date();
   return Utilities.formatDate(now, CFG.TZ, "yyyy-MM-dd'T'HH:mm:ssXXX");
+}
+
+function asStr(v){
+  if (v === null || v === undefined) return "";
+  if (v instanceof Date) return Utilities.formatDate(v, CFG.TZ, "yyyy-MM-dd HH:mm:ss");
+  return String(v).trim();
 }
 
 function parseDate_(s){
@@ -980,7 +987,8 @@ function createBooking_(data){
     idpipe || "",
     ts,
     false,
-    ""
+    "",
+    "" // retraso_enviado (timestamp)
   ];
 
   sh.appendRow(row);
@@ -1033,9 +1041,19 @@ function listBookings_(dateStr, consultor){
   const matches = colB.createTextFinder(String(dateStr)).matchEntireCell(true).findAll();
   if (!matches || !matches.length) return out;
 
+  const totalCols = sh.getLastColumn();
+  // Leemos solo hasta donde exista la hoja (máximo 14 columnas).
+  const width = Math.min(Math.max(totalCols, 1), 14);
+
   for (let i=0;i<matches.length;i++){
     const rowNum = matches[i].getRow();
-    const row = sh.getRange(rowNum, 1, 1, 13).getValues()[0];
+    let row;
+    try{
+      row = sh.getRange(rowNum, 1, 1, width).getValues()[0];
+    }catch(errRow){
+      // si hay algún problema con esta fila, la saltamos para no romper la lista
+      continue;
+    }
 
     const booking_id = row[0];
     const fecha      = normDateStr_(row[1]);
@@ -1049,7 +1067,8 @@ function listBookings_(dateStr, consultor){
     const idpipe     = row[9];
     const ts         = row[10];
     const cancelado  = normBool_(row[11]);
-    const motivo     = row[12];
+    const motivo     = width >= 13 ? row[12] : "";
+    const retrasoTS  = width >= 14 ? asStr(row[13]) : "";
 
     if (fecha !== String(dateStr).trim()) continue;
     if (consultor && consultor !== "todos" && String(c) !== String(consultor).trim()) continue;
@@ -1067,7 +1086,8 @@ function listBookings_(dateStr, consultor){
       idpipe: idpipe || "",
       timestamp_creado: ts,
       cancelado,
-      motivo_cancelacion: motivo || ""
+      motivo_cancelacion: motivo || "",
+      retraso_enviado: retrasoTS
     });
   }
 
@@ -1101,6 +1121,22 @@ function cancelBooking_(booking_id, motivo){
   }
 
   return { ok:true };
+}
+
+function markDelaySent_(booking_id){
+  const sh = getSheet_("Agendas");
+  const last = sh.getLastRow();
+  if (last < 2) return { ok:false, error:"not_found" };
+
+  const colA = sh.getRange(2,1,last-1,1);
+  const cell = colA.createTextFinder(String(booking_id)).matchEntireCell(true).findNext();
+  if (!cell) return { ok:false, error:"not_found" };
+
+  const rowNum = cell.getRow();
+  const ts = timestampISO_();
+  sh.getRange(rowNum, 14).setValue(ts); // N: retraso_enviado
+
+  return { ok:true, timestamp: ts };
 }
 
 // ========== Bloqueos helpers ==========
@@ -1221,10 +1257,14 @@ function doGet(e){
   }
 
   if (mode === "listBookings"){
-    const dateStr   = String((e.parameter.date || today)).trim();
-    const consultor = String((e.parameter.consultor || "todos")).trim();
-    const bookings  = listBookings_(dateStr, consultor);
-    return json_({ ok:true, date: dateStr, consultor, bookings });
+    try{
+      const dateStr   = String((e.parameter.date || today)).trim();
+      const consultor = String((e.parameter.consultor || "todos")).trim();
+      const bookings  = listBookings_(dateStr, consultor);
+      return json_({ ok:true, date: dateStr, consultor, bookings });
+    }catch(errList){
+      return json_({ ok:false, error:"list_error", details: String(errList) });
+    }
   }
 
   if (mode === "schedule"){
@@ -1387,6 +1427,12 @@ function doPost(e){
     const motivo     = String(p.motivo || "").trim();
     if (!booking_id) return json_({ ok:false, error:"missing_booking_id" });
     return json_(cancelBooking_(booking_id, motivo));
+  }
+
+  if (mode === "markDelay"){
+    const booking_id = String(p.booking_id || "").trim();
+    if (!booking_id) return json_({ ok:false, error:"missing_booking_id" });
+    return json_(markDelaySent_(booking_id));
   }
 
   if (mode === "blockDate"){

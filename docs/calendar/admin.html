@@ -350,6 +350,10 @@ body{
   background:#fee2e2;
   color:#b91c1c;
 }
+.sm-admin-badge-delay{
+  background: #e5e7eb;
+  color: #374151;
+}
 .sm-admin-actions{
   display:flex;
   gap:6px;
@@ -1060,7 +1064,7 @@ body{
   // - Este es el backend principal que recibe los datos del front.
   // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/code.gs
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyJvUfgU2-i3RxZ3vHDfi2HKRf8YtIeA3_HJpqt88I_b8yj03pbUMH4dMPR9Z2eVQ91/exec";
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyrldRPLbVqfhsnw5Y6VOyI6WP0dzmFIdtqRab07jZlMQTRia0y1Q6hz-FNFFS135wZ/exec";
 
   const ADMIN_USER = "admin";
   const ADMIN_PASS = "consultores#5";
@@ -2066,6 +2070,19 @@ body{
         tipoRow.appendChild(tipoSpan);
         main.appendChild(tipoRow);
       }
+
+      // Retraso enviado (solo si existe)
+      (function(){
+        const retrasoOk = !!(b.retraso_enviado && String(b.retraso_enviado).trim());
+        if (!retrasoOk) return;
+        const row = document.createElement("div");
+        row.className = "smad-info-row";
+        const badge = document.createElement("span");
+        badge.className = "sm-admin-badge sm-admin-badge-delay";
+        badge.textContent = "Retraso enviado";
+        row.appendChild(badge);
+        main.appendChild(row);
+      })();
 
       // Cancelado badge (si aplica)
       if (b.cancelado){
