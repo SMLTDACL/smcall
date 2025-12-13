@@ -127,6 +127,18 @@ function asStr(v){
   return String(v).trim();
 }
 
+function formatRecorridoLog_(recorrido, now){
+  const rec = String(recorrido || "").trim();
+  if (!rec) return "";
+
+  // Si ya viene con timestamp (dd-MM-yyyy HH:mm: ...) no lo duplicamos
+  const hasTs = /^\d{2}-\d{2}-\d{4} \d{2}:\d{2}\s*:/.test(rec);
+  if (hasTs) return rec;
+
+  const ts = Utilities.formatDate(now || new Date(), TZ, "dd-MM-yyyy HH:mm");
+  return `${ts}: ${rec}`;
+}
+
 function normKey_(v){
   let s = asStr(v);
   if (!s) return "";
@@ -1019,17 +1031,16 @@ function doPost(e){
   if (calls || recorrido){
     const btCell = sh.getRange(rid, COL.LOG_BT);
     const prevBT = asStr(btCell.getValue());
-    const tsRecorrido = recorrido ? Utilities.formatDate(now, TZ, "dd-MM-yyyy HH:mm") : "";
+    const recLine = formatRecorridoLog_(recorrido, now);
 
     let entry = "";
     if (calls) entry += calls;
-    if (recorrido){
-      const recorridoLine = tsRecorrido ? `${tsRecorrido}: ${recorrido}` : recorrido;
-      entry += (entry ? "\n" : "") + recorridoLine;
-    }
+    if (recLine) entry += (entry ? "\n" : "") + recLine;
 
     const nextBT = prevBT ? (prevBT + "\n" + entry) : entry;
     btCell.setValue(nextBT);
+    // <<< NUEVO: recalcular secuencia N/C/F y PERDIDO NC
+    procesarSecuenciaNCPerdido_(btCell);
   }
 
   // ✅ setear ESTADO (CB) según respuesta final (survey)

@@ -1623,7 +1623,7 @@
   // - Este es el backend principal que recibe los datos del front (call.html).
   // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/call/code.gs
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbxOHooSoEHmX6_VgIlcS4lAnyNCpO_8XkDNZsHJUKFCJgnEsb3nLW8JHF8_nO9Djvt0/exec";
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbz5vUFt3Hp0lHtapWCMoey4GwXeAscB0S_QI7Iy_NspztaauN1oR0gRv_0xulxsNS4K/exec";
   const ZOOM_ORIGIN = "https://applications.zoom.us";
   
   // ENDPOINT_LOG_MENSUAL (logs):
@@ -2552,6 +2552,15 @@ window.addEventListener("pagehide", ()=>{
     second: "2-digit",
     hour12: false
   });
+  const __smCLFmtNoSec = new Intl.DateTimeFormat("es-CL", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
   const __smCLCurrency = new Intl.NumberFormat("es-CL", {
     maximumFractionDigits: 0
   });
@@ -2564,6 +2573,17 @@ window.addEventListener("pagehide", ()=>{
       return `${m.day}-${m.month}-${m.year} ${m.hour}:${m.minute}:${m.second}`;
     }catch(_){
       return String(iso || "");
+    }
+  }
+
+  function fmtChileNoSec(dateOrIso){
+    try{
+      const parts = __smCLFmtNoSec.formatToParts(new Date(dateOrIso));
+      const m = {};
+      parts.forEach(p => { if (p.type !== "literal") m[p.type] = p.value; });
+      return `${m.day}-${m.month}-${m.year} ${m.hour}:${m.minute}`;
+    }catch(_){
+      return String(dateOrIso || "");
     }
   }
 
@@ -2780,6 +2800,8 @@ function escapeHtml(s){
 
   const rid = state.pending.rid;
   const idc = getIDC();
+  const recorridoRaw = String(payload?.recorrido || "").trim();
+  const recorridoWithTs = recorridoRaw ? `${fmtChileNoSec(new Date())}: ${recorridoRaw}` : "";
 
 
   // 2) Usa preload ya corriendo (si existe) o crea uno ahora
@@ -2801,7 +2823,7 @@ const nextPromise =
       obs: state.pending.obs || "",
       calls_text: state.pending.calls_text || "",
       survey: String(payload?.numero_pregunta || ""),
-      recorrido: String(payload?.recorrido || "")
+      recorrido: recorridoWithTs
     });
 
     if(!data?.ok) throw new Error(data?.error || "bad_finalize");
@@ -2812,7 +2834,7 @@ const nextPromise =
         idc,
         idpipe: (state.deal?.IDPIPE || ""),
         fecha_completa: fmtChile(new Date().toISOString()),
-        recorrido: String(payload?.recorrido || ""),
+        recorrido: recorridoWithTs,
         tiempo_total: totalCallsMSS_(),
         tiempo_total_sec: totalCallsSec_(),
         final_code: String(payload?.numero_pregunta || "")
