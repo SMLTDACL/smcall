@@ -79,19 +79,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Modal Retraso llamada -->
-  <div id="smc-delay-modal" class="smc-delay-modal" style="display:none;">
-    <div class="smc-delay-backdrop"></div>
-    <div class="smc-delay-dialog">
-      <div class="smc-delay-title">Enviar email de retraso</div>
-      <div class="smc-delay-subtitle">Confirma para enviar el aviso de retraso.</div>
-      <div class="smc-delay-footer">
-        <button type="button" class="smc-delay-btn" id="smc-delay-cancel">Cerrar</button>
-        <button type="button" class="smc-delay-btn smc-delay-btn-primary" id="smc-delay-confirm" disabled>Enviar aviso</button>
-      </div>
-    </div>
-  </div>
 </div>
 <style>
 :root{
@@ -230,15 +217,12 @@ body{
   background:#e0f2fe;
   color:#0369a1;
 }
-    .smc-btn-yellow{
-    background:#f9f2b8 !important;
-    color:#6d6521 !important;
-    text-decoration:none
-  }
-  .smc-btn-yellow:hover,
-  .smc-btn-yellow:focus{
-    text-decoration:none;
-  }
+.smc-badge-noshow{
+  background:#fee2e2;
+  color:#b91c1c;
+  font-weight:600;
+  border:1px solid #fecdd3;
+}
   .smc-btn-icon{
     display:inline-flex;
     align-items:center;
@@ -391,6 +375,13 @@ body{
   .smc-badge-cancel{
     background:#fee2e2;
     color:#b91c1c;
+  }
+  /* Override default badge for no_show */
+  .smc-badge.smc-badge-noshow{
+    background:#fee2e2;
+    color:#b91c1c;
+    font-weight:600;
+    border:1px solid #fecdd3;
   }
   .smc-actions{
     display:flex;
@@ -673,70 +664,16 @@ body{
     cursor:default;}
   
 </style>
-<style>
-.smc-delay-modal{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:99990;
-  font-family:inherit;
-}
-.smc-delay-backdrop{
-  position:absolute;
-  inset:0;
-  background:rgb(255 255 255 / 0.45);
-}
-.smc-delay-dialog{
-  position:relative;
-  background:#ffffff;
-  border-radius:16px;
-  max-width:360px;
-  width:90%;
-  padding:16px;
-  box-shadow:0 18px 45px rgba(15,23,42,0.22);
-  z-index:1;
-}
-.smc-delay-title{
-  font-size:16px;
-  font-weight:700;
-  color:#111827;
-  margin:0 0 6px;
-}
-.smc-delay-subtitle{
-  margin:0 0 12px;
-  color:#4b5563;
-  font-size:13px;
-}
-.smc-delay-footer{
-  display:flex;
-  justify-content:flex-end;
-  gap:8px;
-}
-.smc-delay-btn{
-  border-radius:999px;
-  border:1px solid #d1d5db;
-  padding:7px 14px;
-  font-size:13px;
-  background:#f9fafb;
-  cursor:pointer;
-}
-.smc-delay-btn-primary{
-  background:#1f6feb;
-  color:#ffffff;
-  border-color:#1f6feb;
-}
-</style>
 <script>
 (function(){
-    // ENDPOINT (principal):
+    // ENDPOINT_CALENDAR (principal):
   // - Web App de Google Apps Script (URL /exec).
   // - Este es el backend principal que recibe los datos del front.
   // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/code.gs
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyrldRPLbVqfhsnw5Y6VOyI6WP0dzmFIdtqRab07jZlMQTRia0y1Q6hz-FNFFS135wZ/exec";
-  const RETRASO_WEBHOOK = "https://hooks.zapier.com/hooks/catch/6030955/ufxrjg7/";
+  const ENDPOINT_CALENDAR = "https://script.google.com/macros/s/AKfycbxluSUVEHa-jeX-QSJknVE5ZfdiBFMCm7qw3oc-9wNZ_4kT2CnW_2OZNUFZzZZtWr5e/exec";
+  const PRESENCE_WINDOW_ADVANCE_MIN = 5; // minutos antes para marcar como "en curso"
+  const PRESENCE_SLOT_DURATION_MIN = 30;
 
   const qs  = s => document.querySelector(s);
   const qsa = s => Array.from(document.querySelectorAll(s));
@@ -755,100 +692,7 @@ body{
     l.style.display = show ? "flex" : "none";
   }
 
-  function buildRetrasoPayload(booking){
-    if (!booking) return null;
-    return {
-      action: "retraso_llamada",
-      consultor: CONSULTOR_ID || "",
-      tabla: {
-        booking_id: booking.booking_id || "",
-        fecha: booking.fecha || "",
-        hora: booking.hora || "",
-        nombre: booking.nombre || "",
-        email: booking.email || "",
-        telefono: booking.telefono || "",
-        tipo: booking.tipo || "",
-        idpipe: booking.idpipe || "",
-        marca: booking.marca || "",
-        cancelado: !!booking.cancelado
-      },
-      enviado_en: new Date().toISOString()
-    };
-  }
-
-  async function sendRetrasoWebhook(booking){
-    const payload = buildRetrasoPayload(booking);
-    if (!payload) throw new Error("payload_vacio");
-
-    const res = await fetch(RETRASO_WEBHOOK, {
-      method:"POST",
-      // no-cors + text/plain evita bloqueos de CORS en el navegador
-      mode:"no-cors",
-      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-      body: JSON.stringify(payload)
-    });
-    if (!res || (!res.ok && res.type !== "opaque")) throw new Error("webhook_"+(res ? res.status : "sin_respuesta"));
-  }
-
   // ===== Modal Retraso llamada =====
-  const delayState = {
-    booking: null,
-    sending: false
-  };
-
-  function setDelayConfirmLoading(isLoading){
-    const btn = qs("#smc-delay-confirm");
-    if (!btn) return;
-    if (isLoading){
-      if (!btn.dataset.label) btn.dataset.label = btn.textContent.trim();
-      btn.textContent = "Enviando...";
-      btn.disabled = true;
-    } else {
-      btn.textContent = btn.dataset.label || "Enviar aviso";
-      btn.disabled = false;
-      delete btn.dataset.label;
-    }
-  }
-
-  function showDelayModal(booking){
-    delayState.booking = booking;
-    const confirmBtn = qs("#smc-delay-confirm");
-    if (confirmBtn) confirmBtn.disabled = false;
-    const modal = qs("#smc-delay-modal");
-    if (modal) modal.style.display = "flex";
-  }
-
-  function hideDelayModal(){
-    const modal = qs("#smc-delay-modal");
-    if (modal) modal.style.display = "none";
-    delayState.booking = null;
-    delayState.sending = false;
-    setDelayConfirmLoading(false);
-  }
-
-  async function onConfirmDelay(){
-    if (!delayState.booking || delayState.sending) return;
-
-    const booking = delayState.booking;
-    delayState.sending = true;
-    setDelayConfirmLoading(true);
-    try{
-      await sendRetrasoWebhook(booking);
-      try{
-        await apiMarkDelay(booking.booking_id);
-      }catch(errMark){
-        console.warn("markDelay", errMark);
-      }
-      hideDelayModal();
-      toast("Aviso de retraso enviado");
-      reloadBookings();
-    }catch(err){
-      console.error(err);
-      toast("No se pudo enviar el retraso");
-      setDelayConfirmLoading(false);
-      delayState.sending = false;
-    }
-  }
 
   // ====== copiar al portapapeles ======
   function copyToClipboard(text){
@@ -1000,7 +844,7 @@ body{
 
   // ===== API GETs =====
   async function apiListBookings(dateStr, consultorId){
-    const url = ENDPOINT+"?mode=listBookings"
+    const url = ENDPOINT_CALENDAR+"?mode=listBookings"
       +"&date="+encodeURIComponent(dateStr)
       +"&consultor="+encodeURIComponent(consultorId)
       +"&_="+Date.now();
@@ -1010,14 +854,14 @@ body{
   }
 
   async function apiGetConsultores(){
-    const url = ENDPOINT+"?mode=consultores&_="+Date.now();
+    const url = ENDPOINT_CALENDAR+"?mode=consultores&_="+Date.now();
     const res = await fetch(url, {cache:"no-store"});
     if (!res.ok) throw new Error("consultores "+res.status);
     return res.json();
   }
 
   async function apiSlots(consultor_id, fecha){
-    const url = ENDPOINT+"?mode=slots"
+    const url = ENDPOINT_CALENDAR+"?mode=slots"
       +"&consultor="+encodeURIComponent(consultor_id)
       +"&date="+encodeURIComponent(fecha)
       +"&_="+Date.now();
@@ -1027,7 +871,7 @@ body{
   }
 
   async function apiAvailableDays(consultor, from, to){
-    const url = ENDPOINT+"?mode=availableDays"
+    const url = ENDPOINT_CALENDAR+"?mode=availableDays"
       +"&consultor="+encodeURIComponent(consultor)
       +"&from="+encodeURIComponent(from)
       +"&to="+encodeURIComponent(to)
@@ -1038,7 +882,7 @@ body{
   }
 
   async function apiInitBooking(){
-    const url = ENDPOINT+"?mode=init_booking&_="+Date.now();
+    const url = ENDPOINT_CALENDAR+"?mode=init_booking&_="+Date.now();
     const res = await fetch(url, {cache:"no-store"});
     if (!res.ok) throw new Error("init_booking "+res.status);
     return res.json();
@@ -1051,7 +895,7 @@ body{
     Object.entries(payload).forEach(([k,v])=>{
       if (v !== undefined && v !== null) body.append(k, v);
     });
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("book "+res.status);
     return res.json();
   }
@@ -1061,17 +905,8 @@ body{
     body.append("mode","cancel");
     body.append("booking_id", booking_id);
     body.append("motivo", motivo || "");
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("cancel "+res.status);
-    return res.json();
-  }
-
-  async function apiMarkDelay(booking_id){
-    const body = new URLSearchParams();
-    body.append("mode","markDelay");
-    body.append("booking_id", booking_id);
-    const res = await fetch(ENDPOINT, { method:"POST", body });
-    if (!res.ok) throw new Error("markDelay "+res.status);
     return res.json();
   }
 
@@ -1404,10 +1239,11 @@ body{
       let isPast=false, isNow=false;
       if (b.fecha === todayStr){
         const startM = parseMinutes(b.hora);
-        const endM   = startM!=null ? startM+30 : null;
+        const winStart = startM != null ? startM - PRESENCE_WINDOW_ADVANCE_MIN : null;
+        const endM   = startM!=null ? startM + (PRESENCE_SLOT_DURATION_MIN - PRESENCE_WINDOW_ADVANCE_MIN) : null;
         if (startM != null){
           if (endM <= nowMin) isPast = true;
-          else if (startM <= nowMin && nowMin < endM) isNow = true;
+          else if (winStart != null && winStart <= nowMin && nowMin < endM) isNow = true;
         }
       } else if (b.fecha < todayStr){
         isPast = true;
@@ -1538,15 +1374,26 @@ body{
         main.appendChild(tipoRow);
       }
 
-      // Estado de retraso enviado
-      (function(){
-        const retrasoOk = !!(b.retraso_enviado && String(b.retraso_enviado).trim());
-        if (!retrasoOk) return;
+      // Retraso enviado (solo indicador)
+      if (b.retraso_enviado && String(b.retraso_enviado).trim()){
         const row = document.createElement("div");
         row.className = "smc-info-row";
         const badge = document.createElement("span");
         badge.className = "smc-badge smc-badge-delay";
         badge.textContent = "Retraso enviado";
+        row.appendChild(badge);
+        main.appendChild(row);
+      }
+
+      // No show (asistencia=no_show)
+      (function(){
+        const noShow = String(b.asistencia || "").toLowerCase() === "no_show";
+        if (!noShow) return;
+        const row = document.createElement("div");
+        row.className = "smc-info-row";
+        const badge = document.createElement("span");
+        badge.className = "smc-badge smc-badge-noshow";
+        badge.textContent = "No se llamó";
         row.appendChild(badge);
         main.appendChild(row);
       })();
@@ -1572,19 +1419,6 @@ body{
           openReprogModal(b);
         });
         actions.appendChild(rpBtn);
-      }
-      // Aviso de retraso (solo si no está cancelado; permite pasadas)
-      if (!b.cancelado){
-        const pfBtn = document.createElement("button");
-        pfBtn.type = "button";
-        pfBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-alert-icon lucide-clock-alert"><path d="M12 6v6l4 2"/><path d="M20 12v5"/><path d="M20 21h.01"/><path d="M21.25 8.2A10 10 0 1 0 16 21.16"/></svg>';
-        pfBtn.setAttribute("data-tooltip","Retraso llamada");
-        pfBtn.className = "smc-btn smc-btn-yellow smc-btn-icon";
-        pfBtn.addEventListener("click", ()=>{
-          if (pfBtn.disabled) return;
-          showDelayModal(b);
-        });
-        actions.appendChild(pfBtn);
       }
 
       // Cancelar (solo si no está cancelado)
@@ -1721,18 +1555,6 @@ body{
       rpModal.querySelector("#smc-rp-confirm")
         ?.addEventListener("click", onConfirmReprog);
     }
-
-    // Modal retraso llamada
-    (function(){
-      const delayModal = qs("#smc-delay-modal");
-      if (!delayModal) return;
-      delayModal.querySelector(".smc-delay-backdrop")
-        ?.addEventListener("click", hideDelayModal);
-      delayModal.querySelector("#smc-delay-cancel")
-        ?.addEventListener("click", hideDelayModal);
-      delayModal.querySelector("#smc-delay-confirm")
-        ?.addEventListener("click", onConfirmDelay);
-    })();
 
     bindBookingCodeCopy();
 

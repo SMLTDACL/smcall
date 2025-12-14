@@ -1618,20 +1618,20 @@
   window.__smCRMAppLoaded = true;
 
   /* ===================== [F1] CONFIG ===================== */
-  // ENDPOINT (principal):
+  // ENDPOINT_CALL (principal):
   // - Web App de Google Apps Script (URL /exec).
   // - Este es el backend principal que recibe los datos del front (call.html).
   // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/call/code.gs
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbxHMYSZOeL4b38PuzqQ2-lpU-o-tT4N6xbyn8nq3NRyJtKHsyPxgq2K-3LuNhkWsWv6/exec";
+  const ENDPOINT_CALL = "https://script.google.com/macros/s/AKfycbwnZkcBrj3UJkxAMC3dgxxsWfdsUpni6SYuW2f2DANDHJZGZPod_A_hBd6Q3mumtiPn/exec";
   const ZOOM_ORIGIN = "https://applications.zoom.us";
   
-  // ENDPOINT_LOG_MENSUAL (logs):
+  // ENDPOINT_PUNTOS (logs):
   // - Web App de Google Apps Script (URL /exec) dedicada a registrar métricas/logs mensuales.
-  // - Separado del ENDPOINT principal para aislar carga y mantener el backend principal más limpio.
+  // - Separado del ENDPOINT_CALL principal para aislar carga y mantener el backend principal más limpio.
   // - Nota: esta URL también apunta al despliegue en Google, no a tu carpeta local.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/log-mensual/code.gs
-  const ENDPOINT_LOG_MENSUAL = "https://script.google.com/macros/s/AKfycbwu1EIBD8PPVTCKIe39zO_sjMzUIAnjGqQxehzdEG2sXppjJEJnta8ZTegTv19T7W2y/exec";
+  const ENDPOINT_PUNTOS = "https://script.google.com/macros/s/AKfycbwu1EIBD8PPVTCKIe39zO_sjMzUIAnjGqQxehzdEG2sXppjJEJnta8ZTegTv19T7W2y/exec";
 
   // ZAPIER WEBHOOKS
   const ZAPIER_ANALISIS = "https://hooks.zapier.com/hooks/catch/6030955/ukh9o60/";
@@ -2237,7 +2237,7 @@ function presenceSend_(action, rid, prevRid){
       token: getToken() || ""
     };
 
-    authFetch(ENDPOINT, {
+    authFetch(ENDPOINT_CALL, {
       method: "POST",
       mode: "no-cors",
       keepalive: true,
@@ -2337,7 +2337,7 @@ window.addEventListener("pagehide", ()=>{
   async function apiNext(idc, skipRids){
     const skip = Array.isArray(skipRids) ? skipRids.filter(Boolean).join(",") : "";
     const token = getToken();
-    const url = `${ENDPOINT}?mode=next&idc=${encodeURIComponent(idc)}&debug=1${skip ? `&skip=${encodeURIComponent(skip)}` : ""}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const url = `${ENDPOINT_CALL}?mode=next&idc=${encodeURIComponent(idc)}&debug=1${skip ? `&skip=${encodeURIComponent(skip)}` : ""}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`next ${res.status}`);
     return res.json();
@@ -2353,7 +2353,7 @@ window.addEventListener("pagehide", ()=>{
     recorrido: recorrido || "",
     token: getToken() || ""
   });
-  const res = await authFetch(ENDPOINT, { method:"POST", body });
+  const res = await authFetch(ENDPOINT_CALL, { method:"POST", body });
   if (!res.ok) throw new Error(`finalize ${res.status}`);
   return res.json();
 }
@@ -2372,7 +2372,7 @@ window.addEventListener("pagehide", ()=>{
   });
 
   //  no preflight + no CORS issues (envío “fire and forget”)
-  await authFetch(ENDPOINT_LOG_MENSUAL, {
+  await authFetch(ENDPOINT_PUNTOS, {
     method: "POST",
     mode: "no-cors",
     keepalive: true,
@@ -2392,14 +2392,14 @@ window.addEventListener("pagehide", ()=>{
       motivo: motivo || "",
       token: getToken() || ""
     });
-    const res = await authFetch(ENDPOINT, { method:"POST", body });
+    const res = await authFetch(ENDPOINT_CALL, { method:"POST", body });
     if (!res.ok) throw new Error(`omit ${res.status}`);
     return res.json();
   }
 
   async function apiDealByRid(rid){
     const token = getToken();
-    const url = `${ENDPOINT}?mode=deal&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const url = `${ENDPOINT_CALL}?mode=deal&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`deal ${res.status}`);
     return res.json();
@@ -2407,7 +2407,7 @@ window.addEventListener("pagehide", ()=>{
 
   async function apiSearch(q){
     const token = getToken();
-    const url = `${ENDPOINT}?mode=search&q=${encodeURIComponent(String(q||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const url = `${ENDPOINT_CALL}?mode=search&q=${encodeURIComponent(String(q||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`search ${res.status}`);
     return res.json();
@@ -2416,7 +2416,7 @@ window.addEventListener("pagehide", ()=>{
   // ✅ ultra liviano: solo CH
   async function apiPayState(rid){
     const token = getToken();
-    const url = `${ENDPOINT}?mode=paystate&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const url = `${ENDPOINT_CALL}?mode=paystate&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`paystate ${res.status}`);
     return res.json();
@@ -2424,7 +2424,7 @@ window.addEventListener("pagehide", ()=>{
 
   async function apiPayStateVig(rid){
     const token = getToken();
-    const url = `${ENDPOINT}?mode=paystate_vig&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const url = `${ENDPOINT_CALL}?mode=paystate_vig&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`paystate_vig ${res.status}`);
     return res.json();
@@ -2433,7 +2433,7 @@ window.addEventListener("pagehide", ()=>{
   // ✅ ultra liviano: solo BP
   async function apiLog(rid){
     const token = getToken();
-    const url = `${ENDPOINT}?mode=log&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+    const url = `${ENDPOINT_CALL}?mode=log&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`log ${res.status}`);
     return res.json();

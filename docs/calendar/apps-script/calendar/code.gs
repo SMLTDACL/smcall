@@ -6,7 +6,7 @@
  * - Agendas: A:booking_id, B:fecha, C:hora, D:consultor_id,
  *            E:nombre, F:email, G:telefono, H:marca, I:tipo,
  *            J:idpipe, K:timestamp_creado, L:cancelado, M:motivo_cancelacion,
- *            N:retraso_enviado (timestamp o vacío)
+ *            N:retraso_enviado (timestamp o vacío), O:asistencia_tag (no_show/blank)
  * - AgendasIndex (NUEVO): A:key(fecha||cid), B:fecha, C:consultor_id, D:times_csv, E:count, F:updated_at
  *
  * Endpoints:
@@ -30,7 +30,12 @@ const CFG = {
   TZ: "America/Santiago",
   DAYS_AHEAD_MAX: 90,
   SLOT_MINUTES: 30,
-  WEBHOOK_ZAPIER: "https://hooks.zapier.com/hooks/catch/6030955/uzu970w/"
+  WEBHOOK_ZAPIER: "https://hooks.zapier.com/hooks/catch/6030955/uzu970w/",
+  WEBHOOK_RETRASO: "https://hooks.zapier.com/hooks/catch/6030955/ufxrjg7/",
+  PRESENCE_ENDPOINT: "https://script.google.com/macros/s/AKfycbwnZkcBrj3UJkxAMC3dgxxsWfdsUpni6SYuW2f2DANDHJZGZPod_A_hBd6Q3mumtiPn/exec",
+  WORK_HOUR_START: 8,  // 08:00 Chile
+  WORK_HOUR_END: 21,   // 21:00 Chile
+  AUDIT_LOG_ENABLED: true
 };
 
 // ========== PERF helpers ==========
@@ -104,6 +109,15 @@ function minutesToTime_(mins){
   const hh = (h < 10 ? "0"+h : ""+h);
   const mm = (m < 10 ? "0"+m : ""+m);
   return hh + ":" + mm;
+}
+
+function toTimeMs_(v){
+  if (!v) return 0;
+  if (v instanceof Date) return v.getTime();
+  const s = String(v).trim();
+  if (!s) return 0;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
 }
 
 function normalizePost_(e){
@@ -988,7 +1002,8 @@ function createBooking_(data){
     ts,
     false,
     "",
-    "" // retraso_enviado (timestamp)
+    "", // retraso_enviado (timestamp)
+    ""  // asistencia_tag (no_show/blank)
   ];
 
   sh.appendRow(row);
@@ -1042,8 +1057,8 @@ function listBookings_(dateStr, consultor){
   if (!matches || !matches.length) return out;
 
   const totalCols = sh.getLastColumn();
-  // Leemos solo hasta donde exista la hoja (máximo 14 columnas).
-  const width = Math.min(Math.max(totalCols, 1), 14);
+  // Leemos solo hasta donde exista la hoja (máximo 15 columnas).
+  const width = Math.min(Math.max(totalCols, 1), 15);
 
   for (let i=0;i<matches.length;i++){
     const rowNum = matches[i].getRow();
@@ -1069,6 +1084,7 @@ function listBookings_(dateStr, consultor){
     const cancelado  = normBool_(row[11]);
     const motivo     = width >= 13 ? row[12] : "";
     const retrasoTS  = width >= 14 ? asStr(row[13]) : "";
+    const asistenciaTag = width >= 15 ? asStr(row[14]) : "";
 
     if (fecha !== String(dateStr).trim()) continue;
     if (consultor && consultor !== "todos" && String(c) !== String(consultor).trim()) continue;
@@ -1087,7 +1103,8 @@ function listBookings_(dateStr, consultor){
       timestamp_creado: ts,
       cancelado,
       motivo_cancelacion: motivo || "",
-      retraso_enviado: retrasoTS
+      retraso_enviado: retrasoTS,
+      asistencia: asistenciaTag
     });
   }
 
@@ -1124,6 +1141,10 @@ function cancelBooking_(booking_id, motivo){
 }
 
 function markDelaySent_(booking_id){
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+
+  try{
   const sh = getSheet_("Agendas");
   const last = sh.getLastRow();
   if (last < 2) return { ok:false, error:"not_found" };
@@ -1133,10 +1154,478 @@ function markDelaySent_(booking_id){
   if (!cell) return { ok:false, error:"not_found" };
 
   const rowNum = cell.getRow();
-  const ts = timestampISO_();
-  sh.getRange(rowNum, 14).setValue(ts); // N: retraso_enviado
+    const width = Math.min(Math.max(sh.getLastColumn(), 14), sh.getLastColumn());
+    const row = sh.getRange(rowNum, 1, 1, width).getValues()[0];
 
-  return { ok:true, timestamp: ts };
+    // Col N (index 13): retraso_enviado
+    const already = asStr(width >= 14 ? row[13] : "");
+    if (already){
+      return { ok:true, already:true, timestamp: already };
+    }
+
+    const payload = {
+      action: "retraso_llamada",
+      consultor: String(row[3] || ""),
+      tabla: {
+        booking_id: row[0] || "",
+        fecha: normDateStr_(row[1]),
+        hora: normTimeHHMM_(row[2]),
+        nombre: row[4] || "",
+        email: row[5] || "",
+        telefono: row[6] || "",
+        marca: row[7] || "",
+        tipo: row[8] || "",
+        idpipe: row[9] || "",
+        cancelado: !!row[11]
+      },
+      enviado_en: timestampISO_()
+    };
+
+    try{
+      UrlFetchApp.fetch(CFG.WEBHOOK_RETRASO, {
+        method: "post",
+        contentType: "text/plain;charset=UTF-8",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      });
+    }catch(err){
+      return { ok:false, error:"webhook_error", detail:String(err?.message || err) };
+    }
+
+    const ts = timestampISO_();
+    sh.getRange(rowNum, 14).setValue(ts); // N: retraso_enviado
+
+    return { ok:true, timestamp: ts, sent:true };
+
+  } finally {
+    try{ lock.releaseLock(); }catch(_){}
+  }
+}
+
+// ====== Auditoría temporal (se puede desactivar con CFG.AUDIT_LOG_ENABLED) ======
+function auditLog_(rows){
+  if (!CFG.AUDIT_LOG_ENABLED) return;
+  try{
+    const sh = getSheet_("Logs");
+    if (sh.getLastRow() === 0){
+      sh.appendRow(["timestamp","booking_id","action","detail"]);
+    }
+    sh.insertRowsAfter(1, rows.length);
+    sh.getRange(2,1,rows.length,4).setValues(rows);
+    // Mantén máximo 1000 filas para no crecer infinito
+    const maxRows = 1000;
+    const last = sh.getLastRow();
+    if (last > maxRows){
+      sh.deleteRows(maxRows+1, last-maxRows);
+    }
+  }catch(err){
+    Logger.log("auditLog_ error: "+err);
+  }
+}
+
+// ====== PRESENCIA (backend) ======
+function presenceStatus_(idpipe){
+  if (!idpipe) return { ok:false, error:"missing_idpipe" };
+  const url = CFG.PRESENCE_ENDPOINT+"?mode=presence_status&idpipe="+encodeURIComponent(idpipe)+"&_="+Date.now();
+  try{
+    const res = UrlFetchApp.fetch(url, { method:"get", muteHttpExceptions:true, followRedirects:true });
+    if (!res) return { ok:false, error:"no_response" };
+    const code = res.getResponseCode();
+    if (code !== 200) return { ok:false, error:"http_"+code };
+    const body = res.getContentText() || "";
+    const parsed = JSON.parse(body);
+    return parsed;
+  }catch(err){
+    return { ok:false, error:"fetch_error", detail:String(err?.message || err) };
+  }
+}
+
+/**
+ * Presencias en paralelo (fetchAll).
+ * Retorna map idpipe -> respuesta { ok, ... , batch_ms }
+ */
+function presenceStatusBatch_(idpipes, timeoutMs){
+  const out = {};
+  const pipes = Array.from(new Set((idpipes || []).map(p => String(p || "").trim()).filter(Boolean)));
+  if (!pipes.length) return out;
+
+  const reqs = pipes.map(p => ({
+    url: CFG.PRESENCE_ENDPOINT + "?mode=presence_status&idpipe=" + encodeURIComponent(p) + "&_=" + Date.now(),
+    method: "get",
+    muteHttpExceptions: true,
+    followRedirects: true,
+    // Nota: UrlFetchApp no soporta timeout explícito, usa default del entorno.
+  }));
+
+  const t0 = Date.now();
+  let responses;
+  try{
+    responses = UrlFetchApp.fetchAll(reqs);
+  }catch(err){
+    const batchMs = Date.now() - t0;
+    pipes.forEach(p => out[p] = { ok:false, error:"fetch_all_error", detail:String(err?.message || err), batch_ms: batchMs });
+    return out;
+  }
+
+  const batchMs = Date.now() - t0;
+  for (let i=0;i<pipes.length;i++){
+    const pipe = pipes[i];
+    const res = responses[i];
+    if (!res){
+      out[pipe] = { ok:false, error:"no_response", batch_ms: batchMs };
+      continue;
+    }
+    const code = res.getResponseCode ? res.getResponseCode() : 0;
+    if (code !== 200){
+      out[pipe] = { ok:false, error:"http_"+code, batch_ms: batchMs };
+      continue;
+    }
+    let parsed;
+    try{
+      parsed = JSON.parse(res.getContentText() || "{}");
+    }catch(errParse){
+      out[pipe] = { ok:false, error:"parse_error", detail:String(errParse?.message || errParse), batch_ms: batchMs };
+      continue;
+    }
+    out[pipe] = Object.assign({}, parsed, { batch_ms: batchMs });
+  }
+  return out;
+}
+
+function cacheGreenKey_(booking_id, fecha){
+  return "green:"+String(booking_id||"")+":"+String(fecha||"");
+}
+
+function cacheMarkGreen_(booking_id, fecha, ttlSec){
+  if (!booking_id || !fecha) return;
+  try{
+    const cache = CacheService.getScriptCache();
+    cache.put(cacheGreenKey_(booking_id, fecha), "1", Math.max(60, Math.min(21600, ttlSec)));
+  }catch(_){}
+}
+
+function cacheIsGreen_(booking_id, fecha){
+  if (!booking_id || !fecha) return false;
+  try{
+    const cache = CacheService.getScriptCache();
+    return !!cache.get(cacheGreenKey_(booking_id, fecha));
+  }catch(_){
+    return false;
+  }
+}
+
+// Marca asistencia en col O como "no_show" si aún no está seteado
+function markNoShowAttendance_(booking_id){
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+
+  try{
+    const sh = getSheet_("Agendas");
+    const last = sh.getLastRow();
+    if (last < 2) return { ok:false, error:"not_found" };
+
+    const colA = sh.getRange(2,1,last-1,1);
+    const cell = colA.createTextFinder(String(booking_id)).matchEntireCell(true).findNext();
+    if (!cell) return { ok:false, error:"not_found" };
+
+    const rowNum = cell.getRow();
+    const width = Math.max(15, sh.getLastColumn());
+    const row = sh.getRange(rowNum, 1, 1, width).getValues()[0];
+
+    const current = asStr(width >= 15 ? row[14] : "");
+    if (current){
+      return { ok:true, already:true, value: current };
+    }
+
+    // Header defensivo
+    if (!sh.getRange(1,15).getValue()) sh.getRange(1,15).setValue("asistencia");
+    sh.getRange(rowNum, 15).setValue("no_show");
+    return { ok:true, set:true, value:"no_show" };
+
+  } finally {
+    try{ lock.releaseLock(); }catch(_){}
+  }
+}
+
+// ====== CRON retrasos (minutero) ======
+function cronRetrasos(){
+  const logRows = [];
+  const now = new Date();
+  const t0 = Date.now();
+  const h = Number(Utilities.formatDate(now, CFG.TZ, "H"));
+  if (h < CFG.WORK_HOUR_START || h >= CFG.WORK_HOUR_END){
+    logRows.push([timestampISO_(), "", "skip_off_hours", ""]);
+    auditLog_(logRows);
+    return;
+  }
+
+  const today = todayDate_();
+  let bookings;
+  try{
+    bookings = listBookings_(today, "todos");
+  }catch(err){
+    logRows.push([timestampISO_(), "", "list_error", String(err)]);
+    auditLog_(logRows);
+    return;
+  }
+
+  const nowMs = now.getTime();
+  const lookbackMs = 10*60*1000;
+  const slotMs = 30*60*1000;
+
+  const candidates = [];
+  (bookings || []).forEach(b=>{
+    const retraso = String(b.retraso_enviado || "").trim();
+    if (retraso) return;
+    if (b.cancelado) return;
+    if (!b.hora || !b.fecha) return;
+
+    const parts = String(b.hora).split(":");
+    if (parts.length < 2) return;
+    const hh = Number(parts[0]), mm = Number(parts[1]);
+    if (isNaN(hh) || isNaN(mm)) return;
+
+    const start = new Date(b.fecha+"T"+("0"+hh).slice(-2)+":"+("0"+mm).slice(-2)+":00");
+    if (isNaN(start.getTime())) return;
+
+    const startMs = start.getTime();
+    const validStart = startMs - lookbackMs;
+    const endMs = startMs + slotMs;
+
+    if (nowMs < validStart || nowMs > endMs) return;
+
+    candidates.push({ booking:b, startMs, endMs, validStart });
+  });
+
+  if (!candidates.length){
+    logRows.push([timestampISO_(), "", "no_candidates", ""]);
+    auditLog_(logRows);
+    return;
+  }
+
+  let presOk = 0, presErr = 0, greens = 0, delaySent = 0, delayAlready = 0, delayErr = 0, cached = 0;
+
+  // Paso 1: filtrar cache green y preparar presencias
+  const toCheck = [];
+  const pipes = [];
+  const seenPipe = {};
+  candidates.forEach(c=>{
+    const b = c.booking;
+    const bid = String(b.booking_id || "");
+    const fecha = b.fecha || today;
+
+    if (cacheIsGreen_(bid, fecha)){
+      logRows.push([timestampISO_(), bid, "skip_cached_green", ""]);
+      cached += 1;
+      return;
+    }
+    toCheck.push(c);
+    const pipe = String(b.idpipe || "").trim();
+    if (pipe && !seenPipe[pipe]){
+      seenPipe[pipe] = true;
+      pipes.push(pipe);
+    }
+  });
+
+  // Paso 2: presencias en paralelo
+  const presMap = presenceStatusBatch_(pipes, 15000); // 15s max por lote
+  const batchMs = Object.values(presMap)[0]?.batch_ms || 0;
+
+  // Paso 3: evaluar cada booking
+  toCheck.forEach(c=>{
+    const b = c.booking;
+    const bid = String(b.booking_id || "");
+    const fecha = b.fecha || today;
+    const pipe = String(b.idpipe || "").trim();
+
+    let pres = pipe ? presMap[pipe] : { ok:false, error:"missing_idpipe", batch_ms: batchMs };
+    if (!pres){
+      pres = { ok:false, error:"presence_not_fetched", batch_ms: batchMs };
+    }
+
+    if (!pres.ok){
+      presErr += 1;
+      const detail = "err="+(pres.error||"")+";pres_ms="+(pres.batch_ms != null ? pres.batch_ms : "batch");
+      logRows.push([timestampISO_(), bid, "presence_error", detail]);
+      return;
+    }
+    presOk += 1;
+
+    const lastInMs = toTimeMs_(pres.lastIn);
+    const active = pres.activo === true || String(pres.activo || "").toLowerCase() === "true";
+    const nowMsLocal = Date.now();
+    const hasIn = lastInMs && lastInMs >= c.validStart && lastInMs <= c.endMs;
+    const shouldBeGreen = (nowMsLocal >= c.validStart && nowMsLocal <= c.endMs) && (hasIn || active);
+
+    if (shouldBeGreen){
+      const ttlSec = Math.max(60, Math.floor((c.endMs - nowMsLocal)/1000));
+      cacheMarkGreen_(bid, fecha, ttlSec);
+      greens += 1;
+      const detail = "pres_ms="+(pres.batch_ms != null ? pres.batch_ms : "batch");
+      logRows.push([timestampISO_(), bid, "presence_green", detail]);
+      return;
+    }
+
+    const md = markDelaySent_(bid);
+    if (md && md.ok){
+      const action = md.sent ? "markDelay_sent" : (md.already ? "markDelay_already" : "markDelay_ok");
+      if (md.sent) delaySent += 1;
+      else if (md.already) delayAlready += 1;
+      const detail = "pres_ms="+(pres.batch_ms != null ? pres.batch_ms : "batch");
+      logRows.push([timestampISO_(), bid, action, detail]);
+    } else {
+      delayErr += 1;
+      const detail = "err="+(md?.error || "")+";pres_ms="+(pres.batch_ms != null ? pres.batch_ms : "batch");
+      logRows.push([timestampISO_(), bid, "markDelay_error", detail]);
+    }
+  });
+
+  const totalMs = Date.now() - t0;
+  const summary = [
+    "ms_total="+totalMs,
+    "cands="+candidates.length,
+    "cached="+cached,
+    "pres_ok="+presOk,
+    "pres_err="+presErr,
+    "greens="+greens,
+    "delay_sent="+delaySent,
+    "delay_already="+delayAlready,
+    "delay_err="+delayErr
+  ].join(";");
+  logRows.push([timestampISO_(), "", "cron_done", summary]);
+  auditLog_(logRows);
+}
+
+// ====== CRON asistencia (cada :01 y :31) ======
+function cronAsistencia(){
+  const logRows = [];
+  const now = new Date();
+  const t0 = Date.now();
+
+  const slotMin = CFG.SLOT_MINUTES || 30;
+  const slotMs = slotMin * 60 * 1000;
+  const preMs = 10 * 60 * 1000; // 10 minutos antes
+
+  const todayStr = Utilities.formatDate(now, CFG.TZ, "yyyy-MM-dd");
+  const h = Number(Utilities.formatDate(now, CFG.TZ, "H"));
+  const m = Number(Utilities.formatDate(now, CFG.TZ, "m"));
+  const minutesToday = h*60 + m;
+
+  const boundaryMin = Math.floor(minutesToday / slotMin) * slotMin; // inicio del slot actual
+  let startMinutes = boundaryMin - slotMin; // slot anterior (ya terminó)
+  let windowDate = parseDate_(todayStr) || new Date(now.getTime());
+  if (startMinutes < 0){
+    startMinutes += 24*60;
+    windowDate = addDays_(windowDate, -1);
+  }
+  const windowDateStr = dateToStr_(windowDate);
+  const startHHMM = minutesToTime_(startMinutes);
+  const start = new Date(windowDateStr+"T"+startHHMM+":00");
+  const startMs = start.getTime();
+  const endMs = startMs + slotMs;
+  const validStartMs = startMs - preMs;
+  const windowLabel = windowDateStr + " " + startHHMM;
+
+  let bookings;
+  try{
+    bookings = listBookings_(windowDateStr, "todos");
+  }catch(err){
+    logRows.push([timestampISO_(), "", "list_error_asistencia", String(err)]);
+    auditLog_(logRows);
+    return;
+  }
+
+  const candidates = [];
+  (bookings || []).forEach(b=>{
+    if (b.cancelado) return;
+    if (!b.hora || !b.fecha) return;
+    if (String(b.hora) !== startHHMM) return;
+    const asistenciaTag = asStr(b.asistencia);
+    if (asistenciaTag) return; // ya marcado
+    candidates.push(b);
+  });
+
+  if (!candidates.length){
+    logRows.push([timestampISO_(), "", "no_candidates_asistencia", "window="+windowLabel]);
+    auditLog_(logRows);
+    return;
+  }
+
+  const pipes = [];
+  const seenPipe = {};
+  candidates.forEach(b=>{
+    const pipe = String(b.idpipe || "").trim();
+    if (pipe && !seenPipe[pipe]){
+      seenPipe[pipe] = true;
+      pipes.push(pipe);
+    }
+  });
+
+  const presMap = presenceStatusBatch_(pipes, 15000);
+  const batchMs = Object.values(presMap)[0]?.batch_ms || 0;
+
+  let presOk = 0, presErr = 0, marked = 0, already = 0, skipped = 0;
+
+  candidates.forEach(b=>{
+    const bid = String(b.booking_id || "");
+    const pipe = String(b.idpipe || "").trim();
+
+    let pres = pipe ? presMap[pipe] : { ok:false, error:"missing_idpipe", batch_ms: batchMs };
+    if (!pres){
+      pres = { ok:false, error:"presence_not_fetched", batch_ms: batchMs };
+    }
+
+    if (!pres.ok){
+      presErr += 1;
+      const detail = "err="+(pres.error||"")+";window="+windowLabel+";pres_ms="+(pres.batch_ms != null ? pres.batch_ms : "batch");
+      logRows.push([timestampISO_(), bid, "presence_error_asistencia", detail]);
+      return;
+    }
+    presOk += 1;
+
+    const lastInMs = toTimeMs_(pres.lastIn);
+    const lastOutMs = toTimeMs_(pres.lastOut);
+    const inWindow = (lastInMs && lastInMs >= validStartMs && lastInMs <= endMs) ||
+                     (lastOutMs && lastOutMs >= validStartMs && lastOutMs <= endMs);
+
+    if (inWindow){
+      const detail = "window="+windowLabel+";pres_ms="+(pres.batch_ms != null ? pres.batch_ms : "batch");
+      logRows.push([timestampISO_(), bid, "presence_window_ok", detail]);
+      return;
+    }
+
+    const res = markNoShowAttendance_(bid);
+    if (res && res.ok){
+      if (res.already){
+        already += 1;
+        logRows.push([timestampISO_(), bid, "no_show_already", "window="+windowLabel]);
+      } else if (res.set){
+        marked += 1;
+        logRows.push([timestampISO_(), bid, "no_show_set", "window="+windowLabel]);
+      } else {
+        skipped += 1;
+        logRows.push([timestampISO_(), bid, "no_show_noop", "window="+windowLabel]);
+      }
+    } else {
+      skipped += 1;
+      const detail = "window="+windowLabel+";err="+(res?.error || "");
+      logRows.push([timestampISO_(), bid, "no_show_error", detail]);
+    }
+  });
+
+  const totalMs = Date.now() - t0;
+  const summary = [
+    "ms_total="+totalMs,
+    "window="+windowLabel,
+    "cands="+candidates.length,
+    "pres_ok="+presOk,
+    "pres_err="+presErr,
+    "no_show="+marked,
+    "already="+already,
+    "skip="+skipped
+  ].join(";");
+  logRows.push([timestampISO_(), "", "cron_asistencia_done", summary]);
+  auditLog_(logRows);
 }
 
 // ========== Bloqueos helpers ==========
@@ -1285,6 +1774,17 @@ function doGet(e){
     return json_({ ok:true, consultor: c, blocks: listBlocks_(c) });
   }
 
+  if (mode === "cron_asistencia"){
+    cronAsistencia();
+    return json_({ ok:true, ran:true, at: timestampISO_(), type:"asistencia" });
+  }
+
+  // Endpoint para ser llamado por Cloud Scheduler
+  if (mode === "cron"){
+    cronRetrasos();
+    return json_({ ok:true, ran:true, at: timestampISO_() });
+  }
+
   return json_({ ok:false, error:"unknown_mode" });
 }
 
@@ -1430,9 +1930,7 @@ function doPost(e){
   }
 
   if (mode === "markDelay"){
-    const booking_id = String(p.booking_id || "").trim();
-    if (!booking_id) return json_({ ok:false, error:"missing_booking_id" });
-    return json_(markDelaySent_(booking_id));
+    return json_({ ok:false, error:"markDelay_disabled_use_cron" });
   }
 
   if (mode === "blockDate"){

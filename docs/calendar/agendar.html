@@ -306,12 +306,12 @@ body{
 <script>
 (function(){
   // ==== CONFIG ====
-  // ENDPOINT (principal):
+  // ENDPOINT_CALENDAR (principal):
   // - Web App de Google Apps Script (URL /exec).
   // - Este es el backend principal que recibe los datos del front.
   // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/code.gs
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyrldRPLbVqfhsnw5Y6VOyI6WP0dzmFIdtqRab07jZlMQTRia0y1Q6hz-FNFFS135wZ/exec";
+  const ENDPOINT_CALENDAR = "https://script.google.com/macros/s/AKfycbxluSUVEHa-jeX-QSJknVE5ZfdiBFMCm7qw3oc-9wNZ_4kT2CnW_2OZNUFZzZZtWr5e/exec";
 
   // ==== PERF / DEBUG (mantén como lo tienes) ====
   const DEBUG_PERF = true; // si lo tienes ya, déjalo como está
@@ -552,21 +552,21 @@ body{
   // ==== API ====
 
   async function apiInit(){
-    const url = ENDPOINT+"?mode=init_booking&_="+Date.now();
+    const url = ENDPOINT_CALENDAR+"?mode=init_booking&_="+Date.now();
     const res = await fetch(url, {cache:"no-store"});
     if (!res.ok) throw new Error("init "+res.status);
     return res.json();
   }
 
   async function apiGetConsultores(){
-    const url = ENDPOINT+"?mode=consultores&_="+Date.now();
+    const url = ENDPOINT_CALENDAR+"?mode=consultores&_="+Date.now();
     const res = await fetch(url, {cache:"no-store"});
     if (!res.ok) throw new Error("consultores "+res.status);
     return res.json();
   }
 
   async function apiAvailableDays(consultor, from, to){
-    const url = ENDPOINT+"?mode=availableDays"
+    const url = ENDPOINT_CALENDAR+"?mode=availableDays"
       +"&consultor="+encodeURIComponent(consultor)
       +"&from="+encodeURIComponent(from)
       +"&to="+encodeURIComponent(to)
@@ -577,7 +577,7 @@ body{
   }
 
   async function apiSlots(consultor, dateStr){
-    const url = ENDPOINT+"?mode=slots"
+    const url = ENDPOINT_CALENDAR+"?mode=slots"
       +"&consultor="+encodeURIComponent(consultor)
       +"&date="+encodeURIComponent(dateStr)
       +"&_="+Date.now();
@@ -592,14 +592,14 @@ body{
     Object.entries(payload).forEach(([k,v])=>{
       if (v !== undefined && v !== null) body.append(k, v);
     });
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("book "+res.status);
     return res.json();
   }
 
   // ===== NUEVO: BOOT (1 sola llamada) =====
   async function apiBoot(){
-    const url = ENDPOINT+"?mode=boot&_="+Date.now();
+    const url = ENDPOINT_CALENDAR+"?mode=boot&_="+Date.now();
     const res = await fetch(url, {cache:"no-store"});
     if (!res.ok) throw new Error("boot "+res.status);
     return res.json();

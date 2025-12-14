@@ -30,7 +30,8 @@ const COL = {
   HORA_PROX: 85,     // CG
   ESTADO_PAGO: 86,   // CH
   URL_FICHA_VIGILANCIA: 88,   // 
-  ESTADO_PAGO_VIGILANCIA: 91  // 
+  ESTADO_PAGO_VIGILANCIA: 91,  // 
+  PRESENCE_LOG: 95            // CQ (IN/OUT timestamps)
 
 
 };
@@ -91,6 +92,9 @@ const IDX_CACHE_TTL_SEC = 180; // 3 minutos  <-- cambia acá si quieres
 const IDX_WORK_HOUR_START = 6;   // 09:00  <-- cambia acá si quieres
 const IDX_WORK_HOUR_END   = 23;  // 20:00  <-- cambia acá si quieres
 
+// Cache de RID por idpipe (para lookups rápidos en presence_status)
+const RID_CACHE_TTL_SEC = 1800; // 30 min
+
 
 /*************** [G2] HELPERS ***************/
 function json_(obj, callbackName){
@@ -127,6 +131,12 @@ function asStr(v){
   return String(v).trim();
 }
 
+function asBool_(v){
+  if (v === true) return true;
+  const s = String(v || "").trim().toLowerCase();
+  return s === "true" || s === "1" || s === "sí" || s === "si";
+}
+
 function formatRecorridoLog_(recorrido, now){
   const rec = String(recorrido || "").trim();
   if (!rec) return "";
@@ -144,6 +154,56 @@ function normKey_(v){
   if (!s) return "";
   s = s.replace(/\.0+$/,"");
   return s.trim();
+}
+
+function ridCacheKey_(target){
+  const ssId = SpreadsheetApp.getActiveSpreadsheet().getId();
+  return `rid:${ssId}:${SHEET_NAME}:${target}`;
+}
+
+function findRowByIdpipeCached_(sh, idpipe){
+  const target = normKey_(idpipe);
+  if (!target) return null;
+
+  const cache = CacheService.getScriptCache();
+  const key = ridCacheKey_(target);
+  const cached = cache.get(key);
+  if (cached){
+    const ridCached = parseInt(cached, 10);
+    if (ridCached && ridCached > 1){
+      try{
+        const val = sh.getRange(ridCached, COL.IDPIPE).getDisplayValue();
+        if (normKey_(val) === target) return ridCached; // cache valido
+      }catch(_){}
+    }
+  }
+
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return null;
+
+  const rng = sh.getRange(2, COL.IDPIPE, lastRow-1, 1);
+
+  // Primero intenta TextFinder exacto (rápido)
+  let cell = rng.createTextFinder(target)
+    .matchEntireCell(true)
+    .findNext();
+  let rid = cell ? cell.getRow() : null;
+
+  // Fallback tolerante (trim) si no lo encontró
+  if (!rid){
+    const vals = rng.getDisplayValues();
+    for (let i=0;i<vals.length;i++){
+      if (normKey_(vals[i][0]) === target){
+        rid = i + 2;
+        break;
+      }
+    }
+  }
+
+  if (rid){
+    try{ cache.put(key, String(rid), RID_CACHE_TTL_SEC); }catch(_){}
+  }
+  return rid;
 }
 
 function toTimeMs_(v){
@@ -488,25 +548,58 @@ function searchByEmail_(sh, email){
 }
 
 function searchByIdpipe_(sh, idpipe){
-  const lastRow = sh.getLastRow();
-  if (lastRow < 2) return null;
-
-  const n = lastRow - 1;
-  const target = normKey_(idpipe);
-
-  const colE = sh.getRange(2, COL.IDPIPE, n, 1).getDisplayValues();
-  let rid = null;
-
-  for (let i=0;i<n;i++){
-    if (normKey_(colE[i][0]) === target){
-      rid = i + 2;
-      break;
-    }
-  }
+  const rid = findRowByIdpipeCached_(sh, idpipe);
   if (!rid) return null;
 
   const row = sh.getRange(rid, 1, 1, LAST_COL_TO_READ).getValues()[0];
   return rowToDeal_(rid, row);
+}
+
+function findRowByIdpipe_(sh, idpipe){
+  return findRowByIdpipeCached_(sh, idpipe);
+}
+
+function parsePresenceLog_(txt){
+  const lines = String(txt || "").split(/\r?\n/).map(s=> s.trim()).filter(Boolean);
+  let lastInMs = 0, lastOutMs = 0;
+  let lastIn = "", lastOut = "";
+
+  lines.forEach(line=>{
+    const m = line.match(/^(IN|OUT)\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/i);
+    if (!m) return;
+    const kind = m[1].toUpperCase();
+    const tsStr = m[2];
+    const ms = toTimeMs_(tsStr);
+    if (!ms) return;
+    if (kind === "IN" && (!lastInMs || ms >= lastInMs)){
+      lastInMs = ms;
+      lastIn = tsStr;
+    } else if (kind === "OUT" && (!lastOutMs || ms >= lastOutMs)){
+      lastOutMs = ms;
+      lastOut = tsStr;
+    }
+  });
+
+  return { lastIn, lastOut, lastInMs, lastOutMs };
+}
+
+function presenceStatusByIdpipe_(idpipe){
+  const sh = getSheet_();
+  const rid = findRowByIdpipe_(sh, idpipe);
+  if (!rid) return { ok:false, error:"not_found" };
+
+  const activeVal = sh.getRange(rid, COL.ACTIVO).getValue();
+  const logVal = sh.getRange(rid, COL.PRESENCE_LOG).getValue();
+  const parsed = parsePresenceLog_(logVal);
+
+  return {
+    ok: true,
+    rid,
+    activo: asBool_(activeVal),
+    lastIn: parsed.lastIn || "",
+    lastOut: parsed.lastOut || "",
+    raw: asStr(logVal)
+  };
 }
 
 /*************** [G-PRESENCE] PRESENCIA POPUP (COL B) ***************/
@@ -546,6 +639,20 @@ function presWriteMarked_(set){
   PropertiesService.getScriptProperties().setProperty(PRESENCE_MARKED_KEY, arr.join(","));
 }
 
+function presAppendLog_(sh, rid, kind){
+  if (!rid || rid < 2) return;
+  const k = (String(kind || "").toUpperCase() === "IN") ? "IN" : (String(kind || "").toUpperCase() === "OUT" ? "OUT" : "");
+  if (!k) return;
+
+  const rng = sh.getRange(rid, COL.PRESENCE_LOG);
+  const prev = asStr(rng.getValue());
+  const ts = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd HH:mm:ss");
+  const entry = `${k} ${ts}`;
+  const next = prev ? `${prev}\n${entry}` : entry;
+
+  try{ rng.setValue(next); }catch(_){}
+}
+
 function presSetCheckbox_(sh, rid, val, diag){
   if (!rid || rid < 2) return { ok:false, error:"bad_rid" };
 
@@ -562,8 +669,18 @@ function presSetCheckbox_(sh, rid, val, diag){
     out.beforeRaw = rng.getValue();
   }
 
+  const prevRaw = out.beforeRaw !== undefined ? out.beforeRaw : rng.getValue();
+  const prevBool = asBool_(prevRaw);
+  const nextBool = !!val;
+
+  if (prevBool === nextBool){
+    out.noop = true;
+    return out;
+  }
+
   try{
-    rng.setValue(!!val);
+    rng.setValue(nextBool);
+    presAppendLog_(sh, rid, nextBool ? "IN" : "OUT");
     // SpreadsheetApp.flush();  // <- QUITADO para que sea rápido
   }catch(err){
     out.ok = false;
@@ -783,15 +900,27 @@ function doGet(e){
     const mode = String(p.mode || "").toLowerCase();
     const idc  = String(p.idc || "").trim();
     const debugOn = String(p.debug || "") === "1";
+    const cb = String(p.callback || "").trim();
     const tokenRaw = String(p.token || p.t || "").trim();
+
+    // ✅ Ultra liviano: presencia por IDPIPE (sin token)
+    if (mode === "presence_status"){
+      const idpipe = String(p.idpipe || p.id || "").trim();
+      if (!idpipe) return json_({ ok:false, error:"missing_idpipe" }, cb);
+      if (!rateLimitOk_(normKey_(idpipe) || "anon", 180, 300)) return json_({ ok:false, error:"rate_limited" }, cb);
+      try{
+        const res = presenceStatusByIdpipe_(idpipe);
+        return json_(res, cb);
+      }catch(err){
+        return json_({ ok:false, error:"server_error", detail:String(err?.message || err) }, cb);
+      }
+    }
+
     const vTok = verifyToken_(tokenRaw);
     if (!vTok.ok) return json_({ ok:false, error:vTok.err }, p.callback || "");
     const tokIDC = String(vTok.data?.idc || "").trim();
     if (idc && tokIDC && idc !== tokIDC) return json_({ ok:false, error:"forbidden_idc" }, p.callback || "");
     if (!rateLimitOk_(tokIDC || "anon", 60, 300)) return json_({ ok:false, error:"rate_limited" }, p.callback || "");
-
-    // ✅ JSONP callback (para debug sin CORS)
-    const cb = String(p.callback || "").trim();
 
     if (mode === "ping"){
       return json_({ ok:true, msg:"PING_OK" }, cb);
@@ -1107,6 +1236,34 @@ function normalizePost_(e){
     try { Object.assign(out, JSON.parse(e.postData.contents)); } catch(_){}
   }
   return out;
+}
+
+function findRowByIdpipe_(sh, idpipe){
+  return findRowByIdpipeCached_(sh, idpipe);
+}
+
+function parsePresenceLog_(txt){
+  const lines = String(txt || "").split(/\r?\n/).map(s=> s.trim()).filter(Boolean);
+  let lastInMs = 0, lastOutMs = 0;
+  let lastIn = "", lastOut = "";
+
+  lines.forEach(line=>{
+    const m = line.match(/^(IN|OUT)\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/i);
+    if (!m) return;
+    const kind = m[1].toUpperCase();
+    const tsStr = m[2];
+    const ms = toTimeMs_(tsStr);
+    if (!ms) return;
+    if (kind === "IN" && (!lastInMs || ms >= lastInMs)){
+      lastInMs = ms;
+      lastIn = tsStr;
+    } else if (kind === "OUT" && (!lastOutMs || ms >= lastOutMs)){
+      lastOutMs = ms;
+      lastOut = tsStr;
+    }
+  });
+
+  return { lastIn, lastOut, lastInMs, lastOutMs };
 }
 
 /*************** REGISTRAR TIEMPO ***************/

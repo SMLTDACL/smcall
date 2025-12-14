@@ -112,7 +112,15 @@
       </div>
     </div>
     <!-- Listado de agendamientos -->
-    <div class="sm-subtitle" style="margin-top:10px;">Agendamientos del día</div>
+    <div class="sm-admin-list-header">
+      <div class="sm-subtitle" style="margin-top:0;">Agendamientos del día</div>
+      <button id="sm-admin-refresh-btn" class="sm-admin-refresh-btn" type="button" title="Actualizar listado">
+        <span aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw-icon lucide-refresh-cw"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        </span>
+        <span>Actualizar</span>
+      </button>
+    </div>
     <div id="sm-admin-list" class="sm-admin-list"></div>
   </div>
   <!-- Panel Configuración (card separado) -->
@@ -305,6 +313,31 @@ body{
   max-height:420px;
   overflow:auto;
 }
+.sm-admin-list-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:10px;
+  gap:12px;
+}
+.sm-admin-refresh-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid #ffffff;
+  background:#f5f5f7;
+  padding:6px 10px;
+  border-radius:999px;
+  cursor:pointer;
+  font-size:13px;
+  color:#111827;
+}
+.sm-admin-refresh-btn:hover{
+  background:#f3f4f6;
+}
+.sm-admin-refresh-btn:active{
+  transform:translateY(1px);
+}
 .sm-admin-item{
   display:flex;
   flex-wrap:wrap;
@@ -318,8 +351,19 @@ body{
 }
 .sm-admin-item.is-past{opacity:0.45;}
 .sm-admin-item.is-now{
+  border:1px solid #e5e7eb;
+}
+.sm-admin-item.is-now-pending{
+  background:#f3f4f6;
+  border:1px solid #e5e7eb;
+}
+.sm-admin-item.is-now-present{
   background:#ecfdf3;
   border:1px solid #bbf7d0;
+}
+.sm-admin-item.is-now-missing{
+  background:#fff7ed;
+  border:1px solid #fdba74;
 }
 .sm-admin-item.is-cancelled{
   text-decoration:line-through;
@@ -341,6 +385,7 @@ body{
 .sm-admin-badge-consultor{
   background:#eff6ff;
   color:#1d4ed8;
+  font-weight: 600;
 }
 .sm-admin-badge-hora{
   background:#f3f4f6;
@@ -353,6 +398,11 @@ body{
 .sm-admin-badge-delay{
   background: #e5e7eb;
   color: #374151;
+}
+.sm-admin-badge-noshow{
+  background:#fee2e2;
+  color:#b91c1c;
+  font-weight:600;
 }
 .sm-admin-actions{
   display:flex;
@@ -1059,15 +1109,23 @@ body{
 </style>
 <script>
 (function(){
-  // ENDPOINT (principal):
+  // ENDPOINT_CALENDAR (principal):
   // - Web App de Google Apps Script (URL /exec).
   // - Este es el backend principal que recibe los datos del front.
   // - Nota: aunque copies el código a tu PC, esta URL sigue apuntando al despliegue en Google.
   // - Código fuente (copia local para editar/analizar con Codex): /apps-script/code.gs
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyrldRPLbVqfhsnw5Y6VOyI6WP0dzmFIdtqRab07jZlMQTRia0y1Q6hz-FNFFS135wZ/exec";
+  const ENDPOINT_CALENDAR = "https://script.google.com/macros/s/AKfycbxluSUVEHa-jeX-QSJknVE5ZfdiBFMCm7qw3oc-9wNZ_4kT2CnW_2OZNUFZzZZtWr5e/exec";
+  // Endpoint de presencia (Venta / call)
+  const ENDPOINT_CALL = "https://script.google.com/macros/s/AKfycbwnZkcBrj3UJkxAMC3dgxxsWfdsUpni6SYuW2f2DANDHJZGZPod_A_hBd6Q3mumtiPn/exec";
+  const PRESENCE_LOOKBACK_MINUTES = 10;
+  const PRESENCE_RETRY_MS = 60 * 1000;
 
   const ADMIN_USER = "admin";
   const ADMIN_PASS = "consultores#5";
+  const PRESENCE_WINDOW_ADVANCE_MIN = 5; // minutos antes del inicio para marcar "en curso"
+  const PRESENCE_SLOT_DURATION_MIN = 30;
+  const REFRESH_ALIGN_MS = 15 * 60 * 1000;
+  const REFRESH_OFFSET_MS = -5 * 60 * 1000; // mueve los cortes a 55/10/25/40
 
   const qs  = s => document.querySelector(s);
   const qsa = s => Array.from(document.querySelectorAll(s));
@@ -1075,6 +1133,38 @@ body{
   let gConsultores = [];
   let currentReassignBooking = null;
   let currentReprogBooking   = null;
+  let presenceWatchers = new Map();
+  let presenceGeneration = 0;
+  let presenceGreens = new Set();
+  // Marca cuándo se recargaron los agendamientos por última vez (para saber si se saltó un cuarto)
+  let lastBookingReloadMs = Date.now();
+
+  // Ticker “robusto” para tareas periódicas aun si el navegador ralentiza timers
+  function runEveryAligned(ms, fn, offsetMs = 0){
+    let timeout = null;
+    const step = ()=>{
+      fn();
+      const now = Date.now();
+      const next = Math.ceil((now + offsetMs) / ms) * ms - offsetMs;
+      const delay = Math.max(500, next - now);
+      timeout = setTimeout(step, delay);
+    };
+    step();
+    return ()=> { if (timeout) clearTimeout(timeout); };
+  }
+
+  function onResume(fn){
+    let last = document.visibilityState;
+    document.addEventListener("visibilitychange", ()=>{
+      if (last === "hidden" && document.visibilityState === "visible"){
+        try{ fn(); }catch(err){ console.error(err); }
+      }
+      last = document.visibilityState;
+    });
+    window.addEventListener("focus", ()=>{
+      try{ fn(); }catch(err){ console.error(err); }
+    });
+  }
 
   // Estado del popup de reprogramación
   let rpState = {
@@ -1201,16 +1291,58 @@ body{
     return h*60 + m;
   }
 
+  function presenceKey(b){
+    return String(b.booking_id || b.idpipe || (b.fecha+"_"+b.hora+"_"+b.consultor_id));
+  }
+
+  function clearPresenceWatchers(){
+    presenceGeneration += 1;
+    presenceWatchers.forEach(w=>{
+      if (w && w.timer) clearInterval(w.timer);
+    });
+    presenceWatchers.clear();
+  }
+
+  function applyPresenceClass(el, status){
+    if (!el) return;
+    el.classList.remove("is-now-present","is-now-missing","is-now-pending");
+    if (status === "present"){
+      el.classList.add("is-now","is-now-present");
+    } else if (status === "missing"){
+      el.classList.add("is-now","is-now-missing");
+    } else if (status === "pending"){
+      el.classList.add("is-now","is-now-pending");
+    }
+  }
+
+  function parsePresenceTs(ts){
+    if (!ts) return 0;
+    const clean = String(ts).trim().replace(" ", "T");
+    const ms = Date.parse(clean);
+    return isNaN(ms) ? 0 : ms;
+  }
+
+  function bookingWindowMs(booking){
+    const hhmm = normTime(booking.hora || "");
+    const dateStr = String(booking.fecha || "").trim();
+    if (!hhmm || !dateStr) return null;
+    const start = new Date(`${dateStr}T${hhmm}:00`);
+    if (isNaN(start.getTime())) return null;
+    const startMs = start.getTime() - (PRESENCE_WINDOW_ADVANCE_MIN * 60 * 1000);
+    const endMs = start.getTime() + ((PRESENCE_SLOT_DURATION_MIN - PRESENCE_WINDOW_ADVANCE_MIN) * 60 * 1000);
+    return { startMs, endMs };
+  }
+
   // ===== API GETs =====
   async function apiGetConsultores(){
-    const url = ENDPOINT+"?mode=consultores&_="+Date.now();
+    const url = ENDPOINT_CALENDAR+"?mode=consultores&_="+Date.now();
     const res = await fetch(url, {cache:"no-store"});
     if (!res.ok) throw new Error("consultores "+res.status);
     return res.json();
   }
 
   async function apiListBookings(dateStr, consultor){
-    const url = ENDPOINT+"?mode=listBookings"
+    const url = ENDPOINT_CALENDAR+"?mode=listBookings"
       +"&date="+encodeURIComponent(dateStr)
       +"&consultor="+encodeURIComponent(consultor)
       +"&_="+Date.now();
@@ -1219,8 +1351,17 @@ body{
     return res.json();
   }
 
+  async function apiPresenceStatus(idpipe){
+    const url = ENDPOINT_CALL+"?mode=presence_status"
+      +"&idpipe="+encodeURIComponent(idpipe)
+      +"&_="+Date.now();
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("presence_status "+res.status);
+    return res.json();
+  }
+
   async function apiSlots(consultor_id, fecha){
-    const url = ENDPOINT+"?mode=slots"
+    const url = ENDPOINT_CALENDAR+"?mode=slots"
       +"&consultor="+encodeURIComponent(consultor_id)
       +"&date="+encodeURIComponent(fecha)
       +"&_="+Date.now();
@@ -1230,7 +1371,7 @@ body{
   }
 
   async function apiAvailableDays(consultor, from, to){
-    const url = ENDPOINT+"?mode=availableDays"
+    const url = ENDPOINT_CALENDAR+"?mode=availableDays"
       +"&consultor="+encodeURIComponent(consultor)
       +"&from="+encodeURIComponent(from)
       +"&to="+encodeURIComponent(to)
@@ -1241,7 +1382,7 @@ body{
   }
 
   async function apiInitBooking(){
-    const url = ENDPOINT+"?mode=init_booking&_="+Date.now();
+    const url = ENDPOINT_CALENDAR+"?mode=init_booking&_="+Date.now();
     const res = await fetch(url, {cache:"no-store"});
     if (!res.ok) throw new Error("init_booking "+res.status);
     return res.json();
@@ -1249,7 +1390,7 @@ body{
 
   async function apiListBlocks(consultor_id){
     const cid = consultor_id || "ALL";
-    const url = ENDPOINT+"?mode=blocks"
+    const url = ENDPOINT_CALENDAR+"?mode=blocks"
       +"&consultor="+encodeURIComponent(cid)
       +"&_="+Date.now();
     const res = await fetch(url, { cache:"no-store" });
@@ -1264,7 +1405,7 @@ body{
     Object.entries(payload).forEach(([k,v])=>{
       if (v !== undefined && v !== null) body.append(k, v);
     });
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("book "+res.status);
     return res.json();
   }
@@ -1274,7 +1415,7 @@ body{
     body.append("mode","cancel");
     body.append("booking_id", booking_id);
     body.append("motivo", motivo || "");
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("cancel "+res.status);
     return res.json();
   }
@@ -1285,7 +1426,7 @@ body{
     body.append("fecha", fecha);
     body.append("consultor_id", consultor_id);
     body.append("motivo", motivo || "");
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("blockDate "+res.status);
     return res.json();
   }
@@ -1295,7 +1436,7 @@ body{
     body.append("mode","unblockDate");
     body.append("fecha", fecha);
     body.append("consultor_id", consultor_id);
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("unblockDate "+res.status);
     return res.json();
   }
@@ -1305,7 +1446,7 @@ body{
     body.append("mode","addConsultor");
     body.append("consultor_id", id);
     body.append("nombre", nombre || "");
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("addConsultor "+res.status);
     return res.json();
   }
@@ -1314,7 +1455,7 @@ body{
     const body = new URLSearchParams();
     body.append("mode","deleteConsultor");
     body.append("consultor_id", id);
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("deleteConsultor "+res.status);
     return res.json();
   }
@@ -1331,7 +1472,7 @@ body{
   })();
 
   async function apiGetSchedule(consultor_id){
-    const url = ENDPOINT+"?mode=schedule"
+    const url = ENDPOINT_CALENDAR+"?mode=schedule"
       +"&consultor="+encodeURIComponent(consultor_id)
       +"&_="+Date.now();
     const res = await fetch(url, { cache:"no-store" });
@@ -1345,7 +1486,7 @@ body{
     body.append("consultor_id", consultor_id);
     body.append("days", JSON.stringify(schedule));
     body.append("days_ahead_limit", daysAheadLimit == null ? "" : daysAheadLimit);
-    const res = await fetch(ENDPOINT, { method:"POST", body });
+    const res = await fetch(ENDPOINT_CALENDAR, { method:"POST", body });
     if (!res.ok) throw new Error("saveSchedule "+res.status);
     return res.json();
   }
@@ -1988,10 +2129,103 @@ body{
     }
   }
 
+  // ===== Presencia en reuniones en curso =====
+  async function checkPresenceForBooking(booking, el, windowMs){
+    if (!el || !windowMs){
+      if (el) applyPresenceClass(el, "missing");
+      return false;
+    }
+
+    const idpipe = String(booking.idpipe || "").trim();
+    if (!idpipe){
+      applyPresenceClass(el, "missing");
+      return false;
+    }
+
+    try{
+      const data = await apiPresenceStatus(idpipe);
+      if (!data.ok) throw new Error(data.error || "presence_error");
+
+      const lastInMs = parsePresenceTs(data.lastIn);
+      const active = data.activo === true || String(data.activo || "").toLowerCase() === "true";
+      const now = Date.now();
+      const validStart = windowMs.startMs - (PRESENCE_LOOKBACK_MINUTES * 60 * 1000);
+      const validEnd = windowMs.endMs;
+      const nowWithinSlot = now >= validStart && now <= validEnd;
+      const hasIn = lastInMs && lastInMs >= validStart && lastInMs <= validEnd;
+      const shouldBeGreen = nowWithinSlot && (hasIn || active);
+      const isMissing = nowWithinSlot && !shouldBeGreen;
+
+      applyPresenceClass(el, shouldBeGreen ? "present" : "missing");
+
+      return shouldBeGreen;
+    }catch(err){
+      console.error(err);
+      applyPresenceClass(el, "missing");
+      return false;
+    }
+  }
+
+  function stopPresenceWatcher(key){
+    const w = presenceWatchers.get(key);
+    if (w && w.timer) clearInterval(w.timer);
+    presenceWatchers.delete(key);
+  }
+
+  function startPresenceWatcher(booking, el, windowMs){
+    const key = presenceKey(booking);
+    if (!key || !el) return;
+
+    // Si ya fue marcado verde previamente, no re-consultamos
+    if (presenceGreens.has(key)){
+      applyPresenceClass(el, "present");
+      return;
+    }
+
+    stopPresenceWatcher(key);
+    applyPresenceClass(el, "pending");
+
+    if (!windowMs) return;
+    const gen = presenceGeneration;
+
+    const tick = async ()=>{
+      if (gen !== presenceGeneration){
+        stopPresenceWatcher(key);
+        return true;
+      }
+      if (!document.body.contains(el)){
+        stopPresenceWatcher(key);
+        return true;
+      }
+      const green = await checkPresenceForBooking(booking, el, windowMs);
+      if (green) presenceGreens.add(key);
+      const now = Date.now();
+      if (green || now >= windowMs.endMs){
+        stopPresenceWatcher(key);
+        return true;
+      }
+      return false;
+    };
+
+    (async ()=>{
+      const done = await tick();
+      if (done || gen !== presenceGeneration) return;
+      const timer = setInterval(async ()=>{
+        const finished = await tick();
+        if (finished){
+          clearInterval(timer);
+          presenceWatchers.delete(key);
+        }
+      }, PRESENCE_RETRY_MS);
+      presenceWatchers.set(key, { timer });
+    })();
+  }
+
     // ===== RENDER LISTADO (AHORA IGUAL AL LAYOUT DE CONSULTORES) =====
   function renderBookings(dateStr, bookings){
     const wrap = qs("#sm-admin-list");
     if (!wrap) return;
+    clearPresenceWatchers();
     wrap.innerHTML = "";
 
     if (!bookings || !bookings.length){
@@ -2007,13 +2241,15 @@ body{
       const item = document.createElement("div");
       item.className = "sm-admin-item";
 
+      const windowMs = bookingWindowMs(b);
       let isPast=false, isNow=false;
       if (b.fecha === todayStr){
         const startM = parseMinutes(b.hora);
-        const endM = startM!=null ? startM+30 : null;
+        const winStart = startM != null ? startM - PRESENCE_WINDOW_ADVANCE_MIN : null;
+        const endM = startM!=null ? startM + (PRESENCE_SLOT_DURATION_MIN - PRESENCE_WINDOW_ADVANCE_MIN) : null;
         if (startM != null){
           if (endM <= nowMin) isPast = true;
-          else if (startM <= nowMin && nowMin < endM) isNow = true;
+          else if (winStart != null && winStart <= nowMin && nowMin < endM) isNow = true;
         }
       } else if (b.fecha < todayStr){
         isPast = true;
@@ -2080,6 +2316,19 @@ body{
         const badge = document.createElement("span");
         badge.className = "sm-admin-badge sm-admin-badge-delay";
         badge.textContent = "Retraso enviado";
+        row.appendChild(badge);
+        main.appendChild(row);
+      })();
+
+      // No-show badge (asistencia=no_show)
+      (function(){
+        const noShow = String(b.asistencia || "").toLowerCase() === "no_show";
+        if (!noShow) return;
+        const row = document.createElement("div");
+        row.className = "smad-info-row";
+        const badge = document.createElement("span");
+        badge.className = "sm-admin-badge sm-admin-badge-noshow";
+        badge.textContent = "No se llamó";
         row.appendChild(badge);
         main.appendChild(row);
       })();
@@ -2164,6 +2413,10 @@ body{
 
       item.append(main, actions);
       wrap.appendChild(item);
+
+      if (!b.cancelado && isNow){
+        startPresenceWatcher(b, item, windowMs);
+      }
     });
 
     attachActionTooltips();
@@ -2224,6 +2477,7 @@ body{
       const data = await apiListBookings(dateStr, consultor);
       if (!data.ok) throw new Error(data.error || "list_error");
       renderBookings(dateStr, data.bookings || []);
+      lastBookingReloadMs = Date.now();
     }catch(err){
       console.error(err);
       toast("Error al cargar agendamientos");
@@ -2613,12 +2867,58 @@ body{
       rpModal.querySelector("#sm-rp-confirm")?.addEventListener("click", onConfirmReprog);
     }
 
-    // Auto-refresh cada 15 min
-    setInterval(()=>{
-      if (qs("#sm-admin-panel") && qs("#sm-admin-panel").style.display !== "none"){
-        reloadBookings();
-      }
-    }, 15*60*1000);
+    const refreshBtn = qs("#sm-admin-refresh-btn");
+    if (refreshBtn){
+      refreshBtn.addEventListener("click", ()=> reloadBookings());
+    }
+
+    // Auto-refresh alineado a cuartos (00,15,30,45) y robusto frente a background
+    (function setupQuarterRefresh(){
+      let cancelTicker = null;
+      let pendingAlign = null;
+
+      const tickOnce = ()=>{
+        const panel = qs("#sm-admin-panel");
+        if (panel && panel.style.display !== "none"){
+          reloadBookings();
+        }
+      };
+
+      const clearTicker = ()=>{
+        if (cancelTicker) cancelTicker();
+        cancelTicker = null;
+        if (pendingAlign) clearTimeout(pendingAlign);
+        pendingAlign = null;
+      };
+
+      const delayToNextAligned = ()=>{
+        const now = Date.now();
+        const next = Math.ceil((now + REFRESH_OFFSET_MS) / REFRESH_ALIGN_MS) * REFRESH_ALIGN_MS - REFRESH_OFFSET_MS;
+        return Math.max(500, next - now);
+      };
+
+      const startTicker = ()=>{
+        clearTicker();
+        pendingAlign = setTimeout(()=>{
+          pendingAlign = null;
+          cancelTicker = runEveryAligned(REFRESH_ALIGN_MS, tickOnce, REFRESH_OFFSET_MS);
+        }, delayToNextAligned());
+      };
+
+      const shouldReloadOnResume = ()=>{
+        const nowQ = Math.floor((Date.now() + REFRESH_OFFSET_MS) / REFRESH_ALIGN_MS);
+        const lastQ = Math.floor((lastBookingReloadMs + REFRESH_OFFSET_MS) / REFRESH_ALIGN_MS);
+        return nowQ > lastQ;
+      };
+
+      startTicker();
+      onResume(()=>{
+        if (shouldReloadOnResume()){
+          tickOnce();
+        }
+        startTicker(); // re-alinea el ticker a los minutos 00/15/30/45
+      });
+    })();
   });
 })();
 </script>
