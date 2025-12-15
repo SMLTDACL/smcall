@@ -9,6 +9,85 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <title>Admin</title>
+  <script>
+    (function(){
+      const LOGIN_URL = "../index.html";
+      const TOKEN_KEY = "sm_token";
+      const ALLOWED_CODEP = "863241943";
+      let redirectingToLogin = false;
+      function clearToken(){
+        try{ sessionStorage.removeItem(TOKEN_KEY); }catch(_){}
+      }
+      function redirectToLogin(reason){
+        if (redirectingToLogin) return;
+        redirectingToLogin = true;
+        clearToken();
+        const sep = LOGIN_URL.includes("?") ? "&" : "?";
+        const url = `${LOGIN_URL}${sep}r=${encodeURIComponent(reason || "token")}`;
+        try{ window.location.replace(url); }catch(_){ window.location.href = url; }
+      }
+      function decodeTokenPayload(token){
+        try{
+          const parts = String(token || "").split(".");
+          if (!parts[0]) return null;
+          const json = atob(parts[0].replace(/-/g,"+").replace(/_/g,"/"));
+          return JSON.parse(json);
+        }catch(_){
+          return null;
+        }
+      }
+      function getToken(){
+        const params = new URLSearchParams(location.search);
+        const urlT = (params.get("t") || "").trim();
+        if (urlT){
+          try{ sessionStorage.setItem(TOKEN_KEY, urlT); }catch(_){}
+          return urlT;
+        }
+        try{
+          const st = sessionStorage.getItem(TOKEN_KEY);
+          if (st) return st.trim();
+        }catch(_){}
+        return "";
+      }
+      function isTokenExpired(payload){
+        const exp = Number(payload && payload.exp);
+        if (!exp) return true;
+        return Date.now() > exp * 1000;
+      }
+      function ensureAuth(){
+        const params = new URLSearchParams(location.search);
+        const token = getToken();
+        const idc = (params.get("idc") || params.get("IDC") || "").trim();
+        const codep = (params.get("codep") || "").trim();
+        const payload = decodeTokenPayload(token);
+        if (!token || !idc || !codep || !payload){
+          redirectToLogin("token_missing");
+          return null;
+        }
+        if (isTokenExpired(payload)){
+          redirectToLogin("token_expired");
+          return null;
+        }
+        const tokIdc = String(payload.idc || "").trim();
+        const tokCodep = String(payload.codep || "").trim();
+        if (tokIdc && tokIdc !== idc){
+          redirectToLogin("token_idc_mismatch");
+          return null;
+        }
+        if (tokCodep && tokCodep !== codep){
+          redirectToLogin("token_codep_mismatch");
+          return null;
+        }
+        if (codep !== ALLOWED_CODEP){
+          redirectToLogin("codep_denied");
+          return null;
+        }
+        return { token, idc, codep };
+      }
+      const auth = ensureAuth();
+      if (auth) window.__smAuth = auth;
+    })();
+  </script>
   <!-- OpenReplay Tracking Code -->
   <script>
     // ===== 1) Obtener idc desde la URL =====
@@ -73,29 +152,15 @@
 </head>
 <body>
 
-<div class="sm-logo-wrap">
-  <img class="sm-logo" src="files/logon.png" alt="Logo">
-</div>
 <div class="sm-admin-wrap">
-  <!-- Login -->
-  <div id="sm-admin-login" class="sm-admin-card">
-    <h2 class="sm-title">Login administración</h2>
-    <div class="sm-row">
-      <label class="sm-label">Usuario
-        <input id="sm-admin-user" class="sm-input" type="text">
-      </label>
-    </div>
-    <div class="sm-row">
-      <label class="sm-label">Clave
-        <input id="sm-admin-pass" class="sm-input" type="password">
-      </label>
-    </div>
-    <button id="sm-admin-login-btn" class="sm-btn-primary" type="button">Entrar</button>
+  <div id="sm-admin-loader" class="sm-skeletons" style="display:block;">
+    <div class="sm-skel-card sm-skel-filters"></div>
+    <div class="sm-skel-card sm-skel-list"></div>
+    <div class="sm-skel-card sm-skel-config"></div>
   </div>
+  <div id="sm-admin-content" style="display:none;">
   <!-- Panel Administración (agenda del día) -->
-  <div id="sm-admin-panel" class="sm-admin-card" style="display:none;">
-    <h2 class="sm-title">Administración de agenda</h2>
-    <!-- Filtros -->
+  <div class="sm-admin-card sm-admin-filters-card">
     <div class="sm-admin-bar">
       <div>
         <label class="sm-label">Fecha
@@ -107,10 +172,9 @@
           <select id="sm-admin-consultor" class="sm-select"></select>
         </label>
       </div>
-      <div class="sm-admin-info" id="sm-admin-refresh-info">
-        Actualiza cada 15 min
-      </div>
     </div>
+  </div>
+  <div id="sm-admin-panel" class="sm-admin-card">
     <!-- Listado de agendamientos -->
     <div class="sm-admin-list-header">
       <div class="sm-subtitle" style="margin-top:0;">Agendamientos del día</div>
@@ -122,9 +186,10 @@
       </button>
     </div>
     <div id="sm-admin-list" class="sm-admin-list"></div>
+    <div id="sm-admin-count" class="sm-admin-count"></div>
   </div>
   <!-- Panel Configuración (card separado) -->
-  <div id="sm-admin-config-card" class="sm-admin-card" style="display:none;margin-top: 40px;">
+  <div id="sm-admin-config-card" class="sm-admin-card" style="margin-top: 40px;">
     <details class="sm-config" id="sm-config">
       <summary class="sm-config-summary">
         <span>Configuración</span>
@@ -218,6 +283,7 @@
       </div>
     </details>
   </div>
+  </div>
   <!-- Modal Reasignar -->
   <div id="sm-rea-modal" class="sm-rea-modal">
     <div class="sm-rea-backdrop"></div>
@@ -261,22 +327,10 @@
   </div>
   <!-- Toast + Loader -->
   <div id="sm-admin-toast" class="sm-toast"></div>
-  <div id="sm-admin-loader" class="sm-loader" style="display:none;">
-    <div class="sm-spinner"></div>
-  </div>
 </div>
 <style>
 :root{
   font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
-.sm-logo-wrap{
-  text-align:center;
-  margin:16px 0;
-}
-.sm-logo{
-  max-width:120px;
-  width:100%;
-  height:auto;
 }
 body{
   margin:0;
@@ -288,14 +342,14 @@ body{
 .sm-admin-wrap{
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   padding:24px 0;
+  margin: 18px;
 }
 .sm-admin-card{
-  max-width:1000px;
+  max-width:92%;
   margin:0 auto 18px;
   background:#fff;
   border-radius:18px;
   padding:20px;
-  box-shadow:0 10px 30px rgba(15,23,42,0.08);
 }
 .sm-admin-bar{
   display:flex;
@@ -312,6 +366,13 @@ body{
   padding:10px;
   max-height:420px;
   overflow:auto;
+}
+.sm-admin-count{
+  margin-top:20px;
+  margin-left: 25px;
+  font-size:13px;
+  font-weight:400;
+  color:#111827;
 }
 .sm-admin-list-header{
   display:flex;
@@ -537,26 +598,23 @@ body{
   opacity:1;
   transform:translateX(-50%) translateY(-4px);
 }
-.sm-loader{
-  position:fixed;
-  inset:0;
-  background:rgba(255,255,255,0.75);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
+.sm-skeletons{
+  max-width:92%;
+  margin:0 auto 18px;
+  display:none;
 }
-.sm-spinner{
-  width:32px;
-  height:32px;
-  border-radius:50%;
-  border:3px solid rgba(31,111,235,0.2);
-  border-top-color:#1f6feb;
-  animation:sm-spin .8s linear infinite;
+.sm-skel-card{
+  height:120px;
+  border-radius:18px;
+  margin-bottom:18px;
+  background:linear-gradient(90deg,#e5e7eb,#dcdfe3,#e5e7eb);
+  background-size:200% 100%;
+  animation:smShimmer 1.2s infinite linear;
 }
-@keyframes sm-spin{
-  to{transform:rotate(360deg);}
-}
+.sm-skel-filters{height:110px;}
+.sm-skel-list{height:360px;}
+.sm-skel-config{height:100px;}
+@keyframes smShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* Botón naranja para Reprogramar / Reasignar */
 .sm-admin-actions .sm-admin-btn-orange{
@@ -1120,12 +1178,10 @@ body{
   const PRESENCE_LOOKBACK_MINUTES = 10;
   const PRESENCE_RETRY_MS = 60 * 1000;
 
-  const ADMIN_USER = "admin";
-  const ADMIN_PASS = "consultores#5";
   const PRESENCE_WINDOW_ADVANCE_MIN = 5; // minutos antes del inicio para marcar "en curso"
   const PRESENCE_SLOT_DURATION_MIN = 30;
   const REFRESH_ALIGN_MS = 15 * 60 * 1000;
-  const REFRESH_OFFSET_MS = -5 * 60 * 1000; // mueve los cortes a 55/10/25/40
+  const REFRESH_OFFSET_MS = 5 * 60 * 1000; // mueve los cortes a 55/10/25/40
 
   const qs  = s => document.querySelector(s);
   const qsa = s => Array.from(document.querySelectorAll(s));
@@ -1197,9 +1253,10 @@ body{
   }
 
   function showLoader(show){
-    const l = qs("#sm-admin-loader");
-    if (!l) return;
-    l.style.display = show ? "flex" : "none";
+    const skeleton = qs("#sm-admin-loader");
+    const content = qs("#sm-admin-content");
+    if (skeleton) skeleton.style.display = show ? "block" : "none";
+    if (content) content.style.display = show ? "none" : "";
   }
 
   // ====== copiar al portapapeles (igual a consultores) ======
@@ -1328,9 +1385,12 @@ body{
     if (!hhmm || !dateStr) return null;
     const start = new Date(`${dateStr}T${hhmm}:00`);
     if (isNaN(start.getTime())) return null;
-    const startMs = start.getTime() - (PRESENCE_WINDOW_ADVANCE_MIN * 60 * 1000);
-    const endMs = start.getTime() + ((PRESENCE_SLOT_DURATION_MIN - PRESENCE_WINDOW_ADVANCE_MIN) * 60 * 1000);
-    return { startMs, endMs };
+    const startMs = start.getTime();
+    const endMs = startMs + (PRESENCE_SLOT_DURATION_MIN * 60 * 1000);
+    const monitorStartMs = startMs - (PRESENCE_WINDOW_ADVANCE_MIN * 60 * 1000);
+    const monitorEndMs = startMs + ((PRESENCE_SLOT_DURATION_MIN - PRESENCE_WINDOW_ADVANCE_MIN) * 60 * 1000);
+    // monitorStart/End delimit cuándo el front consulta presencia; validación usa startMs/endMs y lookback
+    return { startMs, endMs, monitorStartMs, monitorEndMs };
   }
 
   // ===== API GETs =====
@@ -2146,15 +2206,22 @@ body{
       const data = await apiPresenceStatus(idpipe);
       if (!data.ok) throw new Error(data.error || "presence_error");
 
+      const now = Date.now();
+      const monitorStart = windowMs.monitorStartMs ?? windowMs.startMs;
+      const monitorEnd   = windowMs.monitorEndMs ?? windowMs.endMs;
+
+      if (now < monitorStart){
+        applyPresenceClass(el, "pending");
+        return false;
+      }
+
       const lastInMs = parsePresenceTs(data.lastIn);
       const active = data.activo === true || String(data.activo || "").toLowerCase() === "true";
-      const now = Date.now();
       const validStart = windowMs.startMs - (PRESENCE_LOOKBACK_MINUTES * 60 * 1000);
       const validEnd = windowMs.endMs;
-      const nowWithinSlot = now >= validStart && now <= validEnd;
+      const nowWithinSlot = now >= monitorStart && now <= monitorEnd;
       const hasIn = lastInMs && lastInMs >= validStart && lastInMs <= validEnd;
       const shouldBeGreen = nowWithinSlot && (hasIn || active);
-      const isMissing = nowWithinSlot && !shouldBeGreen;
 
       applyPresenceClass(el, shouldBeGreen ? "present" : "missing");
 
@@ -2188,6 +2255,8 @@ body{
     if (!windowMs) return;
     const gen = presenceGeneration;
 
+    const stopAt = windowMs.monitorEndMs ?? windowMs.endMs;
+
     const tick = async ()=>{
       if (gen !== presenceGeneration){
         stopPresenceWatcher(key);
@@ -2197,10 +2266,14 @@ body{
         stopPresenceWatcher(key);
         return true;
       }
+      const now = Date.now();
+      if (now >= stopAt){
+        stopPresenceWatcher(key);
+        return true;
+      }
       const green = await checkPresenceForBooking(booking, el, windowMs);
       if (green) presenceGreens.add(key);
-      const now = Date.now();
-      if (green || now >= windowMs.endMs){
+      if (green || now >= stopAt){
         stopPresenceWatcher(key);
         return true;
       }
@@ -2224,6 +2297,11 @@ body{
     // ===== RENDER LISTADO (AHORA IGUAL AL LAYOUT DE CONSULTORES) =====
   function renderBookings(dateStr, bookings){
     const wrap = qs("#sm-admin-list");
+    const countEl = qs("#sm-admin-count");
+    const totalActives = Array.isArray(bookings)
+      ? bookings.filter(b => !b.cancelado).length
+      : 0;
+    if (countEl) countEl.textContent = `${totalActives} reuniones totales.`;
     if (!wrap) return;
     clearPresenceWatchers();
     wrap.innerHTML = "";
@@ -2731,34 +2809,9 @@ body{
     }
   }
 
-  // ===== Login =====
-  function handleLogin(){
-    const u = qs("#sm-admin-user")?.value || "";
-    const p = qs("#sm-admin-pass")?.value || "";
-
-    if (u === ADMIN_USER && p === ADMIN_PASS){
-      qs("#sm-admin-login").style.display = "none";
-
-      const panel = qs("#sm-admin-panel");
-      const configCard = qs("#sm-admin-config-card");
-      if (panel) panel.style.display = "block";
-      if (configCard) configCard.style.display = "block";
-
-      initAdmin();
-    } else {
-      toast("Usuario o clave incorrectos");
-    }
-  }
-
   // ===== Eventos globales =====
   document.addEventListener("DOMContentLoaded", ()=>{
-    const btnLogin = qs("#sm-admin-login-btn");
-    if (btnLogin){
-      btnLogin.addEventListener("click", handleLogin);
-      qs("#sm-admin-pass")?.addEventListener("keypress", ev=>{
-        if (ev.key === "Enter") handleLogin();
-      });
-    }
+    if (!window.__smAuth) return;
 
     const dateInput = qs("#sm-admin-date");
     const selCons   = qs("#sm-admin-consultor");
@@ -2845,6 +2898,8 @@ body{
         }
       });
     }
+
+    initAdmin();
 
     // Editor de horarios
     const selHor    = qs("#sm-hor-consultor");

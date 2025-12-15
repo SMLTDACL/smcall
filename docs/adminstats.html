@@ -126,24 +126,40 @@
 </script>
 </head>
 <body>
-<div class="sm-topbar">
-  <div class="sm-sheet-head">
-    <div class="sm-sheet-left">
-      <div class="sm-sheet-brand" aria-hidden="true">
-        <img src="./files/logon.png" alt="Simple Marcas">
-      </div>
-    </div>
-  </div>
-</div>
 <div id="sm-puntos-app" class="ga">
   <div class="ga-wrap">
     <!-- Top bar -->
     <div class="ga-top">
-      <div class="ga-title-wrap">
-        <div class="ga-title">Admin · Consultores</div>
-        <div class="ga-subtitle" id="gaRangeLabel"></div>
+      <div class="ga-top-left">
+        <div class="ga-cons-filter">
+          <button type="button" class="ga-range-btn ga-cons-btn" id="gaConsBtn" aria-haspopup="dialog" aria-expanded="false">
+            <span class="ga-cons-label">Consultores</span>
+            <span class="ga-cons-summary" id="gaConsBtnSummary">Todos</span>
+            <span class="ga-range-caret" aria-hidden="true"></span>
+          </button>
+          <div class="ga-cons-pop" id="gaConsPop" style="display:none;">
+            <div class="ga-cons-inner">
+              <div class="ga-cons-head">
+                <div class="ga-cons-title">Consultores</div>
+                <div class="ga-cons-actions">
+                  <button type="button" class="ga-cons-link" id="gaConsAll">Todos</button>
+                  <button type="button" class="ga-cons-link" id="gaConsClear">Limpiar</button>
+                </div>
+              </div>
+              <div class="ga-cons-search">
+                <input type="search" id="gaConsSearch" placeholder="Buscar por nombre o ID">
+              </div>
+              <div class="ga-cons-list" id="gaConsList"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ga-chip-group" id="gaMetricToggle" role="group" aria-label="Métrica">
+          <button type="button" class="ga-chip ga-chip-active" data-metric="puntos">Puntos</button>
+          <button type="button" class="ga-chip" data-metric="pesos" id="gaMetricPesos">Pesos</button>
+        </div>
       </div>
-      <div class="ga-controls">
+      <div class="ga-top-right">
+        <div class="ga-subtitle" id="gaRangeLabel"></div>
         <!-- GA-like range picker -->
         <div class="ga-range">
           <button type="button" id="gaRangeBtn" class="ga-range-btn" aria-haspopup="dialog" aria-expanded="false">
@@ -181,123 +197,117 @@
           <input type="hidden" id="smrStart">
           <input type="hidden" id="smrEnd">
         </div>
-        <div class="ga-chip-group" id="gaMetricToggle" role="group" aria-label="Métrica">
-          <button type="button" class="ga-chip ga-chip-active" data-metric="puntos">Puntos</button>
-          <button type="button" class="ga-chip" data-metric="pesos" id="gaMetricPesos">Pesos</button>
-        </div>
-        <div class="ga-cons-filter">
-          <button type="button" class="ga-range-btn ga-cons-btn" id="gaConsBtn" aria-haspopup="dialog" aria-expanded="false">
-            <span class="ga-cons-label">Consultores</span>
-            <span class="ga-cons-summary" id="gaConsBtnSummary">Todos</span>
-            <span class="ga-range-caret" aria-hidden="true"></span>
-          </button>
-          <div class="ga-cons-pop" id="gaConsPop" style="display:none;">
-            <div class="ga-cons-inner">
-              <div class="ga-cons-head">
-                <div class="ga-cons-title">Consultores</div>
-                <div class="ga-cons-actions">
-                  <button type="button" class="ga-cons-link" id="gaConsAll">Todos</button>
-                  <button type="button" class="ga-cons-link" id="gaConsClear">Limpiar</button>
-                </div>
-              </div>
-              <div class="ga-cons-search">
-                <input type="search" id="gaConsSearch" placeholder="Buscar por nombre o ID">
-              </div>
-              <div class="ga-cons-list" id="gaConsList"></div>
-            </div>
+      </div>
+    </div>
+    <div id="gaSkeletonLayout" class="ga-columns ga-skeleton-grid">
+      <div class="ga-col">
+        <div class="ga-card ga-skel-card ga-skel-kpi"></div>
+        <div class="ga-card ga-skel-card ga-skel-kpi"></div>
+        <div class="ga-card ga-skel-card ga-skel-summary"></div>
+        <div class="ga-card ga-skel-card ga-skel-table"></div>
+      </div>
+      <div class="ga-col">
+        <div class="ga-card ga-skel-card ga-skel-chart"></div>
+        <div class="ga-card ga-skel-card ga-skel-table"></div>
+      </div>
+    </div>
+    <div id="gaContentLayout" class="ga-columns" style="display:none;">
+      <div class="ga-col">
+        <!-- KPI cards -->
+        <div class="ga-grid">
+          <!-- PUNTOS -->
+          <div class="ga-card ga-kpi">
+            <div class="ga-kpi-title">Puntos</div>
+            <div class="ga-kpi-value" id="smrTotal" style="display:none;">0</div>
+            <div class="ga-skeleton" id="smrTotalLoading"></div>
+            <div class="ga-kpi-meta" id="smrMeta"></div>
+          </div>
+          <!-- PESOS (solo con codep=917830109) -->
+          <div class="ga-card ga-kpi ga-pesos-only" id="gaPesosCard">
+            <div class="ga-kpi-title">Pesos</div>
+            <div class="ga-kpi-value" id="gaPesos" style="display:none;">$ 0</div>
+            <div class="ga-skeleton" id="gaPesosLoading"></div>
+            <div class="ga-kpi-meta" id="gaRowsCount"></div>
           </div>
         </div>
-      </div>
-    </div>
-    <!-- KPI cards -->
-    <div class="ga-grid">
-      <!-- PUNTOS -->
-      <div class="ga-card ga-kpi">
-        <div class="ga-kpi-title">Puntos</div>
-        <div class="ga-kpi-value" id="smrTotal" style="display:none;">0</div>
-        <div class="ga-skeleton" id="smrTotalLoading"></div>
-        <div class="ga-kpi-meta" id="smrMeta"></div>
-      </div>
-      <!-- PESOS (solo con codep=917830109) -->
-      <div class="ga-card ga-kpi ga-pesos-only" id="gaPesosCard">
-        <div class="ga-kpi-title">Pesos</div>
-        <div class="ga-kpi-value" id="gaPesos" style="display:none;">$ 0</div>
-        <div class="ga-skeleton" id="gaPesosLoading"></div>
-        <div class="ga-kpi-meta" id="gaRowsCount"></div>
-      </div>
-    </div>
-    <!-- Chart -->
-    <div class="ga-card ga-chart" style="margin-top: 14px;">
-      <div class="ga-card-head">
-        <div>
-          <div class="ga-card-title" id="gaChartTitle">Puntos en el tiempo</div>
-          <div class="ga-card-note" id="gaChartNote">Suma diaria (según rango)</div>
+        <div class="ga-card ga-summary" id="gaSummaryCard">
+          <div class="ga-card-head">
+            <div class="ga-card-title">Resumen por consultor</div>
+            <div class="ga-card-note" id="gaSummaryNote">Totales del rango seleccionado</div>
+          </div>
+          <div class="ga-cons-listing" id="gaConsSummary"></div>
         </div>
-        <div class="ga-chip-group ga-chip-group-compact" aria-label="Periodicidad">
-          <button type="button" class="ga-chip" data-period="daily">Diario</button>
-          <button type="button" class="ga-chip ga-chip-active" data-period="weekly">Semanal (L-D)</button>
+        <div class="ga-card ga-table" id="gaRedFlagsCard">
+          <div class="ga-card-head">
+            <div class="ga-card-title">Red Flags</div>
+            <div class="ga-card-note">Datos atípicos para revisión manual</div>
+          </div>
+          <div class="ga-skeleton" id="gaRedFlagsLoading"></div>
+          <div class="ga-table-wrap" style="display:none;" id="gaRedFlagsWrap">
+            <table class="ga-t">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Consultor</th>
+                  <th>ID</th>
+                  <th>Recorrido</th>
+                  <th>Tiempo</th>
+                  <th class="ga-right ga-col-puntos">Puntos</th>
+                  <th class="ga-right ga-col-pesos">Pesos</th>
+                  <th>Motivo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="gaRedFlagsBody"></tbody>
+            </table>
+          </div>
+          <div class="ga-pagination" id="gaRedFlagsPagination" style="display:none;"></div>
         </div>
       </div>
-      <div class="ga-chart-canvas">
-        <canvas id="smrChart"></canvas>
-      </div>
-    </div>
-    <div class="ga-card ga-summary" id="gaSummaryCard">
-      <div class="ga-card-head">
-        <div class="ga-card-title">Resumen por consultor</div>
-        <div class="ga-card-note" id="gaSummaryNote">Totales del rango seleccionado</div>
-      </div>
-      <div class="ga-cons-listing" id="gaConsSummary"></div>
-    </div>
-    <div class="ga-card ga-table" id="gaRedFlagsCard">
-      <div class="ga-card-head">
-        <div class="ga-card-title">Red Flags</div>
-        <div class="ga-card-note">Datos atípicos para revisión manual</div>
-      </div>
-      <div class="ga-skeleton" id="gaRedFlagsLoading"></div>
-      <div class="ga-table-wrap" style="display:none;" id="gaRedFlagsWrap">
-        <table class="ga-t">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Consultor</th>
-              <th>ID</th>
-              <th>Recorrido</th>
-              <th>Tiempo</th>
-              <th class="ga-right ga-col-puntos">Puntos</th>
-              <th class="ga-right ga-col-pesos">Pesos</th>
-              <th>Motivo</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="gaRedFlagsBody"></tbody>
-        </table>
-      </div>
-    </div>
-    <!-- Table -->
-    <div class="ga-card ga-table">
-      <div class="ga-card-head">
-        <div class="ga-card-title">Histórico</div>
-        <div class="ga-card-note">Últimas filas dentro del rango</div>
-      </div>
-      <div class="ga-skeleton" id="smrListLoading"></div>
-      <div class="ga-table-wrap" style="display:none;" id="smrTableWrap">
-        <table class="ga-t">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Consultor</th>
-              <th>ID</th>
-              <th>Recorrido</th>
-              <th>Tiempo</th>
-              <th class="ga-right ga-col-puntos">Puntos</th>
-              <th class="ga-right ga-col-pesos">Pesos</th>
-              <th>Observaciones</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="smrTbody"></tbody>
-        </table>
+      <div class="ga-col">
+        <!-- Chart -->
+        <div class="ga-card ga-chart">
+          <div class="ga-card-head">
+            <div>
+              <div class="ga-card-title" id="gaChartTitle">Puntos en el tiempo</div>
+              <div class="ga-card-note" id="gaChartNote">Suma diaria (según rango)</div>
+            </div>
+            <div class="ga-chip-group ga-chip-group-compact" aria-label="Periodicidad">
+              <button type="button" class="ga-chip" data-period="daily">Diario</button>
+              <button type="button" class="ga-chip ga-chip-active" data-period="weekly">Semanal (L-D)</button>
+            </div>
+          </div>
+          <div class="ga-chart-canvas">
+            <canvas id="smrChart"></canvas>
+          </div>
+        </div>
+        <!-- Table -->
+        <div class="ga-card ga-table">
+          <div class="ga-card-head">
+            <div class="ga-card-title">Histórico</div>
+            <div class="ga-card-note">Últimas acciones dentro del rango</div>
+          </div>
+          <div class="ga-skeleton" id="smrListLoading"></div>
+          <div class="ga-table-wrap" style="display:none;" id="smrTableWrap">
+            <table class="ga-t">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Consultor</th>
+                  <th>ID</th>
+                  <th>Recorrido</th>
+                  <th>Tiempo</th>
+                  <th class="ga-right ga-col-puntos">Puntos</th>
+                  <th class="ga-right ga-col-pesos">Pesos</th>
+                  <th>Observaciones</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="smrTbody"></tbody>
+            </table>
+          </div>
+          <div class="ga-pagination" id="smrPagination" style="display:none;"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -305,19 +315,37 @@
 <style>
   /* Base */
   #sm-puntos-app.ga{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1f2937}
-  .ga-wrap{max-width:1180px;margin:0 auto;padding:18px;box-sizing:border-box}
+  .ga-wrap{max-width:92%;margin:0 auto;padding:18px;box-sizing:border-box}
   .ga-card{
-    background:#fff;border:1px solid rgba(17,24,39,.10);
-    border-radius:14px; box-shadow:0 1px 0 rgba(17,24,39,.04);
+    background:#fff;
+    border-radius:14px;
   }
   /* Top */
   .ga-top{
-    display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
     margin-bottom:14px;
   }
+  .ga-top-left{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:flex-start;
+  }
+  .ga-top-right{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:flex-end;
+    margin-left:auto;
+  }
   .ga-title{font-size:18px;font-weight:800;letter-spacing:-.01em}
-  .ga-subtitle{font-size:12px;color:#6b7280;margin-top:4px}
-  .ga-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+  .ga-subtitle{font-size:12px;color:#6b7280;margin:0}
   .ga-chip-group{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .ga-chip-group-compact .ga-chip{padding:7px 10px;font-size:12px}
   .ga-chip{
@@ -342,7 +370,7 @@
   .ga-cons-pop{
     position:absolute;
     top:calc(100% + 8px);
-    right:0;
+    left:0;
     z-index:999999;
     width:340px;
     max-width:calc(100vw - 24px);
@@ -378,10 +406,64 @@
   .ga-cons-name{font-weight:700;font-size:13px}
   .ga-cons-id{font-size:12px;color:#6b7280}
   .ga-cons-empty{padding:12px;font-size:13px;color:#6b7280}
+  .ga-columns{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:20px;
+    align-items:start;
+  }
+  .ga-col{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    min-width:0;
+  }
+  @media(max-width:1024px){
+    .ga-columns{
+      grid-template-columns:1fr;
+    }
+  }
+  .ga-skeleton-grid .ga-card{
+    border:none;
+  }
+  .ga-skel-card{
+    height:140px;
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(90deg,#e5e7eb,#dcdfe3,#e5e7eb);
+    background-size:200% 100%;
+    animation:gaShimmer 1.2s infinite linear;
+  }
+  .ga-skel-kpi{height:120px;}
+  .ga-skel-summary{height:240px;}
+  .ga-skel-table{height:320px;}
+  .ga-skel-chart{height:260px;}
+  .ga-pagination{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px 12px;
+  }
+  .ga-page-btn{
+    border:1px solid rgba(17,24,39,.12);
+    background:#fff;
+    color:#111827;
+    border-radius:10px;
+    padding:8px 12px;
+    cursor:pointer;
+  }
+  .ga-page-btn:disabled{
+    opacity:0.45;
+    cursor:not-allowed;
+  }
+  .ga-page-info{
+    font-size:13px;
+    color:#4b5563;
+  }
   /* KPI grid */
-  .ga-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px}
-  @media(min-width:920px){ .ga-grid{grid-template-columns:1fr 1fr} }
-  .ga-kpi{padding:14px 14px 12px}
+  .ga-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  .ga-kpi{padding:14px 20px 12px}
   .ga-kpi-title{font-size:12px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
   .ga-kpi-value{font-size:40px;line-height:1.05;font-weight:800;margin-top:6px;letter-spacing:-.02em}
   .ga-kpi-meta{font-size:12px;color:#6b7280;margin-top:8px}
@@ -399,13 +481,13 @@
   #smrListLoading{ min-height: 56px; }
   /* Chart */
   .ga-chart{padding:0;overflow:hidden}
-  .ga-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 14px 8px}
+  .ga-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:20px 20px 8px}
   .ga-card-title{font-size:14px;font-weight:800}
   .ga-card-note{font-size:12px;color:#6b7280}
   .ga-chart-canvas{padding:0 10px 12px}
   .ga-chart-canvas canvas{width:100% !important;height:320px !important}
   .ga-summary{margin-top:12px}
-  .ga-cons-listing{padding:4px 12px 14px;display:flex;flex-direction:column;gap:8px}
+  .ga-cons-listing{padding:4px 20px 14px;display:flex;flex-direction:column;gap:8px}
   .ga-cons-row{
     display:flex;align-items:center;justify-content:space-between;gap:12px;
     padding:10px;border:1px solid rgba(17,24,39,.06);border-radius:12px;
@@ -421,8 +503,8 @@
   .ga-cons-subvalue{font-size:12px;color:#6b7280;text-align:right}
   .ga-dot{width:12px;height:12px;border-radius:999px;flex:0 0 auto}
   /* Table */
-  .ga-table{margin-top:12px}
-  .ga-table-wrap{overflow:auto;padding:6px 10px 12px;position:relative;z-index:0}
+  .ga-table{margin-top:12px;}
+  .ga-table-wrap{overflow:auto;padding:6px 10px 12px;position:relative;z-index:0; margin: 0px 20px 0px 12px;}
   .ga-t{width:100%;border-collapse:separate;border-spacing:0}
   .ga-t thead th{
     position:sticky;top:0;background:#fff;
@@ -437,7 +519,12 @@
   .ga-t tbody tr:hover{background:#fafafa}
   .ga-right{text-align:right}
   .ga-row-rejected td{ text-decoration:line-through; color:#9ca3af; }
-  .ga-flag-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .ga-flag-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:nowrap;
+    align-items:center;
+  }
   .ga-btn-flag{
     border:0;
     background:#fff;
@@ -708,6 +795,21 @@
   const ENDPOINT_PUNTOS = "https://script.google.com/macros/s/AKfycbwu1EIBD8PPVTCKIe39zO_sjMzUIAnjGqQxehzdEG2sXppjJEJnta8ZTegTv19T7W2y/exec";
   const TZ = "America/Santiago";
   const LOGIN_URL = "./index.html";
+  const TOKEN_KEY = "sm_token";
+  const ALLOWED_CODEP = "863241943";
+  const TOKEN_ERROR_CODES = new Set(["TOKEN_INVALID", "TOKEN_EXPIRED"]);
+  let redirectingToLogin = false;
+  function clearToken(){
+    try{ sessionStorage.removeItem(TOKEN_KEY); }catch(_){}
+  }
+  function redirectToLogin(reason){
+    if (redirectingToLogin) return;
+    redirectingToLogin = true;
+    clearToken();
+    const sep = LOGIN_URL.includes("?") ? "&" : "?";
+    const url = `${LOGIN_URL}${sep}r=${encodeURIComponent(reason || "token")}`;
+    try{ window.location.replace(url); }catch(_){ window.location.href = url; }
+  }
   function decodeTokenPayload(token){
     try{
       const parts = String(token || "").split(".");
@@ -719,21 +821,38 @@
     }
   }
   function getToken(){
-    const k = "sm_token";
     const params = new URLSearchParams(location.search);
     const urlT = (params.get("t") || "").trim();
     if (urlT){
-      try{ sessionStorage.setItem(k, urlT); }catch(_){}
+      try{ sessionStorage.setItem(TOKEN_KEY, urlT); }catch(_){}
       return urlT;
     }
     try{
-      const st = sessionStorage.getItem(k);
+      const st = sessionStorage.getItem(TOKEN_KEY);
       if (st) return st.trim();
     }catch(_){}
     return "";
   }
-  function authFetch(url, opts){
-    return fetch(url, opts);
+  function isTokenExpired(payload){
+    const exp = Number(payload && payload.exp);
+    if (!exp) return true;
+    return Date.now() > exp * 1000;
+  }
+  function isTokenError(err){
+    const code = String(err || "").trim().toUpperCase();
+    return TOKEN_ERROR_CODES.has(code);
+  }
+  function handleTokenProblem(err){
+    if (!isTokenError(err)) return false;
+    redirectToLogin(err || "token");
+    return true;
+  }
+  async function authFetch(url, opts){
+    const res = await fetch(url, opts);
+    if (res && (res.status === 401 || res.status === 403)){
+      redirectToLogin(`http_${res.status}`);
+    }
+    return res;
   }
   function ensureAuth(){
     const params = new URLSearchParams(location.search);
@@ -742,20 +861,25 @@
     const codep = (params.get("codep") || "").trim();
     const payload = decodeTokenPayload(token);
     if (!token || !codep || !payload){
-      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
-      window.location.href = LOGIN_URL;
+      redirectToLogin("token_missing");
+      return null;
+    }
+    if (isTokenExpired(payload)){
+      redirectToLogin("token_expired");
       return null;
     }
     const tokIdc = String(payload.idc || "").trim();
     const tokCodep = String(payload.codep || "").trim();
     if (tokIdc && idc && tokIdc !== idc){
-      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
-      window.location.href = LOGIN_URL;
+      redirectToLogin("token_idc_mismatch");
       return null;
     }
     if (tokCodep && codep && tokCodep !== codep){
-      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
-      window.location.href = LOGIN_URL;
+      redirectToLogin("token_codep_mismatch");
+      return null;
+    }
+    if (codep !== ALLOWED_CODEP){
+      redirectToLogin("codep_denied");
       return null;
     }
     return { token, idc, codep };
@@ -852,6 +976,10 @@
       const tw = qs("#smrTableWrap");
       const rfl = qs("#gaRedFlagsLoading");
       const rfw = qs("#gaRedFlagsWrap");
+      const rfp = qs("#gaRedFlagsPagination");
+      const hpg = qs("#smrPagination");
+      const skelLayout = qs("#gaSkeletonLayout");
+      const contentLayout = qs("#gaContentLayout");
 
       if (t)  t.style.display  = on ? "none" : "block";
       if (tl) tl.style.display = on ? "block" : "none";
@@ -861,6 +989,10 @@
       if (tw) tw.style.display = on ? "none" : "block";
       if (rfl) rfl.style.display = on ? "block" : "none";
       if (rfw) rfw.style.display = on ? "none" : "block";
+      if (rfp && on) rfp.style.display = "none";
+      if (hpg && on) hpg.style.display = "none";
+      if (skelLayout) skelLayout.style.display = on ? "grid" : "none";
+      if (contentLayout) contentLayout.style.display = on ? "none" : "grid";
     }
 
     function esc(s){
@@ -874,6 +1006,24 @@
       const max = 20;
       const short = full.length > max ? (full.slice(0, max) + "...") : full;
       return `<span class="ga-tip" data-tip="${esc(full)}"><span class="ga-tip-text">${esc(short)}</span></span>`;
+    }
+    function renderPagination(el, page, totalPages, totalItems, target){
+      if (!el) return;
+      if (!totalItems){
+        el.style.display = "none";
+        el.innerHTML = "";
+        return;
+      }
+      const from = (page - 1) * PAGE_SIZE + 1;
+      const to = Math.min(totalItems, page * PAGE_SIZE);
+      const disablePrev = page <= 1 ? "disabled" : "";
+      const disableNext = page >= totalPages ? "disabled" : "";
+      el.innerHTML = `
+        <button type="button" class="ga-page-btn" data-page-target="${esc(target)}" data-page-action="prev" data-max-pages="${totalPages}" ${disablePrev}>‹</button>
+        <div class="ga-page-info">Página ${page} de ${totalPages} · ${from}-${to} de ${totalItems}</div>
+        <button type="button" class="ga-page-btn" data-page-target="${esc(target)}" data-page-action="next" data-max-pages="${totalPages}" ${disableNext}>›</button>
+      `;
+      el.style.display = "flex";
     }
 
     // ======== TIEMPO (duración) ========
@@ -1362,6 +1512,7 @@
     const METRIC_PESOS = "pesos";
     const PERIOD_DAILY = "daily";
     const PERIOD_WEEKLY = "weekly";
+    const PAGE_SIZE = 10;
     const palette = [
       "#2563EB", // azul
       "#D946EF", // fucsia
@@ -1400,7 +1551,9 @@
       period: PERIOD_WEEKLY,
       consultores: [],
       selectedKeys: new Set(),
-      colorByKey: new Map()
+      colorByKey: new Map(),
+      redPage: 1,
+      histPage: 1
     };
 
     function colorForKey(key){
@@ -1650,11 +1803,11 @@
                 <span class="ga-dot" style="background:${color}"></span>
                 <div class="ga-cons-row-meta">
                   <span class="ga-cons-name">${esc(item.info.name || item.info.display || "Sin consultor")}</span>
-                  <span class="ga-cons-id">${esc(item.info.idc || "")}</span>
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;gap:2px;text-align:right;">
                 <span class="ga-cons-value">${fmtMetricVal(mainVal, state.metric)}</span>
+                <span class="ga-cons-count">${item.count} acciones</span>
               </div>
             </div>
           `);
@@ -1690,14 +1843,21 @@
       const body = qs("#gaRedFlagsBody");
       const wrap = qs("#gaRedFlagsWrap");
       const skel = qs("#gaRedFlagsLoading");
+      const pager = qs("#gaRedFlagsPagination");
       if (!body || !wrap || !skel) return;
 
       const flags = rows.filter(r => isRedFlag(r));
+      const totalPages = Math.max(1, Math.ceil(flags.length / PAGE_SIZE));
+      if (state.redPage > totalPages) state.redPage = totalPages;
+      if (state.redPage < 1) state.redPage = 1;
+      const start = (state.redPage - 1) * PAGE_SIZE;
+      const slice = flags.slice(start, start + PAGE_SIZE);
+
       body.innerHTML = "";
       if (!flags.length){
-        body.innerHTML = `<tr><td colspan="8" style="padding:12px;color:#6b7280;">Sin red flags pendientes.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="9" style="padding:12px;color:#6b7280;">Sin red flags pendientes.</td></tr>`;
       } else {
-        for (const r of flags){
+        for (const r of slice){
           const info = normalizeConsultor(r);
           const ts = Number(r?.TS_MS || 0);
           const d = ts ? new Date(ts).toLocaleString("es-CL") : (r["FECHA COMPLETA"] || "");
@@ -1733,13 +1893,20 @@
       }
       skel.style.display = "none";
       wrap.style.display = "block";
+      renderPagination(pager, state.redPage, totalPages, flags.length, "red");
     }
 
     function renderTable(rows){
       const tbody = qs("#smrTbody");
-      if (!tbody) return;
+      const pager = qs("#smrPagination");
+      if (!tbody || !pager) return;
+      const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+      if (state.histPage > totalPages) state.histPage = totalPages;
+      if (state.histPage < 1) state.histPage = 1;
+      const start = (state.histPage - 1) * PAGE_SIZE;
+      const slice = rows.slice(start, start + PAGE_SIZE);
       tbody.innerHTML = "";
-      for (const r of rows){
+      for (const r of slice){
         const info = normalizeConsultor(r);
         const ts = Number(r?.TS_MS || 0);
         const d = ts ? new Date(ts).toLocaleString("es-CL") : (r["FECHA COMPLETA"] || "");
@@ -1771,6 +1938,7 @@
         `;
         tbody.insertAdjacentHTML("beforeend", rowHtml);
       }
+      renderPagination(pager, state.histPage, totalPages, rows.length, "hist");
     }
 
     function renderAll(customRows){
@@ -1797,9 +1965,9 @@
       }
 
       if (pTotal) pTotal.textContent = totals.puntos.toLocaleString("es-CL");
-      if (pMeta)  pMeta.textContent  = `${totals.count} filas`;
+      if (pMeta)  pMeta.textContent  = `${totals.count} acciones`;
       if (pesosEl) pesosEl.textContent = fmtMetricVal(totals.pesos, METRIC_PESOS);
-      if (rowsEl) rowsEl.textContent = `${totals.count} filas`;
+      if (rowsEl) rowsEl.textContent = `${totals.count} acciones`;
 
       renderSummary(rowsForMetrics);
       renderChart(rowsForMetrics);
@@ -1828,11 +1996,15 @@
         const token = getToken();
         const url = `${ENDPOINT_PUNTOS}?action=report&scope=all&codep=${encodeURIComponent(auth.codep)}&start_ts=${encodeURIComponent(start_ts)}&end_ts=${encodeURIComponent(end_ts)}&limit=5000&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
         const res = await authFetch(url, { cache:"no-store" });
+        if (redirectingToLogin) return;
         const text = await res.text();
 
         let json;
         try{ json = JSON.parse(text); } catch(_){ throw new Error("Respuesta no es JSON válido"); }
-        if (!json.ok) throw new Error(json.error || "Error en report");
+        if (!json.ok){
+          if (handleTokenProblem(json.error)) return;
+          throw new Error(json.error || "Error en report");
+        }
 
         const allRows = Array.isArray(json.rows) ? json.rows : [];
 
@@ -1869,6 +2041,8 @@
           FLAG_REASON: String(r.FLAG_REASON || "").trim(),
           __key: `${r.__sheet || ""}#${r.__row || ""}`
         }));
+        state.redPage = 1;
+        state.histPage = 1;
 
         // UI sync
         updateConsBtnSummary();
@@ -1876,9 +2050,12 @@
         syncMetricUI();
         renderAll();
       }catch(_){
+        if (redirectingToLogin) return;
         state.rows = [];
         state.consultores = [];
         state.selectedKeys = new Set();
+        state.redPage = 1;
+        state.histPage = 1;
         updateConsBtnSummary();
         renderConsSelector(qs("#gaConsSearch")?.value || "");
         renderAll();
@@ -1923,10 +2100,14 @@
       body.append("reason", reason || "");
       body.append("token", token);
       const res = await authFetch(ENDPOINT_PUNTOS, { method:"POST", body });
+      if (redirectingToLogin) throw new Error("token_redirect");
       const text = await res.text();
       let json;
       try{ json = JSON.parse(text); }catch(_){ throw new Error("flag_update_invalid_response"); }
-      if (!json.ok) throw new Error(json.error || "flag_update_error");
+      if (!json.ok){
+        if (handleTokenProblem(json.error)) throw new Error("token_error");
+        throw new Error(json.error || "flag_update_error");
+      }
       return json;
     }
     async function sendAdjustUpdate(row, pesos, reason){
@@ -1940,10 +2121,14 @@
       body.append("reason", reason || "");
       body.append("token", token);
       const res = await authFetch(ENDPOINT_PUNTOS, { method:"POST", body });
+      if (redirectingToLogin) throw new Error("token_redirect");
       const text = await res.text();
       let json;
       try{ json = JSON.parse(text); }catch(_){ throw new Error("adjust_invalid_response"); }
-      if (!json.ok) throw new Error(json.error || "adjust_error");
+      if (!json.ok){
+        if (handleTokenProblem(json.error)) throw new Error("token_error");
+        throw new Error(json.error || "adjust_error");
+      }
       return json;
     }
 
@@ -1976,6 +2161,7 @@
           }
           renderAll();
         }catch(_){
+          if (redirectingToLogin) return;
           alert("No se pudo actualizar el estado. Intenta nuevamente.");
         }
       });
@@ -2010,10 +2196,31 @@
           row.FLAG_REASON = trimmed;
           renderAll();
         }catch(_){
+          if (redirectingToLogin) return;
           alert("No se pudo actualizar el monto. Intenta nuevamente.");
         }
       });
     }
+
+    const pagers = qsa(".ga-pagination");
+    pagers.forEach(pg=>{
+      pg.addEventListener("click",(ev)=>{
+        const btn = ev.target && ev.target.closest && ev.target.closest("[data-page-action]");
+        if (!btn) return;
+        const action = btn.getAttribute("data-page-action");
+        const target = btn.getAttribute("data-page-target") || "";
+        const max = Number(btn.getAttribute("data-max-pages") || "1") || 1;
+        const prop = target === "red" ? "redPage" : "histPage";
+        const current = state[prop] || 1;
+        let next = current;
+        if (action === "prev") next = Math.max(1, current - 1);
+        if (action === "next") next = Math.min(max, current + 1);
+        if (next !== current){
+          state[prop] = next;
+          renderAll();
+        }
+      });
+    });
 
     const consBtn = qs("#gaConsBtn");
     const consPop = qs("#gaConsPop");

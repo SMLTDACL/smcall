@@ -708,6 +708,20 @@
   const ENDPOINT_PUNTOS = "https://script.google.com/macros/s/AKfycbwu1EIBD8PPVTCKIe39zO_sjMzUIAnjGqQxehzdEG2sXppjJEJnta8ZTegTv19T7W2y/exec";
   const TZ = "America/Santiago";
   const LOGIN_URL = "./index.html";
+  const TOKEN_KEY = "sm_token";
+  const TOKEN_ERROR_CODES = new Set(["TOKEN_INVALID", "TOKEN_EXPIRED"]);
+  let redirectingToLogin = false;
+  function clearToken(){
+    try{ sessionStorage.removeItem(TOKEN_KEY); }catch(_){}
+  }
+  function redirectToLogin(reason){
+    if (redirectingToLogin) return;
+    redirectingToLogin = true;
+    clearToken();
+    const sep = LOGIN_URL.includes("?") ? "&" : "?";
+    const url = `${LOGIN_URL}${sep}r=${encodeURIComponent(reason || "token")}`;
+    try{ window.location.replace(url); }catch(_){ window.location.href = url; }
+  }
   function decodeTokenPayload(token){
     try{
       const parts = String(token || "").split(".");
@@ -719,21 +733,38 @@
     }
   }
   function getToken(){
-    const k = "sm_token";
     const params = new URLSearchParams(location.search);
     const urlT = (params.get("t") || "").trim();
     if (urlT){
-      try{ sessionStorage.setItem(k, urlT); }catch(_){}
+      try{ sessionStorage.setItem(TOKEN_KEY, urlT); }catch(_){}
       return urlT;
     }
     try{
-      const st = sessionStorage.getItem(k);
+      const st = sessionStorage.getItem(TOKEN_KEY);
       if (st) return st.trim();
     }catch(_){}
     return "";
   }
-  function authFetch(url, opts){
-    return fetch(url, opts);
+  function isTokenExpired(payload){
+    const exp = Number(payload && payload.exp);
+    if (!exp) return true;
+    return Date.now() > exp * 1000;
+  }
+  function isTokenError(err){
+    const code = String(err || "").trim().toUpperCase();
+    return TOKEN_ERROR_CODES.has(code);
+  }
+  function handleTokenProblem(err){
+    if (!isTokenError(err)) return false;
+    redirectToLogin(err || "token");
+    return true;
+  }
+  async function authFetch(url, opts){
+    const res = await fetch(url, opts);
+    if (res && (res.status === 401 || res.status === 403)){
+      redirectToLogin(`http_${res.status}`);
+    }
+    return res;
   }
   function ensureAuth(){
     const params = new URLSearchParams(location.search);
@@ -742,20 +773,21 @@
     const codep = (params.get("codep") || "").trim();
     const payload = decodeTokenPayload(token);
     if (!token || !codep || !payload){
-      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
-      window.location.href = LOGIN_URL;
+      redirectToLogin("token_missing");
+      return null;
+    }
+    if (isTokenExpired(payload)){
+      redirectToLogin("token_expired");
       return null;
     }
     const tokIdc = String(payload.idc || "").trim();
     const tokCodep = String(payload.codep || "").trim();
     if (tokIdc && idc && tokIdc !== idc){
-      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
-      window.location.href = LOGIN_URL;
+      redirectToLogin("token_idc_mismatch");
       return null;
     }
     if (tokCodep && codep && tokCodep !== codep){
-      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
-      window.location.href = LOGIN_URL;
+      redirectToLogin("token_codep_mismatch");
       return null;
     }
     return { token, idc, codep };
@@ -1811,11 +1843,15 @@
         const token = getToken();
         const url = `${ENDPOINT_PUNTOS}?action=report&scope=all&codep=${encodeURIComponent(auth.codep)}&start_ts=${encodeURIComponent(start_ts)}&end_ts=${encodeURIComponent(end_ts)}&limit=5000&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
         const res = await authFetch(url, { cache:"no-store" });
+        if (redirectingToLogin) return;
         const text = await res.text();
 
         let json;
         try{ json = JSON.parse(text); } catch(_){ throw new Error("Respuesta no es JSON válido"); }
-        if (!json.ok) throw new Error(json.error || "Error en report");
+        if (!json.ok){
+          if (handleTokenProblem(json.error)) return;
+          throw new Error(json.error || "Error en report");
+        }
 
         const allRows = Array.isArray(json.rows) ? json.rows : [];
 
@@ -1859,6 +1895,7 @@
         syncMetricUI();
         renderAll();
       }catch(_){
+        if (redirectingToLogin) return;
         state.rows = [];
         state.consultores = [];
         state.selectedKeys = new Set();
@@ -1906,10 +1943,14 @@
       body.append("reason", reason || "");
       body.append("token", token);
       const res = await authFetch(ENDPOINT_PUNTOS, { method:"POST", body });
+      if (redirectingToLogin) throw new Error("token_redirect");
       const text = await res.text();
       let json;
       try{ json = JSON.parse(text); }catch(_){ throw new Error("flag_update_invalid_response"); }
-      if (!json.ok) throw new Error(json.error || "flag_update_error");
+      if (!json.ok){
+        if (handleTokenProblem(json.error)) throw new Error("token_error");
+        throw new Error(json.error || "flag_update_error");
+      }
       return json;
     }
     async function sendAdjustUpdate(row, pesos, reason){
@@ -1923,10 +1964,14 @@
       body.append("reason", reason || "");
       body.append("token", token);
       const res = await authFetch(ENDPOINT_PUNTOS, { method:"POST", body });
+      if (redirectingToLogin) throw new Error("token_redirect");
       const text = await res.text();
       let json;
       try{ json = JSON.parse(text); }catch(_){ throw new Error("adjust_invalid_response"); }
-      if (!json.ok) throw new Error(json.error || "adjust_error");
+      if (!json.ok){
+        if (handleTokenProblem(json.error)) throw new Error("token_error");
+        throw new Error(json.error || "adjust_error");
+      }
       return json;
     }
 
@@ -1959,6 +2004,7 @@
           }
           renderAll();
         }catch(_){
+          if (redirectingToLogin) return;
           alert("No se pudo actualizar el estado. Intenta nuevamente.");
         }
       });
@@ -1993,6 +2039,7 @@
           row.FLAG_REASON = trimmed;
           renderAll();
         }catch(_){
+          if (redirectingToLogin) return;
           alert("No se pudo actualizar el monto. Intenta nuevamente.");
         }
       });

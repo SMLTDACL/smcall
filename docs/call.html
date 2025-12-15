@@ -51,6 +51,9 @@
   const LOGIN_URL = "https://portal.simplemarcas.cl/";
   const LOADER_ID = "__sm_auth_overlay__";
 
+  // Expone utilidades de login para otros scripts de la página
+  window.__smLoginUrl = LOGIN_URL;
+
   let redirecting = false;
   let watchdog = null;
 
@@ -127,6 +130,7 @@
       try{ location.replace(url); } catch(_){ location.href = url; }
     });
   }
+  window.__smRedirectToLogin = redirectToLogin;
 
   function b64urlToText(b64url){
     var s = String(b64url || "").replace(/-/g, "+").replace(/_/g, "/");
@@ -357,6 +361,14 @@
           <span class="sm-hover-icon" aria-hidden="true">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-right-icon lucide-arrow-up-right"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
           </span>
+        </button>
+        <button id="sm-btn-consultores-head" class="sm-icon-btn sm-icon-btn-hover" type="button" aria-label="Abrir agendas consultores" style="display:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users-icon lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span class="sm-icon-label">Agendas consultores</span>
+        </button>
+        <button id="sm-btn-adminstats-head" class="sm-icon-btn sm-icon-btn-hover" type="button" aria-label="Abrir estadísticas admin" style="display:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column-big-icon lucide-chart-column-big"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="15" y="5" width="4" height="12" rx="1"/><rect x="7" y="8" width="4" height="9" rx="1"/></svg>
+          <span class="sm-icon-label">Estadísticas</span>
         </button>
       </div>
     </div>
@@ -606,6 +618,19 @@
       </div>
     </div>
   </div>
+  <!-- ===================== [B3.6] MODAL: DETALLE RUBRO (PDF) ===================== -->
+  <div id="sm-pdf-modal" class="sm-modal sm-pdf-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="sm-modal-backdrop"></div>
+    <div id="sm-pdf-card" class="sm-modal-card sm-pdf-card">
+      <div class="sm-pdf-frame-wrap">
+        <div id="sm-pdf-shimmer" class="sm-shimmer-block sm-pdf-shimmer" aria-hidden="true"></div>
+        <iframe id="sm-pdf-frame" class="sm-pdf-frame" title="Detalle rubro" loading="lazy"></iframe>
+      </div>
+      <div class="sm-modal-actions sm-pdf-actions">
+        <button id="sm-btn-pdf-close-foot" class="sm-btn sm-btn-secondary sm-btn-xs" type="button">Cerrar</button>
+      </div>
+    </div>
+  </div>
   <!-- ===================== [B3.7] MODAL: AGENDA EMBEBIDA ===================== -->
   <div id="sm-agenda-modal" class="sm-modal sm-agenda-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="sm-modal-backdrop"></div>
@@ -622,12 +647,22 @@
       <iframe id="sm-consultor-iframe" class="sm-agenda-frame" title="Agenda consultor" allow="clipboard-read; clipboard-write"></iframe>
     </div>
   </div>
-  <!-- ===================== [B3.6] MODAL: INACTIVIDAD ===================== -->
+  <!-- ===================== [B3.8] MODAL: INACTIVIDAD ===================== -->
   <div id="sm-idle-modal" class="sm-idle-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="sm-idle-backdrop"></div>
     <div class="sm-idle-card">
       <div class="sm-idle-sub">Han pasado 10 minutos sin actividad.</div>
       <div class="sm-idle-count">Se cerrará en <span id="sm-idle-count">60</span>s</div>
+    </div>
+  </div>
+  <!-- ===================== [B3.9] OVERLAY: ADMIN CONSULTOR (full sheet) ===================== -->
+  <div id="sm-admin-overlay" class="sm-overlay" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="sm-sheet sm-admin-sheet" role="document">
+      <div class="sm-sheet-body sm-admin-body">
+        <button type="button" id="sm-admin-close" class="sm-admin-close" aria-label="Cerrar administración">✕</button>
+        <iframe id="sm-admin-iframe" class="sm-admin-frame" title="Admin consultores" allow="clipboard-read; clipboard-write"></iframe>
+        <iframe id="sm-adminstats-iframe" class="sm-admin-frame" title="Admin estadísticas" allow="clipboard-read; clipboard-write"></iframe>
+      </div>
     </div>
   </div>
       <!-- Toast -->
@@ -1011,9 +1046,91 @@
     border:0;
     display:block;
   }
+  .sm-admin-sheet{
+    margin:0 auto;
+    background:#F5F5F7;
+  }
+  .sm-admin-body{
+    position:relative;
+    flex:1;
+    padding:0;
+    height:100%;
+    min-height:calc(100vh - var(--sm-topbar-h));
+    overflow:hidden;
+  }
+  .sm-admin-frame{
+    width:100%;
+    height:100%;
+    border:0;
+    display:none;
+    background:#F5F5F7;
+  }
+  .sm-admin-frame.is-active{ display:block; }
+  .sm-admin-close{
+    position:absolute;
+    top:12px;
+    right:12px;
+    width:36px;
+    height:36px;
+    border:0;
+    border-radius:50%;
+    background:rgba(0,0,0,.08);
+    color:#111827;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2;
+  }
+  .sm-admin-close:hover{ background:rgba(0,0,0,.12); }
   .sm-modal-title{ font-size:16px; font-weight:700; color:#111827; margin-bottom:6px; }
   .sm-modal-sub{ font-size:13px; color:#6b7280; margin-bottom:12px; }
   .sm-modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
+  .sm-modal-card.sm-pdf-card{
+    width:min(820px, calc(75vw));
+    max-width:820px;
+    height:min(75vh, calc(100vh - 120px));
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .sm-pdf-frame-wrap{
+    position:relative;
+    flex:1;
+    min-height:320px;
+    border-radius:14px;
+    overflow:hidden;
+    background:#fff;
+  }
+  .sm-pdf-frame{
+    width:100%;
+    height:100%;
+    border:0;
+    display:block;
+    background:#fff;
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+  .sm-pdf-frame.is-loaded{
+    opacity:1;
+  }
+  .sm-pdf-shimmer{
+    position:absolute;
+    inset:0;
+    height:100%;
+    margin:0;
+    border-radius:inherit;
+    background:#fff;
+    opacity:1;
+    transition:opacity .25s ease;
+  }
+  .sm-pdf-shimmer.is-hide{
+    opacity:0;
+  }
+  .sm-pdf-actions{
+    justify-content:flex-end;
+    align-items:center;
+  }
   /* Tour modal */
   .sm-tour-modal{
     position:fixed;
@@ -1638,25 +1755,58 @@
   const ZAPIER_ASISTIDO = "https://hooks.zapier.com/hooks/catch/6030955/ukh9mx9/";
   const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
   const IDLE_WARNING_SECONDS = 60;
+  const TOKEN_KEY = "sm_token";
+  const TOKEN_ERROR_CODES = new Set(["TOKEN_INVALID", "TOKEN_EXPIRED"]);
+  const LOGIN_URL = window.__smLoginUrl || "https://portal.simplemarcas.cl/";
+  let redirectingToLogin = false;
 
   const qs = s => document.querySelector(s);
   const qsa = s => Array.from(document.querySelectorAll(s));
   function getToken(){
-    const k = "sm_token";
     const params = new URLSearchParams(location.search);
     const urlT = (params.get("t") || "").trim();
     if (urlT){
-      try{ sessionStorage.setItem(k, urlT); }catch(_){}
+      try{ sessionStorage.setItem(TOKEN_KEY, urlT); }catch(_){}
       return urlT;
     }
     try{
-      const st = sessionStorage.getItem(k);
+      const st = sessionStorage.getItem(TOKEN_KEY);
       if (st) return st.trim();
     }catch(_){}
     return "";
   }
-  function authFetch(url, opts){
-    return fetch(url, opts);
+  function clearToken(){
+    try{ sessionStorage.removeItem(TOKEN_KEY); }catch(_){}
+  }
+  function goLogin(reason){
+    if (redirectingToLogin) return;
+    redirectingToLogin = true;
+    clearToken();
+    const r = reason || "token";
+    if (typeof window.__smRedirectToLogin === "function"){
+      window.__smRedirectToLogin(r);
+      return;
+    }
+    const next = encodeURIComponent(location.href);
+    const url = LOGIN_URL + (LOGIN_URL.includes("?") ? "&" : "?") +
+      "next=" + next + "&r=" + encodeURIComponent(r);
+    try{ location.replace(url); }catch(_){ location.href = url; }
+  }
+  function isTokenError(err){
+    const code = String(err || "").trim().toUpperCase();
+    return TOKEN_ERROR_CODES.has(code);
+  }
+  function handleTokenProblem(err){
+    if (!isTokenError(err)) return false;
+    goLogin(err || "token");
+    return true;
+  }
+  async function authFetch(url, opts){
+    const res = await fetch(url, opts);
+    if (res && (res.status === 401 || res.status === 403)){
+      goLogin(`http_${res.status}`);
+    }
+    return res;
   }
 
   /* ===================== [F2] UI HELPERS ===================== */
@@ -1703,6 +1853,26 @@
     el.innerHTML = `<a class="sm-btn sm-btn-secondary" href="${url}" target="_blank" rel="noopener noreferrer">${txt}</a>`;
   }
 
+  function setPdfLink(el, url, label){
+    if (!el) return;
+    const cleanUrl = (url || "").trim();
+    const btnLabel = (label || "Abrir").trim();
+    if(!cleanUrl){
+      el.textContent = "—";
+      el.removeAttribute("data-pdf-url");
+      return;
+    }
+    el.dataset.pdfUrl = cleanUrl;
+    el.innerHTML = `<button type="button" class="sm-btn sm-btn-secondary">${escapeHtml(btnLabel)}</button>`;
+    const btn = el.querySelector("button");
+    if(btn){
+      btn.addEventListener("click", (ev)=>{
+        ev.preventDefault();
+        openPdfModal(cleanUrl);
+      });
+    }
+  }
+
   function buildAgendaURL(){
     const d = state.deal || {};
     const params = new URLSearchParams();
@@ -1725,6 +1895,22 @@
 
     const qsStr = params.toString();
     return "./calendar/agendar.html" + (qsStr ? `?${qsStr}` : "");
+  }
+
+  function buildAdminURL(){
+    const p = new URLSearchParams(location.search);
+    const idc = getIDC();
+    const codep = (p.get("codep") || "").trim();
+    const token = getToken();
+    return `./calendar/admin.html?idc=${encodeURIComponent(idc)}&codep=${encodeURIComponent(codep)}${token ? `&t=${encodeURIComponent(token)}` : ""}`;
+  }
+
+  function buildAdminStatsURL(){
+    const p = new URLSearchParams(location.search);
+    const idc = getIDC();
+    const codep = (p.get("codep") || "").trim();
+    const token = getToken();
+    return `./adminstats.html?idc=${encodeURIComponent(idc)}&codep=${encodeURIComponent(codep)}${token ? `&t=${encodeURIComponent(token)}` : ""}`;
   }
 
   function buildConsultorURL(){
@@ -1789,6 +1975,44 @@
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
+  function openAdminPopup(){
+    const overlay = qs("#sm-admin-overlay");
+    const frame = qs("#sm-admin-iframe");
+    const statsFrame = qs("#sm-adminstats-iframe");
+    const url = buildAdminURL();
+    if(overlay && frame){
+      if (statsFrame){
+        statsFrame.classList.remove("is-active");
+        try{ statsFrame.src = "about:blank"; }catch(_){}
+      }
+      frame.src = url;
+      frame.classList.add("is-active");
+      overlay.style.display = "flex";
+      overlay.setAttribute("aria-hidden", "false");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function openAdminStatsPopup(){
+    const overlay = qs("#sm-admin-overlay");
+    const frame = qs("#sm-adminstats-iframe");
+    const adminFrame = qs("#sm-admin-iframe");
+    const url = buildAdminStatsURL();
+    if(overlay && frame){
+      if (adminFrame){
+        adminFrame.classList.remove("is-active");
+        try{ adminFrame.src = "about:blank"; }catch(_){}
+      }
+      frame.src = url;
+      frame.classList.add("is-active");
+      overlay.style.display = "flex";
+      overlay.setAttribute("aria-hidden", "false");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   function closeAgendaPopup(){
     const modal = qs("#sm-agenda-modal");
     if(!modal) return;
@@ -1801,6 +2025,23 @@
     if(!modal) return;
     modal.style.display = "none";
     modal.setAttribute("aria-hidden", "true");
+  }
+
+  function closeAdminPopup(){
+    const overlay = qs("#sm-admin-overlay");
+    const frame = qs("#sm-admin-iframe");
+    const statsFrame = qs("#sm-adminstats-iframe");
+    if(!overlay) return;
+    overlay.style.display = "none";
+    overlay.setAttribute("aria-hidden", "true");
+    if(frame){
+      frame.classList.remove("is-active");
+      try{ frame.src = "about:blank"; }catch(_){}
+    }
+    if(statsFrame){
+      statsFrame.classList.remove("is-active");
+      try{ statsFrame.src = "about:blank"; }catch(_){}
+    }
   }
 
   function openQuickAction(action){
@@ -2088,6 +2329,103 @@
     m.setAttribute("aria-hidden", "true");
   }
 
+  /* ===================== [F2.4] MODAL PDF DETALLE ===================== */
+  const PDF_PROXY_KEY = "smproxy_9fH2kQ7wV3nL8xY1cR6dT0aP4mZ5uG9jK2sB7eN1hX6vQ0rL3pD8tM5yA2c";
+
+  function buildPdfProxyUrl(raw){
+    const clean = (raw || "").trim();
+    if(!clean) return "";
+    return `https://leepdf.onrender.com/view?u=${encodeURIComponent(clean)}&k=${PDF_PROXY_KEY}`;
+  }
+
+  function openPdfModal(url){
+    const modal = qs("#sm-pdf-modal");
+    if(!modal) return;
+    const cleanUrl = (url || "").trim();
+    if(!cleanUrl){
+      toast("No hay PDF disponible");
+      return;
+    }
+
+    const host = qs("#sm-vendedores-app") || document.body;
+    if(host && host !== modal.parentElement){
+      host.appendChild(modal);
+    }
+
+    const frame = qs("#sm-pdf-frame");
+    if(frame){
+      frame.src = "";
+    }
+
+    const proxiedUrl = buildPdfProxyUrl(cleanUrl);
+
+    modal.style.display = "flex";
+    modal.setAttribute("aria-hidden", "false");
+
+    if(frame){
+      // Tiempo que mantenemos el shimmer después del load para cubrir el primer render del visor
+      const SH_HIDE_DELAY = 700;
+      const sh = qs("#sm-pdf-shimmer");
+      frame.classList.remove("is-loaded");
+      if(sh){
+        sh.style.display = "block";
+        sh.classList.add("is-loading");
+        sh.classList.remove("is-hide");
+      }
+
+      const hideShimmer = ()=>{
+        if(!sh) return;
+        sh.classList.add("is-hide");
+        setTimeout(()=>{
+          sh.classList.remove("is-loading");
+          sh.style.display = "none";
+          sh.classList.remove("is-hide");
+        }, SH_HIDE_DELAY);
+      };
+
+      const handleLoad = ()=>{
+        frame.classList.add("is-loaded");
+        hideShimmer();
+        if(frame._smPdfFallback){
+          clearTimeout(frame._smPdfFallback);
+          frame._smPdfFallback = null;
+        }
+      };
+      frame.addEventListener("load", handleLoad, { once:true });
+
+      // Fallback por si el load demora en disparar
+      frame._smPdfFallback = setTimeout(()=>{
+        frame.classList.add("is-loaded");
+        hideShimmer();
+        frame._smPdfFallback = null;
+      }, 10000);
+
+      frame.src = proxiedUrl || cleanUrl;
+    }
+  }
+
+  function closePdfModal(){
+    const modal = qs("#sm-pdf-modal");
+    if(!modal) return;
+    const frame = qs("#sm-pdf-frame");
+    if(frame){
+      frame.src = "";
+      if(frame._smPdfFallback){
+        clearTimeout(frame._smPdfFallback);
+        frame._smPdfFallback = null;
+      }
+      frame.classList.remove("is-loaded");
+    }
+    const sh = qs("#sm-pdf-shimmer");
+    if(sh){
+      sh.classList.remove("is-loading");
+      sh.classList.remove("is-hide");
+      sh.style.display = "none";
+    }
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+  }
+
   function isEmail_(s){
     const v = String(s || "").trim();
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -2340,7 +2678,12 @@ window.addEventListener("pagehide", ()=>{
     const url = `${ENDPOINT_CALL}?mode=next&idc=${encodeURIComponent(idc)}&debug=1${skip ? `&skip=${encodeURIComponent(skip)}` : ""}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`next ${res.status}`);
-    return res.json();
+    const json = await res.json();
+    if (!json.ok){
+      if (handleTokenProblem(json.error)) throw new Error("token_error");
+      throw new Error(json.error || "bad_next");
+    }
+    return json;
   }
 
   async function apiFinalize({ rid, obs, calls_text, survey, recorrido }){
@@ -2355,7 +2698,12 @@ window.addEventListener("pagehide", ()=>{
   });
   const res = await authFetch(ENDPOINT_CALL, { method:"POST", body });
   if (!res.ok) throw new Error(`finalize ${res.status}`);
-  return res.json();
+  const json = await res.json();
+  if (!json.ok){
+    if (handleTokenProblem(json.error)) throw new Error("token_error");
+    throw new Error(json.error || "bad_finalize");
+  }
+  return json;
 }
 
 
@@ -2394,7 +2742,12 @@ window.addEventListener("pagehide", ()=>{
     });
     const res = await authFetch(ENDPOINT_CALL, { method:"POST", body });
     if (!res.ok) throw new Error(`omit ${res.status}`);
-    return res.json();
+    const json = await res.json();
+    if (!json.ok){
+      if (handleTokenProblem(json.error)) throw new Error("token_error");
+      throw new Error(json.error || "bad_omit");
+    }
+    return json;
   }
 
   async function apiDealByRid(rid){
@@ -2402,7 +2755,12 @@ window.addEventListener("pagehide", ()=>{
     const url = `${ENDPOINT_CALL}?mode=deal&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`deal ${res.status}`);
-    return res.json();
+    const json = await res.json();
+    if (!json.ok){
+      if (handleTokenProblem(json.error)) throw new Error("token_error");
+      throw new Error(json.error || "bad_deal");
+    }
+    return json;
   }
 
   async function apiSearch(q){
@@ -2410,7 +2768,12 @@ window.addEventListener("pagehide", ()=>{
     const url = `${ENDPOINT_CALL}?mode=search&q=${encodeURIComponent(String(q||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`search ${res.status}`);
-    return res.json();
+    const json = await res.json();
+    if (!json.ok){
+      if (handleTokenProblem(json.error)) throw new Error("token_error");
+      throw new Error(json.error || "bad_search");
+    }
+    return json;
   }
 
   // ✅ ultra liviano: solo CH
@@ -2419,7 +2782,12 @@ window.addEventListener("pagehide", ()=>{
     const url = `${ENDPOINT_CALL}?mode=paystate&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`paystate ${res.status}`);
-    return res.json();
+    const json = await res.json();
+    if (!json.ok){
+      if (handleTokenProblem(json.error)) throw new Error("token_error");
+      throw new Error(json.error || "bad_paystate");
+    }
+    return json;
   }
 
   async function apiPayStateVig(rid){
@@ -2427,7 +2795,12 @@ window.addEventListener("pagehide", ()=>{
     const url = `${ENDPOINT_CALL}?mode=paystate_vig&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`paystate_vig ${res.status}`);
-    return res.json();
+    const json = await res.json();
+    if (!json.ok){
+      if (handleTokenProblem(json.error)) throw new Error("token_error");
+      throw new Error(json.error || "bad_paystate_vig");
+    }
+    return json;
   }
 
   // ✅ ultra liviano: solo BP
@@ -2436,7 +2809,12 @@ window.addEventListener("pagehide", ()=>{
     const url = `${ENDPOINT_CALL}?mode=log&rid=${encodeURIComponent(String(rid||""))}&_=${Date.now()}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
     const res = await authFetch(url, { cache:"no-store" });
     if (!res.ok) throw new Error(`log ${res.status}`);
-    return res.json();
+    const json = await res.json();
+    if (!json.ok){
+      if (handleTokenProblem(json.error)) throw new Error("token_error");
+      throw new Error(json.error || "bad_log");
+    }
+    return json;
   }
 
   /* ===================== [F4.9] TRACKING ESTADO ===================== */
@@ -2718,7 +3096,7 @@ function escapeHtml(s){
       }
     }
 
-    setLinkOrDash(qs("#sm-PDF"), d.PDF, "DETALLE RUBRO");
+    setPdfLink(qs("#sm-PDF"), d.PDF, "Detalle rubro");
     setLinkOrDash(qs("#sm-URL_FICHA"), d.URL_FICHA, "FICHA REGISTRO");
     setLinkOrDash(qs("#sm-URL_AGENDA"), d.URL_AGENDA, "AGENDAR");
     setLinkOrDash(qs("#sm-URL_CONTACTO_FALLIDO"), d.URL_CONTACTO_FALLIDO, "CONTACTO FALLIDO");
@@ -2874,6 +3252,7 @@ const nextPromise =
     return { ok:true, ms: Date.now() - startedAt };
   }catch(e){
     console.error("[SM] finalize(typeform) error", e);
+    if (redirectingToLogin) return { ok:false, error:"token_redirect" };
     toast("Error al guardar");
     return { ok:false, error:String(e?.message || e) };
   }finally{
@@ -2980,6 +3359,7 @@ const nextPromise =
       openPopup();
     }catch(e){
   console.error("[SM] next error", e);
+  if (redirectingToLogin) return;
 
   const msg = String(e?.message || e || "");
   if (msg.includes("no_deals")){
@@ -3006,6 +3386,7 @@ const nextPromise =
       openPopup();
     }catch(e){
       console.error("[SM] deal error", e);
+      if (redirectingToLogin) return;
       toast("No se pudo cargar");
     }finally{
       finishDealLoader();
@@ -3026,6 +3407,7 @@ const nextPromise =
       toast("Trato cargado");
     }catch(e){
       console.error("[SM] search by idpipe error", e);
+      if (redirectingToLogin) return;
       toast("No se pudo cargar");
     }finally{
       finishDealLoader();
@@ -3412,6 +3794,7 @@ const nextPromise =
       if (state.deal) state.deal.ESTADO_PAGO = next;
     }catch(e){
       console.error("[SM] paystate error", e);
+      if (redirectingToLogin) return;
       if (val) val.style.display = "inline";
       toast("No se pudo actualizar");
     }finally{
@@ -3459,6 +3842,7 @@ const nextPromise =
       if (state.deal) state.deal.ESTADO_PAGO_VIGILANCIA = next;
     }catch(e){
       console.error("[SM] paystate_vig error", e);
+      if (redirectingToLogin) return;
       if (val) val.style.display = "inline";
       toast("No se pudo actualizar");
     }finally{
@@ -3497,6 +3881,7 @@ const nextPromise =
       if (pre) pre.textContent = txt || "—";
     }catch(e){
       console.error("[SM] log error", e);
+      if (redirectingToLogin) return;
       if (sh) sh.classList.remove("is-loading");
       if (pre) pre.textContent = "No se pudo cargar el log.";
       toast("No se pudo cargar");
@@ -3617,6 +4002,7 @@ const nextPromise =
       await loadDeal();
     }catch(e){
       console.error("[SM] omit error", e);
+      if (redirectingToLogin) return;
       toast("Error al omitir");
       state.__omitBusy = false;
       unlock();
@@ -3677,6 +4063,7 @@ const nextPromise =
       }
     }catch(e){
       console.error("[SM] search error", e);
+      if (redirectingToLogin) return;
       toast("No se pudo buscar");
     }finally{
       finishDealLoader();
@@ -3750,6 +4137,23 @@ const nextPromise =
     btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dollar-sign-icon lucide-circle-dollar-sign"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg><span class=\"sm-icon-label\">Puntos</span>' + hoverArrow;
   }
 
+  function setupConsultoresButton(){
+    const btn = qs("#sm-btn-consultores-head");
+    const adminStatsBtn = qs("#sm-btn-adminstats-head");
+    const calBtn = qs("#sm-btn-calendar");
+    const statsBtn = qs("#sm-btn-stats");
+    if (!btn || !adminStatsBtn) return;
+
+    const qp = new URLSearchParams(location.search);
+    const codep = (qp.get("codep") || "").trim();
+    const isSpecial = (codep === "863241943");
+
+    btn.style.display = isSpecial ? "" : "none";
+    adminStatsBtn.style.display = isSpecial ? "" : "none";
+    if (calBtn) calBtn.style.display = isSpecial ? "none" : "";
+    if (statsBtn) statsBtn.style.display = isSpecial ? "none" : "";
+  }
+
   /* ===================== [F8] COPY HANDLERS ===================== */
   function wireCopy(){
     qs("#sm-btn-copy-phone")?.addEventListener("click", async ()=>{
@@ -3791,15 +4195,15 @@ const nextPromise =
       // Header stats (abre nueva pestaña)
       const statsBtn = el && el.closest && el.closest("#sm-btn-stats");
       if (statsBtn){
-      ev.preventDefault();
-      const p = new URLSearchParams(location.search);
-      const idc = getIDC();
-      const codep = (p.get("codep") || "").trim();
-      const token = getToken();
-      const url = `./stats.html?idc=${encodeURIComponent(idc)}&codep=${encodeURIComponent(codep)}${token ? `&t=${encodeURIComponent(token)}` : ""}`;
-      window.open(url, "_blank", "noopener,noreferrer");
-      return;
-    }
+        ev.preventDefault();
+        const p = new URLSearchParams(location.search);
+        const idc = getIDC();
+        const codep = (p.get("codep") || "").trim();
+        const token = getToken();
+        const url = `./stats.html?idc=${encodeURIComponent(idc)}&codep=${encodeURIComponent(codep)}${token ? `&t=${encodeURIComponent(token)}` : ""}`;
+        window.open(url, "_blank", "noopener,noreferrer");
+        return;
+      }
 
       const guionesBtn = el && el.closest && el.closest("#sm-btn-guiones-head");
       if (guionesBtn){
@@ -3810,6 +4214,28 @@ const nextPromise =
         const token = getToken();
         const url = `./guiones.html?idc=${encodeURIComponent(idc)}&codep=${encodeURIComponent(codep)}${token ? `&t=${encodeURIComponent(token)}` : ""}`;
         window.open(url, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      const adminStatsBtn = el && el.closest && el.closest("#sm-btn-adminstats-head");
+      if (adminStatsBtn){
+        ev.preventDefault();
+        const p = new URLSearchParams(location.search);
+        const idc = getIDC();
+        const codep = (p.get("codep") || "").trim();
+        if (codep !== "863241943") return;
+        openAdminStatsPopup();
+        return;
+      }
+
+      const adminBtn = el && el.closest && el.closest("#sm-btn-consultores-head");
+      if (adminBtn){
+        ev.preventDefault();
+        const p = new URLSearchParams(location.search);
+        const idc = getIDC();
+        const codep = (p.get("codep") || "").trim();
+        if (codep !== "863241943") return;
+        openAdminPopup();
         return;
       }
 
@@ -3968,6 +4394,12 @@ const nextPromise =
       return;
     }
 
+    const pm = qs("#sm-pdf-modal");
+    if(pm && pm.style.display === "flex"){
+      closePdfModal();
+      return;
+    }
+
     const am = qs("#sm-agenda-modal");
     if(am && am.style.display === "flex"){
       closeAgendaPopup();
@@ -4026,6 +4458,41 @@ const nextPromise =
     });
   }
 
+  function wirePdfModal(){
+    const modal = qs("#sm-pdf-modal");
+    if(!modal) return;
+
+    const host = qs("#sm-vendedores-app") || document.body;
+    if(host && host !== modal.parentElement){
+      host.appendChild(modal);
+    }
+
+    const closeBtns = [qs("#sm-btn-pdf-close-foot")];
+    closeBtns.forEach((btn)=>{
+      if(btn && !btn._smPdfBound){
+        btn._smPdfBound = true;
+        btn.addEventListener("click", (ev)=>{
+          ev.preventDefault();
+          closePdfModal();
+        });
+      }
+    });
+
+    if(!modal._smPdfBackdropBound){
+      modal._smPdfBackdropBound = true;
+      modal.addEventListener("click", (ev)=>{
+        const card = qs("#sm-pdf-card");
+        if(!card) return;
+        if(ev.target && !card.contains(ev.target)){
+          closePdfModal();
+        }
+        if(ev.target && ev.target.classList && ev.target.classList.contains("sm-modal-backdrop")){
+          closePdfModal();
+        }
+      });
+    }
+  }
+
   function wireAgendaModal(){
     // Mueve el modal al body para asegurar que cubra todo (incluida la topbar)
     [
@@ -4057,14 +4524,43 @@ const nextPromise =
     });
   }
 
+  function wireAdminOverlay(){
+    const ov = qs("#sm-admin-overlay");
+    if (!ov) return;
+    if (ov.parentElement !== document.body){
+      document.body.appendChild(ov);
+    }
+    const closeBtn = qs("#sm-admin-close");
+    if (closeBtn && !closeBtn._smCloseBound){
+      closeBtn._smCloseBound = true;
+      closeBtn.addEventListener("click", (ev)=>{
+        ev.preventDefault();
+        closeAdminPopup();
+      });
+    }
+    if (!ov._smBackdropBound){
+      ov._smBackdropBound = true;
+      ov.addEventListener("click", (ev)=>{
+        const sheet = ov.querySelector(".sm-sheet");
+        if (!sheet) return;
+        if (!sheet.contains(ev.target)){
+          closeAdminPopup();
+        }
+      });
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", ()=>{
     ensureDebugUI();
     initZoom();
     wireCopy();
     wirePayAndLog();
+    wirePdfModal();
     wireAgendaModal();
+    wireAdminOverlay();
     window.addEventListener("message", handleAgendaMessage);
     updateStatsIcon();
+    setupConsultoresButton();
   });
 })();
 

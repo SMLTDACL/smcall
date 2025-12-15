@@ -64,6 +64,19 @@
   <script>
 (function(){
   const LOGIN_URL = "./index.html";
+  const TOKEN_KEY = "sm_token";
+  let redirectingToLogin = false;
+  function clearToken(){
+    try{ sessionStorage.removeItem(TOKEN_KEY); }catch(_){}
+  }
+  function redirectToLogin(reason){
+    if (redirectingToLogin) return;
+    redirectingToLogin = true;
+    clearToken();
+    const sep = LOGIN_URL.includes("?") ? "&" : "?";
+    const url = `${LOGIN_URL}${sep}r=${encodeURIComponent(reason || "token")}`;
+    try{ location.replace(url); }catch(_){ location.href = url; }
+  }
   function decodeTokenPayload(token){
     try{
       const parts = String(token || "").split(".");
@@ -73,18 +86,22 @@
     }catch(_){ return null; }
   }
   function getToken(){
-    const k = "sm_token";
     const params = new URLSearchParams(location.search);
     const urlT = (params.get("t") || "").trim();
     if (urlT){
-      try{ sessionStorage.setItem(k, urlT); }catch(_){}
+      try{ sessionStorage.setItem(TOKEN_KEY, urlT); }catch(_){}
       return urlT;
     }
     try{
-      const st = sessionStorage.getItem(k);
+      const st = sessionStorage.getItem(TOKEN_KEY);
       if (st) return st.trim();
     }catch(_){}
     return "";
+  }
+  function isTokenExpired(payload){
+    const exp = Number(payload && payload.exp);
+    if (!exp) return true;
+    return Date.now() > exp * 1000;
   }
   function ensureAuth(){
     const params = new URLSearchParams(location.search);
@@ -93,15 +110,17 @@
     const codep = (params.get("codep") || "").trim();
     const payload = decodeTokenPayload(token);
     if (!token || !idc || !codep || !payload){
-      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
-      location.replace(LOGIN_URL);
+      redirectToLogin("token_missing");
+      return;
+    }
+    if (isTokenExpired(payload)){
+      redirectToLogin("token_expired");
       return;
     }
     const tokIdc = String(payload.idc || "").trim();
     const tokCodep = String(payload.codep || "").trim();
     if ((tokIdc && tokIdc !== idc) || (tokCodep && tokCodep !== codep)){
-      try{ sessionStorage.removeItem("sm_token"); }catch(_){}
-      location.replace(LOGIN_URL);
+      redirectToLogin("token_mismatch");
       return;
     }
   }
