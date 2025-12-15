@@ -627,6 +627,7 @@
         <iframe id="sm-pdf-frame" class="sm-pdf-frame" title="Detalle rubro" loading="lazy"></iframe>
       </div>
       <div class="sm-modal-actions sm-pdf-actions">
+        <a id="sm-btn-pdf-download" class="sm-btn sm-btn-primary sm-btn-xs" href="#" target="_blank" rel="noopener noreferrer" download style="display:none;">Descargar PDF</a>
         <button id="sm-btn-pdf-close-foot" class="sm-btn sm-btn-secondary sm-btn-xs" type="button">Cerrar</button>
       </div>
     </div>
@@ -2338,6 +2339,39 @@
     return `https://leepdf.onrender.com/view?u=${encodeURIComponent(clean)}&k=${PDF_PROXY_KEY}`;
   }
 
+  function getPdfFilename(url){
+    const clean = (url || "").trim();
+    if(!clean) return "";
+    try{
+      const noHash = clean.split("#")[0];
+      const noQuery = noHash.split("?")[0];
+      const parts = noQuery.split("/").filter(Boolean);
+      const last = parts.pop() || "";
+      return last || "";
+    }catch(_){
+      return "";
+    }
+  }
+
+  function updatePdfDownloadButton(cleanUrl, proxiedUrl){
+    const btn = qs("#sm-btn-pdf-download");
+    if(!btn) return;
+    const href = (cleanUrl || proxiedUrl || "").trim();
+    if(!href){
+      btn.style.display = "none";
+      btn.removeAttribute("href");
+      btn.removeAttribute("download");
+      return;
+    }
+    btn.style.display = "inline-flex";
+    btn.setAttribute("href", href);
+    btn.setAttribute("target", "_blank");
+    btn.setAttribute("rel", "noopener noreferrer");
+
+    const filename = getPdfFilename(cleanUrl) || "detalle-rubro.pdf";
+    btn.setAttribute("download", filename);
+  }
+
   function openPdfModal(url){
     const modal = qs("#sm-pdf-modal");
     if(!modal) return;
@@ -2358,6 +2392,9 @@
     }
 
     const proxiedUrl = buildPdfProxyUrl(cleanUrl);
+    modal.dataset.pdfUrl = cleanUrl;
+    modal.dataset.pdfProxyUrl = proxiedUrl || "";
+    updatePdfDownloadButton(cleanUrl, proxiedUrl);
 
     modal.style.display = "flex";
     modal.setAttribute("aria-hidden", "false");
@@ -2407,6 +2444,9 @@
   function closePdfModal(){
     const modal = qs("#sm-pdf-modal");
     if(!modal) return;
+    updatePdfDownloadButton("", "");
+    modal.removeAttribute("data-pdf-url");
+    modal.removeAttribute("data-pdf-proxy-url");
     const frame = qs("#sm-pdf-frame");
     if(frame){
       frame.src = "";
