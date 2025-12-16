@@ -449,14 +449,14 @@
                 <div class="sm-row"><div class="sm-k">Cant. clases</div><div id="sm-CANT_CLASES" class="sm-v">—</div></div>
                 <div class="sm-row"><div class="sm-k">Detalle rubro</div><div id="sm-PDF" class="sm-v sm-link">—</div></div>
                 <div class="sm-row"><div class="sm-k">Opción elegida por cliente</div><div id="sm-OPCION" class="sm-v">—</div></div>
-                <div class="sm-row"><div class="sm-k">Descuento ya aplicado</div><div id="sm-DESCUENTO" class="sm-v">—</div></div>
+                <div class="sm-row sm-row-discount" aria-hidden="true"><div class="sm-k">Descuento ya aplicado</div><div id="sm-DESCUENTO" class="sm-v">—</div></div>
                 <div class="sm-row">
-                  <div class="sm-k">Monto final sin tasas</div>
+                  <div class="sm-k">Monto 1 clase sin tasas</div>
                   <div class="sm-v sm-v-tip">
                     <span id="sm-MONTO_BASE">—</span>
                     <span class="sm-info-icn" aria-label="Información sobre el monto base" tabindex="0">
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info-icon lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span class="sm-tooltip">Es lo que deberá pagar el cliente a Simple Marcas por una clase <strong>(ya incluye cualquier descuento o promoción)</strong>. Si desea agregar clases serán $100.000 por clase adicional a este monto final sin tasas. No incluye tasas.</span>
+                      <span class="sm-tooltip"><strong>Ya incluye cualquier descuento o promoción.</strong><br>Si desea agregar clases serán $100.000 por clase, adicional a este monto. No incluye tasas.</span>
                     </span>
                   </div>
                 </div>
@@ -886,6 +886,7 @@
     border-bottom:1px solid rgba(0,0,0,.06); align-items:center;
   }
   .sm-row:last-child{ border-bottom:0; padding-bottom:0; }
+  .sm-row-discount{ display:none; }
   .sm-k-tip{ display:inline-flex; align-items:center; gap:6px; }
   .sm-k{ font-size:12px; color:#6b7280; min-width:130px; }
   .sm-info-icn{
