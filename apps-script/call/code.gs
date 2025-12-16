@@ -14,6 +14,7 @@ const COL = {
   CANT_CLASES: 13,   // M
   PDF: 14,           // N
   OPCION: 15,        // O
+  CUPON: 65,         // BM
   FECHA_OUT: 17,     // Q
   DESCUENTO: 66,     // BN
   MONTO_BASE: 67,    // BO 
@@ -496,6 +497,7 @@ function rowToDeal_(sheetRow, row){
     CANT_CLASES: asStr(row[COL.CANT_CLASES-1]),
     PDF: asStr(row[COL.PDF-1]),
     OPCION: asStr(row[COL.OPCION-1]),
+    CUPON: asStr(row[COL.CUPON-1]),
     MONTO_BASE: asStr(row[COL.MONTO_BASE-1]), // 
     DESCUENTO: asStr(row[COL.DESCUENTO-1]),
     LOG_BT: asStr(row[COL.LOG_BT-1]), // 
@@ -1046,6 +1048,9 @@ function estadoFromSurvey_(code, rid){
 
     case "A.2.6":
       return "NO CORRESPONDE";
+
+    case "A.2.7":
+      return "NUEVA SOLICITUD";
 
     // ===== PERDIDOS REGISTRO =====
     case "A.2.3":

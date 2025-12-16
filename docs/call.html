@@ -550,6 +550,7 @@
               </div>
               <!-- botones mini abajo derecha -->
               <div class="sm-right-actions">
+                <button id="sm-btn-nueva-solicitud" class="sm-mini-btn" type="button">📋 Nueva solicitud</button>
                 <button id="sm-btn-venta-analisis" class="sm-mini-btn" type="button">📊 Venta de Análisis</button>
                 <button id="sm-btn-venta-asistido" class="sm-mini-btn" type="button">💻 Venta Registro Asistido</button>
               </div>
@@ -627,7 +628,7 @@
         <iframe id="sm-pdf-frame" class="sm-pdf-frame" title="Detalle rubro" loading="lazy"></iframe>
       </div>
       <div class="sm-modal-actions sm-pdf-actions">
-        <a id="sm-btn-pdf-download" class="sm-btn sm-btn-primary sm-btn-xs" href="#" target="_blank" rel="noopener noreferrer" download style="display:none;">Descargar PDF</a>
+        <a id="sm-btn-pdf-download" class="sm-link-action sm-pdf-download" href="#" target="_blank" rel="noopener noreferrer" download style="display:none;">Descargar PDF</a>
         <button id="sm-btn-pdf-close-foot" class="sm-btn sm-btn-secondary sm-btn-xs" type="button">Cerrar</button>
       </div>
     </div>
@@ -1129,8 +1130,11 @@
     opacity:0;
   }
   .sm-pdf-actions{
-    justify-content:flex-end;
+    justify-content:flex-start;
     align-items:center;
+  }
+  #sm-btn-pdf-close-foot{
+    margin-left:auto;
   }
   /* Tour modal */
   .sm-tour-modal{
@@ -4112,7 +4116,64 @@ const nextPromise =
     }
   }
 
-  /* ===================== [F7.2] VENTAS (ZAPIER) ===================== */
+  /* ===================== [F7.2] ACCIONES DE VENTA ===================== */
+  function splitNombreApellido(nombreCompleto){
+    const parts = String(nombreCompleto || "").trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return { nombre:"", apellido:"" };
+    const nombre = parts.shift();
+    return { nombre, apellido: parts.join(" ") };
+  }
+
+  function normalizeOpcionCliente(opcion){
+    const raw = String(opcion || "").trim().toLowerCase();
+    if(!raw) return "";
+    const clean = raw.replace(/ó/g, "o");
+    const compact = clean.replace(/\s+/g, "");
+    if (compact.includes("opc2") || compact.includes("opcion2") || compact === "2") return "2";
+    if (compact.includes("opc3") || compact.includes("opcion3") || compact === "3") return "3";
+    return "";
+  }
+
+  function buildNuevaSolicitudUrl(){
+    const d = state.deal || {};
+    const opt = normalizeOpcionCliente(d.OPCION);
+    if(!opt) return { url:"", error:"option" };
+
+    const base = (opt === "2")
+      ? "https://solicitud.simplemarcas.cl/exfgojnp"
+      : "https://solicitud.simplemarcas.cl/smlx8gtr";
+
+    const { nombre, apellido } = splitNombreApellido(d.NOMBRE || "");
+    const telefonoInput = (qs("#sm-phone")?.value || "").trim();
+    const telefono = telefonoInput || (d.TELEFONO || "").trim();
+
+    const url = new URL(base);
+    url.searchParams.set("format", "software_interno");
+    url.searchParams.set("8ifiq", d.EMAIL || "");
+    url.searchParams.set("dddkm", nombre);
+    url.searchParams.set("cbl3f", apellido);
+    url.searchParams.set("6lso5", telefono);
+    url.searchParams.set("41d8h", d.MARCA || "");
+    url.searchParams.set("7jr9m", d.MONTO_BASE || "");
+    url.searchParams.set("4kpf6", d.CUPON || "");
+
+    return { url: url.toString(), error:"" };
+  }
+
+  function openNuevaSolicitud(){
+    if(!state.deal) return toast("Sin trato cargado");
+    const { url, error } = buildNuevaSolicitudUrl();
+    if(!url){
+      if (error === "option"){
+        toast("La opción debe ser Opción 2 o Opción 3");
+      } else {
+        toast("No se pudo armar la solicitud");
+      }
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   function doVentaAnalisis(){
     if(!state.deal) return toast("Sin trato cargado");
     if (state.__saleBusy) return;
@@ -4405,6 +4466,12 @@ const nextPromise =
         return;
       }
 
+      if(id === "sm-btn-nueva-solicitud"){
+        ev.preventDefault();
+        openNuevaSolicitud();
+        return;
+      }
+
       if(id === "sm-btn-venta-asistido"){
         ev.preventDefault();
         doVentaAsistido();
@@ -4666,6 +4733,7 @@ const nextPromise =
       "A.1.2": "+$390",
       "A.2.1": "+$390",
       "A.2.6": "+$390",
+      "A.2.7": "+$520",
       "A.2.3": "+$390",
       "A.2.4": "+$520",
       "A.2.2.3": "+$390",
@@ -4736,9 +4804,10 @@ const nextPromise =
           options:[
             { id:"A.2.1", label:"Número equivocado", next:null, requires_text:false },
             { id:"A.2.6", label:"No corresponde a ventas", next:null, requires_text:false },
+            { id:"A.2.2", label:"Ya no quiere el Registro", next:"A|Q2_2", requires_text:false },
+            { id:"A.2.7", label:"Nueva solicitud (modificación de rubro)", next:null, requires_text:false },
             { id:"A.2.3", label:"Le interesa, pero no quiere que lo llamen más por ahora, el se contactará por email o por la página.", next:null, requires_text:false },
             { id:"A.2.4", label:"Agendado (no podía hablar ahora)", next:null, requires_text:false },
-            { id:"A.2.2", label:"Ya no quiere el Registro", next:"A|Q2_2", requires_text:false },
             { id:"A.2.5", label:"Se envía Ficha", next:"A|Q3", requires_text:false }
           ]
         },
@@ -4779,7 +4848,7 @@ const nextPromise =
           id:"A|Q3_2",
           text:"¿Se agendó para verificar el pago?",
           options:[
-            { id:"A.3.2.1", label:"No quiere que lo llamen más por ahora, el se contactará por email o por la página.", next:null, requires_text:false },
+            { id:"A.3.2.1", label:"No quiere agendar solo quería la información o cotizar", next:null, requires_text:false },
             { id:"A.3.2.2", label:"Agendado (no podía pagar ahora)", next:null, requires_text:false }
           ]
         },
