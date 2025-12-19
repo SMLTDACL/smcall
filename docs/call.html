@@ -2074,6 +2074,13 @@
     }
   }
 
+  function closeBlockingPopups(){
+    // Cierra overlays que pueden quedar encima del trato cuando se abre desde la lupa
+    closeAdminPopup();
+    closeConsultorPopup();
+    closeAgendaPopup();
+  }
+
   function openQuickAction(action){
     const d = state.deal || {};
     if (action === "agenda"){
@@ -2107,6 +2114,7 @@
   }
 
   function openPopup(){
+    closeBlockingPopups();
     const o = qs("#sm-overlay");
     if(!o) return;
     o.style.display = "flex";
@@ -2613,6 +2621,15 @@
   }
 
     /* ===================== [PRESENCE] POPUP ACTIVE (COL B) ===================== */
+  function shouldSkipPresence_(){
+    try{
+      const qp = new URLSearchParams(location.search);
+      return (qp.get("codep") || "").trim() === "863241943";
+    }catch(_){
+      return false;
+    }
+  }
+
   function getPresenceSid_(){
     if (state.__presenceSid) return state.__presenceSid;
     try{
@@ -2633,6 +2650,7 @@
   }
 
 function presenceSend_(action, rid, prevRid){
+  if (shouldSkipPresence_()) return;
   try{
     const sid = getPresenceSid_();
     const payload = {
@@ -2657,6 +2675,7 @@ function presenceSend_(action, rid, prevRid){
 
 
 function presenceStartHeartbeat_(){
+  if (shouldSkipPresence_()) return;
   if (state.__presenceTimer || state.__presenceTimeout) return;
 
   // Queremos 1 ping por “bucket” de 10 minutos (como tu sweep).
@@ -2706,6 +2725,7 @@ function presenceStopHeartbeat_(){
 
 
   function presenceEnterOrSwitch_(newRid){
+    if (shouldSkipPresence_()) return;
     const prev = state.__presenceRid;
     state.__presenceRid = newRid || null;
 

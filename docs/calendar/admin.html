@@ -301,7 +301,7 @@
     <div class="sm-rea-dialog">
       <div class="sm-rea-title">Reasignar reunión</div>
       <div class="sm-rea-body" id="sm-rea-body">
-        Buscando consultores disponibles…
+        <span class="sm-shimmer-text" data-text="Buscando consultores disponibles…">Buscando consultores disponibles…</span>
       </div>
       <div class="sm-rea-row" id="sm-rea-select-row" style="display:none;">
         <label for="sm-rea-select">Nuevo consultor</label>
@@ -323,7 +323,7 @@
       </div>
       <div class="sm-rp-grid">
         <div class="sm-rp-cal-wrap">
-          <div id="sm-rp-cal" class="sm-rp-cal">Cargando calendario…</div>
+          <div id="sm-rp-cal" class="sm-rp-cal"><span class="sm-shimmer-text" data-text="Cargando calendario…">Cargando calendario…</span></div>
         </div>
         <div class="sm-rp-slots-wrap">
           <div class="sm-rp-date-label" id="sm-rp-date-label">Selecciona una fecha</div>
@@ -647,6 +647,49 @@ body{
   color:#ea580c !important;
 }
 
+/* Texto shimmer para estados de carga */
+.sm-shimmer-text{
+  position:relative;
+  display:inline-block;
+  font-weight:400;
+  letter-spacing:.2px;
+  color:#6b7280;
+}
+.sm-shimmer-text::after{
+  content:attr(data-text);
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  white-space:nowrap;
+  color:transparent;
+  -webkit-text-fill-color:transparent;
+  -webkit-background-clip:text;
+  background-clip:text;
+  background-image:linear-gradient(
+    90deg,
+    rgba(255,255,255,0.00) 0%,
+    rgba(255,255,255,0.00) 42%,
+    rgba(255,255,255,0.12) 50%,
+    rgba(255,255,255,0.62) 56%,
+    rgba(255,255,255,0.92) 60%,
+    rgba(255,255,255,0.62) 64%,
+    rgba(255,255,255,0.12) 70%,
+    rgba(255,255,255,0.00) 78%,
+    rgba(255,255,255,0.00) 100%
+  );
+  background-repeat:no-repeat;
+  background-size:220% 100%;
+  background-position:-120% 0;
+  mix-blend-mode:screen;
+  opacity:1;
+  animation:sm-text-shimmer 1.05s linear infinite;
+  will-change:background-position;
+}
+@keyframes sm-text-shimmer{
+  from{background-position:-120% 0;}
+  to{background-position:120% 0;}
+}
+
 
 
 /* ===== Modal Reasignar ===== */
@@ -717,10 +760,21 @@ body{
   background:#f9fafb;
   cursor:pointer;
 }
+.sm-rea-btn:disabled{
+  background:#e5e7eb;
+  border-color:#e5e7eb;
+  color:#9ca3af;
+  cursor:not-allowed;
+}
 .sm-rea-btn-primary{
   background:#1f6feb;
   color:#ffffff;
   border-color:#1f6feb;
+}
+.sm-rea-btn-primary:disabled{
+  background:#9ca3af;
+  border-color:#9ca3af;
+  color:#f3f4f6;
 }
 
 /* ===== Modal Reprogramar ===== */
@@ -817,10 +871,21 @@ body{
   background:#f9fafb;
   cursor:pointer;
 }
+.sm-rp-btn:disabled{
+  background:#e5e7eb;
+  border-color:#e5e7eb;
+  color:#9ca3af;
+  cursor:not-allowed;
+}
 .sm-rp-btn-primary{
   background:#1f6feb;
   color:#ffffff;
   border-color:#1f6feb;
+}
+.sm-rp-btn-primary:disabled{
+  background:#9ca3af;
+  border-color:#9ca3af;
+  color:#f3f4f6;
 }
 .sm-rp-cal{
   font-size:12px;
@@ -1260,6 +1325,11 @@ body{
     selectedDate: null,
     selectedTime: null
   };
+
+  function rpUpdateConfirmState(){
+    const btn = qs("#sm-rp-confirm");
+    if (btn) btn.disabled = !(rpState.selectedDate && rpState.selectedTime);
+  }
 
   function consultorCapDays(cid){
     const base = rpState.global_days_ahead_max || 90;
@@ -1868,15 +1938,20 @@ body{
     const sel    = qs("#sm-rea-select");
     const btnConf = qs("#sm-rea-confirm");
 
-    if (bodyEl) bodyEl.textContent = "Buscando consultores disponibles para "+normTime(booking.hora)+"…";
+    const searchingText = "Buscando consultores disponibles para "+normTime(booking.hora)+"…";
+    if (bodyEl) bodyEl.innerHTML = `<span class="sm-shimmer-text" data-text="${searchingText}">${searchingText}</span>`;
     if (rowSel) rowSel.style.display = "none";
     if (sel) sel.innerHTML = "";
-    if (btnConf) btnConf.disabled = true;
+    if (btnConf){
+      btnConf.disabled = true;
+      btnConf.textContent = "Cargando...";
+    }
 
     try{
       const opts = await fetchReassignOptions(booking);
       if (!opts.length){
         if (bodyEl) bodyEl.textContent = "No hay ningún consultor con este horario disponible.";
+        if (btnConf) btnConf.textContent = "Reasignar";
         return;
       }
 
@@ -1891,10 +1966,14 @@ body{
           sel.appendChild(opt);
         });
       }
-      if (btnConf) btnConf.disabled = false;
+      if (btnConf){
+        btnConf.disabled = false;
+        btnConf.textContent = "Reasignar";
+      }
     }catch(err){
       console.error(err);
       if (bodyEl) bodyEl.textContent = "Ocurrió un error al buscar opciones de reasignación.";
+      if (btnConf) btnConf.textContent = "Reasignar";
     }
   }
 
@@ -2053,6 +2132,7 @@ body{
           rpState.selectedDate = ymd;
           rpState.selectedTime = null;
           qsa(".sm-rp-day-btn").forEach(b=> b.classList.toggle("selected", b === btn));
+          rpUpdateConfirmState();
           rpLoadSlotsForSelectedDate();
         });
       }
@@ -2089,7 +2169,8 @@ body{
     const btnConfirm = qs("#sm-rp-confirm");
     if (!slotsWrap || !rpState.selectedDate) return;
 
-    if (btnConfirm) btnConfirm.disabled = true;
+    rpState.selectedTime = null;
+    rpUpdateConfirmState();
     slotsWrap.textContent = "Cargando horarios…";
 
     try{
@@ -2114,13 +2195,14 @@ body{
         btn.addEventListener("click", ()=>{
           rpState.selectedTime = t;
           qsa(".sm-rp-slot-btn").forEach(b=> b.classList.toggle("selected", b === btn));
-          if (btnConfirm) btnConfirm.disabled = !rpState.selectedTime;
+          rpUpdateConfirmState();
         });
         slotsWrap.appendChild(btn);
       });
     }catch(err){
       console.error(err);
       slotsWrap.textContent = "Error al cargar horarios.";
+      rpUpdateConfirmState();
     }
   }
 
@@ -2137,13 +2219,13 @@ body{
     if (body) body.textContent = "Selecciona una nueva fecha y horario para el consultor "+String(booking.consultor_id)+".";
     if (slotsWrap) slotsWrap.innerHTML = "";
     if (label) label.textContent = "Selecciona una fecha";
-    if (cal) cal.textContent = "Cargando calendario…";
-    if (btnConfirm) btnConfirm.disabled = true;
+    if (cal) cal.innerHTML = `<span class="sm-shimmer-text" data-text="Cargando calendario…">Cargando calendario…</span>`;
 
     rpState.consultorId = String(booking.consultor_id);
     rpState.availableDays= {};
     rpState.selectedDate = null;
     rpState.selectedTime = null;
+    rpUpdateConfirmState();
 
     try{
       if (!rpState.inited){
@@ -2346,9 +2428,9 @@ body{
       item.className = "sm-admin-item";
 
       const windowMs = bookingWindowMs(b);
+      const startM = parseMinutes(b.hora);
       let isPast=false, isNow=false;
       if (b.fecha === todayStr){
-        const startM = parseMinutes(b.hora);
         const winStart = startM != null ? startM - PRESENCE_WINDOW_ADVANCE_MIN : null;
         const endM = startM!=null ? startM + (PRESENCE_SLOT_DURATION_MIN - PRESENCE_WINDOW_ADVANCE_MIN) : null;
         if (startM != null){
@@ -2464,7 +2546,8 @@ body{
       const actions = document.createElement("div");
       actions.className = "sm-admin-actions";
 
-      if (!b.cancelado && !isPast){
+      const canReassign = (!b.cancelado && !isPast && (b.fecha !== todayStr || (startM != null && startM >= nowMin + 10)));
+      if (canReassign){
         const reasignBtn = document.createElement("button");
         reasignBtn.type = "button";
         reasignBtn.className = "sm-admin-btn sm-admin-btn-yellow sm-admin-btn-icon";
