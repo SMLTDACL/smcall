@@ -806,9 +806,20 @@
     if (redirectingToLogin) return;
     redirectingToLogin = true;
     clearToken();
+
+    // Si estamos dentro de call.html, pedimos al contenedor que redirija completo
+    try{
+      if (window.parent && window.parent !== window){
+        if (typeof window.parent.__smRedirectToLogin === "function"){
+          window.parent.__smRedirectToLogin(reason || "token");
+          return;
+        }
+      }
+    }catch(_){}
+
     const sep = LOGIN_URL.includes("?") ? "&" : "?";
     const url = `${LOGIN_URL}${sep}r=${encodeURIComponent(reason || "token")}`;
-    try{ window.location.replace(url); }catch(_){ window.location.href = url; }
+    try{ window.top.location.replace(url); }catch(_){ window.location.href = url; }
   }
   function decodeTokenPayload(token){
     try{
