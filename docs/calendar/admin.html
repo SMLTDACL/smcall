@@ -438,8 +438,16 @@ body{
   border:1px solid #fdba74;
 }
 .sm-admin-item.is-cancelled{
-  text-decoration:line-through;
   opacity:0.55;
+}
+.sm-admin-item.is-cancelled .smad-info-row:not(.smad-info-row-motivo),
+.sm-admin-item.is-cancelled .sm-admin-badge:not(.sm-admin-badge-cancel){
+  text-decoration:line-through;
+}
+.sm-admin-item.is-cancelled .sm-admin-badge-cancel,
+.sm-admin-item.is-cancelled .smad-info-row-motivo,
+.sm-admin-item.is-cancelled .smad-info-row-motivo *{
+  text-decoration:none;
 }
 .sm-admin-item-main{
   display:flex;
@@ -472,8 +480,8 @@ body{
   color: #374151;
 }
 .sm-admin-badge-noshow{
-  background:#fee2e2;
-  color:#b91c1c;
+  background:#5f676a;
+  color:#ffffff;
   font-weight:600;
 }
 .sm-admin-actions{
@@ -1168,11 +1176,12 @@ body{
 }
 
 .smad-info-value-motivo{
-  max-width: 150px;
+  max-width: 280px;
   display: inline-block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 12px;
 }
 
 </style>

@@ -352,8 +352,14 @@ body{
     border:1px solid #bbf7d0;
   }
   .smc-item.is-cancelled{
-    text-decoration:line-through;
     opacity:0.55;
+  }
+  .smc-item.is-cancelled .smc-info-row,
+  .smc-item.is-cancelled .smc-badge:not(.smc-badge-cancel){
+    text-decoration:line-through;
+  }
+  .smc-item.is-cancelled .smc-badge-cancel{
+    text-decoration:none;
   }
   .smc-item-main{
     display:flex;
