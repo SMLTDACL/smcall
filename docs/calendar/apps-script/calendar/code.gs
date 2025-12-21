@@ -979,7 +979,7 @@ function availableDaysTurboResult_(consultor, fromStrParam, toStrParam, today){
 
 // ========== Agendas (book / cancel / list) ==========
 function createBooking_(data){
-  const { fecha, hora, consultorSeleccionado, nombre, email, telefono, marca, tipo, idpipe } = data;
+  const { fecha, hora, consultorSeleccionado, nombre, email, telefono, marca, tipo, idpipe, rid } = data;
 
   const fechaNorm = normDateStr_(fecha);
   const horaNorm  = normTimeHHMM_(hora);
@@ -1026,6 +1026,7 @@ function createBooking_(data){
     marca,
     tipo,
     idpipe: idpipe || "",
+    rid: rid || "",
     timestamp: ts,
     meeting_datetime_utc: meetingUTC
   };
@@ -1850,6 +1851,7 @@ function doPost(e){
     const marca    = String(p.marca || "").trim();
     const tipo     = String(p.tipo || "").trim();
     const idpipe   = String(p.idpipe || "").trim();
+    const rid      = String(p.rid || "").trim();
 
     if (!fecha || !hora) return json_({ ok:false, error:"missing_date_time" });
 
@@ -1914,9 +1916,16 @@ function doPost(e){
     }
 
     const booking_id = createBooking_({
-      fecha, hora,
+      fecha,
+      hora,
       consultorSeleccionado: assignedConsultor,
-      nombre, email, telefono, marca, tipo, idpipe
+      nombre,
+      email,
+      telefono,
+      marca,
+      tipo,
+      idpipe,
+      rid
     });
 
     return json_({ ok:true, booking_id, consultor_id: assignedConsultor });

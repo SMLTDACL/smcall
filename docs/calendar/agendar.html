@@ -45,6 +45,7 @@
     <form id="sm-booking-form" class="sm-form" style="display:none;">
       <input type="hidden" id="sm-date-input">
       <input type="hidden" id="sm-time-input">
+      <input type="hidden" id="sm-rid">
       <div class="sm-row">
         <label class="sm-label">Nombre
           <input id="sm-nombre" type="text" class="sm-input">
@@ -912,6 +913,7 @@ body{
     const marca = p.get("marca") || "";
     const tipo = p.get("tipo") || "";
     const idpipe = p.get("idpipe") || "";
+    const rid = p.get("rid") || "";
 
     if (qs("#sm-nombre")) qs("#sm-nombre").value = nombre;
     if (qs("#sm-email")) qs("#sm-email").value = email;
@@ -919,6 +921,7 @@ body{
     if (qs("#sm-marca")) qs("#sm-marca").value = marca;
     if (qs("#sm-tipo")) qs("#sm-tipo").value = tipo;
     if (qs("#sm-idpipe")) qs("#sm-idpipe").value = idpipe;
+    if (qs("#sm-rid")) qs("#sm-rid").value = rid;
   }
 
   function buildConsultorSelect(consultores, preferredCid){
@@ -1137,6 +1140,7 @@ body{
     const marca = qs("#sm-marca")?.value.trim() || "";
     const tipo  = qs("#sm-tipo")?.value.trim() || "";
     const idpipe = qs("#sm-idpipe")?.value.trim() || "";
+    const rid = qs("#sm-rid")?.value.trim() || "";
 
     if (!fecha || !hora){
       toast("Selecciona fecha y hora");
@@ -1162,7 +1166,8 @@ body{
         telefono: tel,
         marca,
         tipo,
-        idpipe
+        idpipe,
+        rid
       });
       if (!data.ok){
         const msg = data.error === "too_soon"

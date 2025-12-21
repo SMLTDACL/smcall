@@ -1922,6 +1922,8 @@
     if(tipo) params.set("tipo", tipo);
     const idpipe = (d.IDPIPE || "").trim();
     if(idpipe) params.set("idpipe", idpipe);
+    const rid = String(state.__presenceRid || d.RID || "").trim();
+    if(rid) params.set("rid", rid);
 
     const qsStr = params.toString();
     return "./calendar/agendar.html" + (qsStr ? `?${qsStr}` : "");
