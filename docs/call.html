@@ -2909,13 +2909,15 @@ window.addEventListener("pagehide", ()=>{
   }
 
   /* ===================== [F4.9] TRACKING ESTADO ===================== */
-  function renderTracking(estadoRaw){
+  function renderTracking(estadoRaw, tipoRaw){
     const box = qs("#sm-tracking");
     const estadoRow = qs(".sm-row-estado");
     if(!box) return;
 
     const raw = String(estadoRaw || "").trim();
     const est = raw.toUpperCase();
+    const tipo = String(tipoRaw || "").toUpperCase();
+    const isPaidSale = tipo.includes("PAGADO");
 
     // Solo se muestra si el estado está dentro de estos
     const allowed = new Set([
@@ -2945,11 +2947,19 @@ window.addEventListener("pagehide", ()=>{
     else if (est === "VIGILANCIA PAGADA") active = 5;
 
     // Labels: siempre la primera opción, excepto si el estado es "AGENDADO ..." (ahí muestra esa)
-    const label1 = (est === "AGENDADO") ? "AGENDADO" : "NUEVO CONTACTO";
-    const label2 = (est === "AGENDADO PAGO REGISTRO") ? "AGENDADO PAGO REGISTRO" : "PEND. PAGO REGISTRO";
+    const label1Base = (est === "AGENDADO") ? "AGENDADO" : "NUEVO CONTACTO";
+    const label2Base = (est === "AGENDADO PAGO REGISTRO") ? "AGENDADO PAGO REGISTRO" : "PEND. PAGO REGISTRO";
     const label3 = "REGISTRO PAGADO";
     const label4 = (est === "AGENDADO PAGO VIGILANCIA") ? "AGENDADO PAGO VIGILANCIA" : "PEND. PAGO VIGILANCIA";
     const label5 = "VIGILANCIA PAGADA";
+
+    let label1 = label1Base;
+    let label2 = label2Base;
+
+    if (isPaidSale){
+      if (label1Base === "NUEVO CONTACTO") label1 = "LLAMADA TASA INICIAL";
+      label2 = (label2Base === "AGENDADO PAGO REGISTRO") ? "AGENDADO PAGO TASA INICIAL" : "PEND. PAGO TASA INICIAL";
+    }
 
     const labels = [label1, label2, label3, label4, label5];
 
@@ -3151,7 +3161,7 @@ function escapeHtml(s){
 
     renderCalls();
     showDealView();
-    renderTracking(d.ESTADO);
+    renderTracking(d.ESTADO, d.TIPO);
     renderHistorialBT(d.LOG_BT || d.BT || "");
 
     // Reset encuesta para cada trato
