@@ -559,7 +559,8 @@
               </div>
               <!-- botones mini abajo derecha -->
               <div class="sm-right-actions">
-                <button id="sm-btn-nueva-solicitud" class="sm-mini-btn" type="button">📋 Nueva solicitud</button>
+                <button id="sm-btn-cambio-rubro" class="sm-mini-btn" type="button">✏️ Enviar a modificar rubro</button>
+                <button id="sm-btn-nueva-solicitud" class="sm-mini-btn" type="button">📋 Nueva marca adicional</button>
                 <button id="sm-btn-venta-analisis" class="sm-mini-btn" type="button">📊 Venta de Análisis</button>
                 <button id="sm-btn-venta-asistido" class="sm-mini-btn" type="button">💻 Venta Registro Asistido</button>
               </div>
@@ -628,7 +629,24 @@
       </div>
     </div>
   </div>
-  <!-- ===================== [B3.6] MODAL: DETALLE RUBRO (PDF) ===================== -->
+  <!-- ===================== [B3.6] MODAL: CAMBIO DE RUBRO ===================== -->
+  <div id="sm-cambio-modal" class="sm-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="sm-modal-backdrop"></div>
+    <div class="sm-modal-card">
+      <div class="sm-modal-title">Enviar a modificar rubro</div>
+      <div class="sm-modal-sub">Describe <strong>todo el rubro desde cero</strong>, incluyendo cada actividad que debe quedar registrada (no solo las partes modificadas).</div>
+      <div id="sm-cambio-lock-msg" class="sm-alert" style="display:none;">
+        Solo se permite enviar modificación de rubro una vez. Si quieres modificarlo nuevamente espera que llegue el trato con la primera modificación.
+      </div>
+      <label class="sm-modal-label" for="sm-cambio-rubro">Rubro</label>
+      <textarea id="sm-cambio-rubro" class="sm-textarea" rows="4" maxlength="1000" placeholder="Describe todo el rubro desde cero, incluyendo cada actividad que debe quedar registrada (no solo las partes modificadas)."></textarea>
+      <div class="sm-modal-actions">
+        <button id="sm-cambio-cancel" class="sm-btn sm-btn-secondary" type="button">Cancelar</button>
+        <button id="sm-cambio-send" class="sm-btn sm-btn-primary" type="button">Enviar</button>
+      </div>
+    </div>
+  </div>
+  <!-- ===================== [B3.7] MODAL: DETALLE RUBRO (PDF) ===================== -->
   <div id="sm-pdf-modal" class="sm-modal sm-pdf-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="sm-modal-backdrop"></div>
     <div id="sm-pdf-card" class="sm-modal-card sm-pdf-card">
@@ -642,7 +660,7 @@
       </div>
     </div>
   </div>
-  <!-- ===================== [B3.7] MODAL: AGENDA EMBEBIDA ===================== -->
+  <!-- ===================== [B3.8] MODAL: AGENDA EMBEBIDA ===================== -->
   <div id="sm-agenda-modal" class="sm-modal sm-agenda-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="sm-modal-backdrop"></div>
     <div class="sm-modal-card sm-agenda-card">
@@ -658,7 +676,7 @@
       <iframe id="sm-consultor-iframe" class="sm-agenda-frame" title="Agenda consultor" allow="clipboard-read; clipboard-write"></iframe>
     </div>
   </div>
-  <!-- ===================== [B3.8] MODAL: INACTIVIDAD ===================== -->
+  <!-- ===================== [B3.9] MODAL: INACTIVIDAD ===================== -->
   <div id="sm-idle-modal" class="sm-idle-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="sm-idle-backdrop"></div>
     <div class="sm-idle-card">
@@ -666,7 +684,7 @@
       <div class="sm-idle-count">Se cerrará en <span id="sm-idle-count">60</span>s</div>
     </div>
   </div>
-  <!-- ===================== [B3.9] OVERLAY: ADMIN CONSULTOR (full sheet) ===================== -->
+  <!-- ===================== [B3.10] OVERLAY: ADMIN CONSULTOR (full sheet) ===================== -->
   <div id="sm-admin-overlay" class="sm-overlay" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="sm-sheet sm-admin-sheet" role="document">
       <div class="sm-sheet-body sm-admin-body">
@@ -1041,6 +1059,23 @@
   .sm-modal-card{
     position:relative; width:min(560px, calc(100vw - 36px)); background:#fff; border-radius:18px;
     padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.22);
+  }
+  .sm-alert{
+    margin:10px 0;
+    padding:12px 12px;
+    background:rgba(255,193,7,.12);
+    border:1px solid rgba(255,193,7,.4);
+    border-radius:12px;
+    color:#7a5a00;
+    font-size:13px;
+    line-height:1.35;
+  }
+  .sm-modal-label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:#374151;
+    margin:10px 0 6px 0;
   }
   .sm-modal-card.sm-agenda-card{
     width:min(1080px, calc(100vw - 32px));
@@ -1783,6 +1818,7 @@
   // ZAPIER WEBHOOKS
   const ZAPIER_ANALISIS = "https://hooks.zapier.com/hooks/catch/6030955/ukh9o60/";
   const ZAPIER_ASISTIDO = "https://hooks.zapier.com/hooks/catch/6030955/ukh9mx9/";
+  const ZAPIER_CAMBIO_RUBRO = "https://hooks.zapier.com/hooks/catch/6030955/ugslhdr/";
   const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
   const IDLE_WARNING_SECONDS = 60;
   const TOKEN_KEY = "sm_token";
@@ -2367,6 +2403,93 @@
     if(!m) return;
     m.style.display = "none";
     m.setAttribute("aria-hidden", "true");
+  }
+
+  /* ===================== [F2.3bis] MODAL CAMBIO DE RUBRO ===================== */
+  function isCambioLocked(){
+    const rid = String(state.__presenceRid || state.deal?.RID || "").trim();
+    return !!(rid && state.__cambioSentRid === rid);
+  }
+
+  function updateCambioLockUI(){
+    const msg = qs("#sm-cambio-lock-msg");
+    const sendBtn = qs("#sm-cambio-send");
+    const rubroLabel = qs('label[for="sm-cambio-rubro"]');
+    const rubroInput = qs("#sm-cambio-rubro");
+    const locked = isCambioLocked();
+    if(msg) msg.style.display = locked ? "block" : "none";
+    if(rubroLabel) rubroLabel.style.display = locked ? "none" : "block";
+    if(rubroInput) rubroInput.style.display = locked ? "none" : "block";
+    if(sendBtn){
+      sendBtn.disabled = locked;
+      sendBtn.setAttribute("aria-disabled", locked ? "true" : "false");
+      sendBtn.style.opacity = locked ? ".6" : "";
+      sendBtn.style.pointerEvents = locked ? "none" : "";
+    }
+  }
+
+  function openCambioRubroModal(){
+    if(!state.deal) return toast("Sin trato cargado");
+    const m = qs("#sm-cambio-modal");
+    if(!m) return;
+    const rubroInput = qs("#sm-cambio-rubro");
+    if(rubroInput) rubroInput.value = "";
+    m.style.display = "flex";
+    m.setAttribute("aria-hidden", "false");
+    updateCambioLockUI();
+    setTimeout(()=>{
+      try{
+        if(!isCambioLocked() && rubroInput){
+          rubroInput.focus();
+          rubroInput.select();
+        }
+      }catch(_){}
+    }, 0);
+  }
+
+  function closeCambioRubroModal(){
+    const m = qs("#sm-cambio-modal");
+    if(!m) return;
+    m.style.display = "none";
+    m.setAttribute("aria-hidden", "true");
+  }
+
+  function submitCambioRubro(){
+    if(!state.deal) return toast("Sin trato cargado");
+    if(isCambioLocked()){
+      updateCambioLockUI();
+      return;
+    }
+    if(state.__cambioBusy) return;
+
+    const rid = String(state.__presenceRid || state.deal?.RID || "").trim();
+    const id = String(state.deal?.IDPIPE || state.deal?.ID || "").trim();
+    const idc = getIDC();
+    const marca = (state.deal?.MARCA || "").trim();
+    const rubro = (qs("#sm-cambio-rubro")?.value || "").trim();
+
+    if(!rid){ toast("Sin RID"); return; }
+    if(!id){ toast("Sin ID"); return; }
+    if(!rubro){ toast("Rubro requerido"); return; }
+
+    const btn = qs("#sm-cambio-send");
+    state.__cambioBusy = true;
+    const unlock = lockBtn(btn, "Enviando...");
+
+    try{
+      const payload = { RID: rid, ID: id, IDC: idc, Marca: marca, Rubro: rubro };
+      sendWebhookViaForm(ZAPIER_CAMBIO_RUBRO, payload);
+      toast("Solicitud enviada");
+      state.__cambioSentRid = rid;
+      updateCambioLockUI();
+      closeCambioRubroModal();
+    }catch(e){
+      console.error("[SM] cambio rubro error", e);
+      toast("No se pudo enviar");
+    }finally{
+      state.__cambioBusy = false;
+      unlock && unlock();
+    }
   }
 
   /* ===================== [F2.4] MODAL PDF DETALLE ===================== */
@@ -2990,6 +3113,8 @@ window.addEventListener("pagehide", ()=>{
     skipRids: [],
     __omitBusy: false,
     __saleBusy: false,
+    __cambioBusy: false,
+    __cambioSentRid: null,
     __searchBusy: false,
     __payBusy: false,
     __payVigBusy: false,
@@ -3153,6 +3278,7 @@ function escapeHtml(s){
     state.deal = d;
     state.calls = [];
     state.pending = null;
+    state.__cambioSentRid = null;
     state.__preloadRid = null;
     state.__preloadPromise = null;
     state.__preloadResult = null;
@@ -4524,6 +4650,24 @@ const nextPromise =
         return;
       }
 
+      if(id === "sm-btn-cambio-rubro"){
+        ev.preventDefault();
+        openCambioRubroModal();
+        return;
+      }
+
+      if(id === "sm-cambio-cancel"){
+        ev.preventDefault();
+        closeCambioRubroModal();
+        return;
+      }
+
+      if(id === "sm-cambio-send"){
+        ev.preventDefault();
+        submitCambioRubro();
+        return;
+      }
+
       // Mini buttons right-bottom
       if(id === "sm-btn-venta-analisis"){
         ev.preventDefault();
@@ -4563,6 +4707,12 @@ const nextPromise =
     const lm = qs("#sm-log-modal");
     if(lm && lm.style.display === "flex"){
       closeLogModal();
+      return;
+    }
+
+    const crm = qs("#sm-cambio-modal");
+    if(crm && crm.style.display === "flex"){
+      closeCambioRubroModal();
       return;
     }
 
