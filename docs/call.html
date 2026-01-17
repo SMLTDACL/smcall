@@ -4332,8 +4332,8 @@ const nextPromise =
     if(!opt) return { url:"", error:"option" };
 
     const base = (opt === "2")
-      ? "https://solicitud.simplemarcas.cl/exfgojnp"
-      : "https://solicitud.simplemarcas.cl/smlx8gtr";
+      ? "https://pay.simplemarcas.cl/registro-completo/"
+      : "https://pay.simplemarcas.cl/registro-completo/?pro=true";
 
     const { nombre, apellido } = splitNombreApellido(d.NOMBRE || "");
     const telefonoInput = (qs("#sm-phone")?.value || "").trim();
@@ -4341,12 +4341,12 @@ const nextPromise =
 
     const url = new URL(base);
     url.searchParams.set("format", "software_interno");
-    url.searchParams.set("8ifiq", d.EMAIL || "");
-    url.searchParams.set("dddkm", nombre);
-    url.searchParams.set("cbl3f", apellido);
-    url.searchParams.set("6lso5", telefono);
+    url.searchParams.set("email", d.EMAIL || "");
+    url.searchParams.set("nombre", nombre);
+    url.searchParams.set("apellido", apellido);
+    url.searchParams.set("telefono", telefono);
+    url.searchParams.set("cupon", d.CUPON || "");
     url.searchParams.set("41d8h", d.MARCA || "");
-    url.searchParams.set("4kpf6", d.CUPON || "");
 
     return { url: url.toString(), error:"" };
   }
